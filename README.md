@@ -1,5 +1,7 @@
 # Lectern — design package
 
+[![CI](https://github.com/bsletten/lectern-slides/actions/workflows/ci.yml/badge.svg)](https://github.com/bsletten/lectern-slides/actions/workflows/ci.yml)
+
 Specifications and starter assets for building **Lectern**, a Python tool that
 assembles Markdown slide sources into a deck and renders it via reveal.js (with
 remark / marp / quarto as alternates), with live preview and PDF export. This is
