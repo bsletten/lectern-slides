@@ -38,6 +38,24 @@ def test_check_reports_error_with_location(tmp_path):
     assert "missing.md" in result.stderr
 
 
+def test_build_writes_index_and_reports(fixtures, tmp_path):
+    out = tmp_path / "site"
+    result = runner.invoke(
+        app, ["build", str(fixtures / "render-deck"), "-o", str(out)]
+    )
+    assert result.exit_code == 0, result.output
+    assert (out / "index.html").is_file()
+    assert "built 3 slide(s)" in result.stdout
+
+
+def test_build_rejects_unsupported_format(fixtures, tmp_path):
+    result = runner.invoke(
+        app, ["build", str(fixtures / "render-deck"), "-o", str(tmp_path), "-f", "pdf"]
+    )
+    assert result.exit_code == 1
+    assert "pdf" in result.stderr
+
+
 def test_version():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0

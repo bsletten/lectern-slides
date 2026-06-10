@@ -1,0 +1,17 @@
+title      = "Render Fixture"
+author     = "Test Harness"
+renderer   = "reveal"
+theme      = "base"
+aspect     = "4:3"
+asset_base = "./assets"
+
+slides = [
+  "slides/anchor.md",
+  "slides/incr.md",
+  "slides/bg.md",
+]
+
+[reveal]
+math      = "katex"
+highlight = true
+transition = "fade"

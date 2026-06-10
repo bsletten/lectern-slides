@@ -1,0 +1,136 @@
+/* ============================================================================
+   Lectern — base theme
+   A neutral, token-driven starting point. Customize by editing the tokens in
+   :root first (accent + fonts are the highest-leverage changes); the rest
+   cascades. Class names match Remark conventions (center / middle / inverse /
+   quotation / footnote) so existing decks render correctly.
+   ============================================================================ */
+
+:root {
+  /* --- geometry -------------------------------------------------------- */
+  --slide-w: 1280px;
+  --slide-h: 720px;
+  --pad-x: 88px;
+  --pad-y: 64px;
+
+  /* --- color (change --accent first) ----------------------------------- */
+  --bg:          #fbfbfd;
+  --fg:          #17171d;
+  --muted:       #5b5b66;
+  --accent:      #0e7c86;       /* restrained teal; the one chromatic note   */
+  --rule:        #e4e4ea;
+  --inverse-bg:  #14141b;
+  --inverse-fg:  #f4f4f7;
+  --code-bg:     #0f1020;
+  --code-fg:     #e8e8f2;
+
+  /* --- type (wire up the real web fonts in your template <head>) -------- */
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body:    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  --fs-h1: 52px;
+  --fs-h2: 32px;
+  --fs-body: 27px;
+  --fs-code: 19px;
+  --fs-small: 16px;
+  --lh-tight: 1.14;
+  --lh-body: 1.42;
+}
+
+/* --- slide surface ----------------------------------------------------- */
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); color: var(--fg); background: var(--bg); }
+
+.slide {
+  width: var(--slide-w);
+  height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x);
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  page-break-after: always;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* --- typography -------------------------------------------------------- */
+.slide h1 { font-family: var(--font-display); font-weight: 600;
+            font-size: var(--fs-h1); line-height: var(--lh-tight);
+            letter-spacing: -0.01em; margin: 0 0 0.35em; }
+.slide h2 { font-family: var(--font-display); font-weight: 500;
+            font-size: var(--fs-h2); line-height: 1.2; margin: 0 0 0.4em;
+            color: var(--muted); }
+.slide p, .slide li { font-size: var(--fs-body); line-height: var(--lh-body); }
+.slide ul, .slide ol { padding-left: 1.05em; }
+.slide li { margin: 0.18em 0; }
+.slide li::marker { color: var(--accent); }
+.slide a { color: var(--accent); text-decoration: none;
+           border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.slide strong { font-weight: 650; }
+.slide img { max-width: 100%; height: auto; }
+
+/* --- code (these decks are code-heavy; give it real presence) ---------- */
+.slide pre {
+  font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.4;
+  background: var(--code-bg); color: var(--code-fg);
+  padding: 22px 26px; border-radius: 10px; overflow: hidden;
+}
+.slide code { font-family: var(--font-mono); }
+.slide :not(pre) > code {
+  font-size: 0.9em; padding: 0.08em 0.34em; border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* --- layout: anchor the whole slide's content block (compose freely) --- */
+/* The slide is a vertical flex container; these move the content block to any
+   of nine positions. Default is top-left. Set via `<!-- slide: .center .middle -->`. */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }   /* vertical — default */
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }   /* horizontal — default */
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+/* e.g. `.center .middle` = dead centre · `.right .bottom` = bottom-right corner */
+
+/* --- place an individual box at a point (any number per slide) --------- */
+/* `::: {.place .top .right}` … `:::` anchors a box inside the slide. Combine
+   edges, or give exact coordinates with style="left:62%; top:18%". */
+.place { position: absolute; max-width: 72%; }
+.place.top    { top: var(--pad-y); }
+.place.bottom { bottom: var(--pad-y); }
+.place.left   { left: var(--pad-x); }
+.place.right  { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* --- inverse (colour only) --------------------------------------------- */
+.slide.inverse { background: var(--inverse-bg); color: var(--inverse-fg); }
+.slide.inverse h1 { color: var(--inverse-fg); }
+.slide.inverse h2 { color: color-mix(in srgb, var(--inverse-fg) 70%, transparent); }
+.slide.inverse a   { color: color-mix(in srgb, var(--accent) 70%, white); }
+
+/* --- Remark-parity content classes ------------------------------------- */
+.quotation {
+  font-family: var(--font-display); font-weight: 400; font-style: italic;
+  font-size: 42px; line-height: 1.3; max-width: 82%;
+}
+.quotation-source {
+  display: block; margin-top: 0.55em; font-size: 24px;
+  font-style: normal; opacity: 0.65;
+}
+.quotation-source::before { content: "— "; }
+.footnote {
+  position: absolute; bottom: 34px; left: var(--pad-x); right: var(--pad-x);
+  font-size: var(--fs-small); color: var(--muted); text-align: center;
+}
+
+/* --- accessibility floor ----------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

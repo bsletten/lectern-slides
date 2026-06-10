@@ -99,11 +99,19 @@ def assemble(
     source: str | Path,
     *,
     config_override: str | Path | None = None,
+    cli_overrides: dict | None = None,
+    user_config: Path | None = None,
     src: Source | None = None,
 ) -> AssembledDeck:
     """Assemble the deck named by *source* into an :class:`AssembledDeck`."""
     src = src or FilesystemSource()
-    resolved = resolve_source(source, config_override=config_override, src=src)
+    resolved = resolve_source(
+        source,
+        config_override=config_override,
+        cli_overrides=cli_overrides,
+        user_config=user_config,
+        src=src,
+    )
     return assemble_resolved(resolved, src=src)
 
 

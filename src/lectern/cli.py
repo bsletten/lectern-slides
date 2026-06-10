@@ -1,14 +1,15 @@
 """The ``lectern`` command-line interface.
 
-M1 ships two commands:
+Commands so far:
 
 * ``lectern assemble SOURCE [-o OUT]`` — expand includes/ranges into one deck and
   write the assembled Markdown (the "assemble then feed any renderer" escape
   hatch). Provenance comments are kept so the output is self-describing.
 * ``lectern check SOURCE`` — validate includes/ranges (and surface warnings)
   without writing anything.
+* ``lectern build SOURCE`` — assemble and render to ``out_dir`` (reveal HTML).
 
-Rendering, watch/serve, and the other adapters arrive in later milestones.
+Watch/serve and the other adapters arrive in later milestones.
 """
 
 from __future__ import annotations
@@ -19,8 +20,10 @@ from pathlib import Path
 import typer
 
 from . import __version__
-from .errors import LecternError
-from .preprocess import assemble
+from .config import resolve_source
+from .errors import ConfigError, LecternError
+from .preprocess import assemble, assemble_resolved
+from .render import get_renderer
 
 app = typer.Typer(
     add_completion=False,
@@ -91,6 +94,65 @@ def check(
     suffix = " with warnings" if deck.warnings else ""
     typer.secho(
         f"ok: {deck.slide_count} slide(s) assembled cleanly{suffix}",
+        fg=typer.colors.GREEN,
+    )
+
+
+@app.command()
+def build(
+    source: Path = typer.Argument(
+        ..., metavar="SOURCE", help="Manifest, deck dir, or .md file."
+    ),
+    renderer: str | None = typer.Option(
+        None, "-r", "--renderer", help="Override the renderer (e.g. reveal)."
+    ),
+    theme: str | None = typer.Option(
+        None, "-t", "--theme", help="Override the theme (bundled name or path)."
+    ),
+    asset_base: str | None = typer.Option(
+        None, "--asset-base", help="Override the asset base (local dir or URL)."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "-o",
+        "--out",
+        help="Override the output directory (default: deck out_dir).",
+    ),
+    fmt: str = typer.Option("html", "-f", "--format", help="Output format (html)."),
+    config: Path | None = typer.Option(
+        None, "--config", help="Override the deck manifest (.toml)."
+    ),
+) -> None:
+    """Assemble and render the deck (reveal HTML) into the deck's output dir."""
+    overrides = {
+        "renderer": renderer,
+        "theme": theme,
+        "asset_base": asset_base,
+        "out_dir": str(out) if out is not None else None,
+    }
+    try:
+        resolved = resolve_source(
+            source, config_override=config, cli_overrides=overrides
+        )
+        adapter = get_renderer(resolved.config.renderer)
+        caps = adapter.capabilities()
+        if fmt != "html" or not caps.html:
+            raise ConfigError(
+                f"renderer '{adapter.name}' cannot produce '{fmt}' yet "
+                "(only 'html' is supported in this build)"
+            )
+        if not adapter.available():
+            raise ConfigError(f"renderer '{adapter.name}' is not available")
+
+        deck = assemble_resolved(resolved)
+        result = adapter.render(deck, resolved.config, resolved.out_dir)
+    except LecternError as e:
+        raise _fail(e) from None
+
+    _emit_warnings(result.warnings)
+    typer.secho(
+        f"built {deck.slide_count} slide(s), {len(result.assets)} asset(s) "
+        f"-> {result.output}",
         fg=typer.colors.GREEN,
     )
 
