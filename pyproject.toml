@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lectern-slides"
+version = "0.1.0"
+description = "Assemble Markdown slide sources into a deck and render it through a pluggable framework adapter."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Brian Sletten", email = "brian.sletten@gmail.com" }]
+keywords = ["slides", "markdown", "reveal.js", "presentation", "transclusion"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Documentation",
+  "Topic :: Multimedia :: Graphics :: Presentation",
+]
+
+# Core stays dependency-light. Rendering/serving deps arrive with their milestones.
+dependencies = [
+  "typer>=0.12",
+  "pydantic>=2.6",
+  "python-frontmatter>=1.1",
+]
+
+[project.optional-dependencies]
+pdf = ["playwright>=1.44", "pypdf>=4.2", "reportlab>=4.1"]
+
+[project.scripts]
+lectern = "lectern.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/bsletten/lectern-slides"
+Repository = "https://github.com/bsletten/lectern-slides"
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lectern"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Typer's argument/option declarations are call-in-default by design.
+"src/lectern/cli.py" = ["B008"]

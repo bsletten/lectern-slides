@@ -1,0 +1,11 @@
+title    = "Fixture Deck"
+author   = "Test Harness"
+renderer = "reveal"
+partials = ["./_partials"]
+
+slides = [
+  "slides/00-intro.md",
+  "lib.md#1,3-",          # ranged include resolved via the partials search dir
+  "slides/20-fence.md",
+  "slides/30-canvas.md",
+]

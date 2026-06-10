@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtualenvs / tooling
+.venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Lectern build artifacts (deck out_dir / build_dir defaults)
+/dist/
+/build/
