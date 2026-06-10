@@ -1,0 +1,97 @@
+/* ============================================================================
+   Sample theme — PAPER
+   Light, editorial, calm. Pairs a serif display with a humanist sans body and a
+   deep indigo accent. Same markup as MIDNIGHT renders cleanly here too —
+   that's the point of the shared token contract.
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 92px; --pad-y: 68px;
+
+  --bg: #f5f4f0; --fg: #1c1b19; --muted: #6a675f; --accent: #3f3cbb;
+  --rule: #ddd9cf; --inverse-bg: #1c1b19; --inverse-fg: #f5f4f0;
+  --code-bg: #1f1e29; --code-fg: #ecebf5;
+
+  --font-display: "Source Serif 4", "Spectral", Georgia, serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  --fs-h1: 52px; --fs-h2: 30px; --fs-body: 27px; --fs-code: 19px; --fs-small: 16px;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); color: var(--fg); background: var(--bg); }
+
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--fg); page-break-after: always;
+}
+.slide:last-child { page-break-after: auto; }
+
+.slide h1 { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-h1);
+            line-height: 1.14; margin: 0 0 0.3em; padding-bottom: 0.28em;
+            border-bottom: 1px solid var(--rule); }
+.slide.center h1 { border-bottom: none; padding-bottom: 0; }
+.slide h2 { font-family: var(--font-display); font-weight: 400; font-style: italic;
+            font-size: var(--fs-h2); color: var(--muted); margin: 0 0 0.4em; }
+.slide p, .slide li { font-size: var(--fs-body); line-height: 1.46; }
+.slide ul, .slide ol { padding-left: 1.05em; }
+.slide li { margin: 0.2em 0; }
+.slide li::marker { color: var(--accent); }
+.slide a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.4em auto 0; }
+
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.4;
+             background: var(--code-bg); color: var(--code-fg); padding: 22px 26px; border-radius: 8px; }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.9em;
+             padding: 0.08em 0.34em; border-radius: 5px;
+             background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* syntax highlighting (reveal highlight plugin) */
+.hljs { color: var(--code-fg); background: var(--code-bg); }
+.hljs-comment, .hljs-quote { color: #7a7790; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: #9b97ff; }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: #9bd1a8; }
+.hljs-number, .hljs-meta { color: #e2a98a; }
+.hljs-title, .hljs-title.function_, .hljs-name { color: #cfc8f5; }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: #a7c3ff; }
+
+/* layout classes */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.slide.inverse { background: var(--inverse-bg); color: var(--inverse-fg); }
+.slide.inverse h1 { border-color: color-mix(in srgb, var(--inverse-fg) 25%, transparent); }
+.slide.inverse h2 { color: color-mix(in srgb, var(--inverse-fg) 70%, transparent); }
+.slide.inverse a { color: color-mix(in srgb, var(--accent) 55%, white); border-color: currentColor; }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-style: italic; font-size: 42px;
+             line-height: 1.32; max-width: 82%; }
+.quotation-source { display: block; margin-top: 0.55em; font-size: 24px;
+             font-style: normal; font-family: var(--font-body); opacity: 0.7; }
+.quotation-source::before { content: "— "; }
+.footnote { position: absolute; bottom: 36px; left: var(--pad-x); right: var(--pad-x);
+            font-size: var(--fs-small); color: var(--muted); text-align: center; }
+
+/* tables */
+.slide table { width: 100%; border-collapse: collapse; font-size: 22px; margin-top: 0.4em; }
+.slide th { text-align: left; font-family: var(--font-display); font-weight: 600;
+            padding: 10px 14px; border-bottom: 2px solid var(--fg); }
+.slide td { padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+.slide tbody tr:nth-child(even) { background: color-mix(in srgb, var(--fg) 3%, transparent); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

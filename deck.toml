@@ -1,0 +1,42 @@
+# Example Lectern deck manifest.
+# Place at the root of a talk directory, e.g. talks/ai-sec/deck.toml
+# Run:  lectern watch talks/ai-sec      (live preview)
+#       lectern build talks/ai-sec -f pdf
+
+title      = "The Security of AI Systems: Jailbreaking, RAG, and Beyond"
+author     = "Brian Sletten"
+renderer   = "reveal"          # reveal | remark | marp | quarto
+theme      = "base"            # bundled name, or a path like "./themes/mine.css"
+aspect     = "16:9"
+
+# Where images / SVGs / other assets come from. A local directory OR a URL.
+# For the eventual semantic-CMS source this becomes the CMS base URL.
+asset_base = "https://localhost:8080/bosatsu/data"
+
+# Reusable partial libraries, searched in order when an include path isn't
+# found relative to the including file.
+partials   = ["../_partials", "~/talks/_lib"]
+
+out_dir    = "dist"
+build_dir  = "build"
+
+# Ordered deck contents. Each entry is a path, optionally with a #range.
+# Omit `slides` entirely to use directory mode (lexical filename order).
+slides = [
+  "00-title.md",
+  "rdf-intro.md#1-3,14",       # pull slides 1-3 and 14 from a reusable partial
+  "10-threat-model.md",
+  "20-architectural-risk.md",
+  "90-questions.md",
+]
+
+[serve]
+host = "127.0.0.1"
+port = 8080
+open = true
+coi  = false                   # true → COOP/COEP headers for WASM/WebGPU embeds
+
+[reveal]
+controls   = true
+progress   = true
+transition = "none"            # keep print/PDF clean

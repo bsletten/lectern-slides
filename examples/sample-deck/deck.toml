@@ -1,0 +1,61 @@
+# Sample Lectern deck — exercises every core feature.
+#
+#   lectern watch examples/sample-deck            # live, reloading preview
+#   lectern build examples/sample-deck -f pdf     # vector PDF
+#
+# THEME SWITCH: change the one line below (or override on the CLI with
+#   lectern build examples/sample-deck --theme ./themes/paper.css
+theme      = "./themes/japandi.css"      # japandi · midnight · paper
+
+title      = "Lectern: A Feature Tour"
+author     = "Brian Sletten"
+renderer   = "reveal"
+aspect     = "16:9"
+
+# Assets (the background SVG, the D3 viz page) live alongside the deck.
+asset_base = "./assets"
+
+# Reusable snippets searched here when an include path isn't found relatively.
+partials   = ["./_partials"]
+
+out_dir    = "dist"
+build_dir  = "build"
+
+slides = [
+  "slides/00-title.md",
+  "slides/10-agenda.md",
+  "slides/20-qualifications.md",
+  "slides/25-code.md",
+  "slides/30-background.md",
+  "slides/40-incremental.md",
+  "slides/45-layout.md",
+  "slides/50-animation.md",
+  "slides/60-table.md",
+  "slides/70-math.md",
+  "slides/80-closing.md",
+]
+
+[serve]
+host = "127.0.0.1"
+port = 8080
+open = true
+coi  = false          # leave off: the D3 page pulls d3 from a CDN (see README)
+
+[reveal]
+controls   = true
+progress   = true
+transition = "fade"
+math       = "katex"  # enable the math plugin for the LaTeX slide
+highlight  = true     # load the highlight plugin; theme supplies token colors
+slide_number = "c"    # subtle corner index, styled by the theme
+
+# PDF export (see PDF-EXPORT.md). Defaults shown; override per-build on the CLI,
+# e.g.  lectern build examples/sample-deck -f pdf --layout 1up   (bare slides)
+[pdf]
+layout        = "2up-notes"  # 2 slides + their notes per page (handout default)
+color         = "color"      # color | bw   (bw_engine = tokens | ghostscript)
+backgrounds   = true
+light_inverse = false        # flip dark .inverse slides to light for ink
+fragments     = "flatten"    # flatten builds onto one page (handout-friendly)
+posters       = "auto"       # capture a still frame for the D3 embed
+poster_at     = 1200         # ms; the embed also signals window.lecternReady

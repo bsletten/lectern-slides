@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>D3 — token probabilities</title>
+<style>
+  html, body { margin: 0; background: transparent; }
+  body { font: 14px/1.4 "Inter", system-ui, sans-serif; color: #889; }
+  .bar { fill: #38bdf8; }
+  .label { fill: currentColor; }
+  @media (prefers-reduced-motion: reduce) { .bar { transition: none; } }
+</style>
+</head>
+<body>
+<svg id="chart" width="980" height="380" viewBox="0 0 980 380" role="img"
+     aria-label="Animated bar chart of token probabilities"></svg>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+  const tokens = ["the", "model", "can", "be", "talked", "out", "of", "it"];
+  const W = 980, H = 380, M = { top: 24, right: 16, bottom: 40, left: 16 };
+  const iw = W - M.left - M.right, ih = H - M.top - M.bottom;
+
+  const svg = d3.select("#chart");
+  const g = svg.append("g").attr("transform", `translate(${M.left},${M.top})`);
+  const x = d3.scaleBand().domain(tokens).range([0, iw]).padding(0.28);
+  const y = d3.scaleLinear().domain([0, 1]).range([ih, 0]);
+
+  g.selectAll("text.label").data(tokens).join("text")
+    .attr("class", "label")
+    .attr("x", d => x(d) + x.bandwidth() / 2)
+    .attr("y", ih + 26).attr("text-anchor", "middle")
+    .style("font-size", "13px").text(d => d);
+
+  const bars = g.selectAll("rect.bar").data(tokens).join("rect")
+    .attr("class", "bar")
+    .attr("x", d => x(d)).attr("width", x.bandwidth())
+    .attr("rx", 4).attr("y", ih).attr("height", 0);
+
+  const still = new URLSearchParams(location.search).has("static")
+    || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function softmax(z) {
+    const m = Math.max(...z), e = z.map(v => Math.exp(v - m));
+    const s = e.reduce((a, b) => a + b, 0);
+    return e.map(v => v / s);
+  }
+  function update(fixed) {
+    const probs = softmax(fixed || tokens.map(() => Math.random() * 4));
+    bars.data(probs).transition().duration(still ? 0 : 900).ease(d3.easeCubicOut)
+      .attr("y", d => y(d)).attr("height", d => ih - y(d));
+  }
+
+  if (still) {
+    // PDF / reduced-motion: paint one deterministic frame and signal readiness
+    // so Lectern's poster capture knows when to screenshot.
+    update([3.4, 1.1, 2.2, 0.6, 3.9, 1.6, 0.9, 2.7]);
+    window.lecternReady = true;
+  } else {
+    update();
+    setInterval(update, 1600);
+  }
+</script>
+</body>
+</html>
