@@ -93,7 +93,8 @@ def sheet_size(
     """Resolve the sheet (W, H) in points for ``paper`` at ``orientation``.
 
     ``deck`` uses the master page size as-is; named sizes and ``WxH`` (CSS pixels)
-    are oriented per ``orientation``.
+    are oriented per ``orientation``. ``orientation="auto"`` matches the sheet to
+    the deck (landscape for a wide master), so 16:9 slides tile without big gaps.
     """
     key = paper.strip().lower()
     if key == "deck":
@@ -110,9 +111,12 @@ def sheet_size(
         # WxH is given in CSS pixels (like the deck aspect); convert to points.
         w, h = float(dims.group(1)) * 72 / 96, float(dims.group(2)) * 72 / 96
 
-    if orientation == "landscape" and h > w:
+    want = orientation
+    if want == "auto":
+        want = "landscape" if master[0] >= master[1] else "portrait"
+    if want == "landscape" and h > w:
         w, h = h, w
-    elif orientation == "portrait" and w > h:
+    elif want == "portrait" and w > h:
         w, h = h, w
     return w, h
 

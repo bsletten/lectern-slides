@@ -133,6 +133,14 @@ def test_sheet_size_named_and_orientation():
     assert geometry.sheet_size("deck", "portrait", (600, 800)) == (600, 800)
 
 
+def test_sheet_size_auto_matches_deck_aspect():
+    # auto -> landscape for a wide master, portrait for a tall one
+    w, h = geometry.sheet_size("letter", "auto", (960, 540))
+    assert w > h and {round(w), round(h)} == {612, 792}
+    w, h = geometry.sheet_size("letter", "auto", (540, 960))
+    assert h > w
+
+
 def test_sheet_size_wxh_pixels_to_points():
     # 1280x720 px -> *0.75 -> 960x540 pt, oriented landscape
     w, h = geometry.sheet_size("1280x720", "landscape", (0, 0))
@@ -223,7 +231,8 @@ def test_2up_notes_sheet_count_and_notes_text():
     )
     pages = _pages(out)
     assert len(pages) == 2  # 3 slides, 2 per sheet
-    assert [round(float(x)) for x in pages[0].mediabox] == [0, 0, 612, 792]
+    # letter sheet (auto-oriented landscape for the wide synthetic master)
+    assert sorted(round(float(x)) for x in pages[0].mediabox) == [0, 0, 612, 792]
     text = pages[0].extract_text()
     assert "first note" in text and "second note here" in text
 

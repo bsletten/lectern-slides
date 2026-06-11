@@ -78,7 +78,7 @@ class PdfConfig(_Section):
 
     # imposition / layout
     layout: str = "2up-notes"  # 1up | 2up | 2up-notes | 4up | 6up | 3up-notes
-    orientation: str = "portrait"  # portrait | landscape
+    orientation: str = "auto"  # auto (match deck) | portrait | landscape
     margins: str = "12mm"
     gutter: str = "10mm"
     frame: bool = True

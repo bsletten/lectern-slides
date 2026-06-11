@@ -48,7 +48,7 @@ These live behind a `lectern-slides[pdf]` install extra so the core stays light.
 | `backgrounds = true\|false` | `print_background` on/off **and** an injected print stylesheet that hides `data-background-*` and `.inverse` fills when off. Default `true`. |
 | `light_inverse = true\|false` | Flip `.inverse` (dark) slides to light for ink economy, using the theme's own tokens (`--inverse-bg`→`--bg`, `--inverse-fg`→`--fg`). Default `false`. |
 | `fragments = "flatten"\|"steps"` | Maps to reveal `pdfSeparateFragments`. `flatten` = one page per slide with all builds shown (handout default); `steps` = one page per build. |
-| `paper = "deck"\|"letter"\|"a4"\|WxH` | `deck` (default) uses the slide aspect via `prefer_css_page_size`; named sizes letterbox the slide for standard paper. |
+| `paper = "deck"\|"letter"\|"a4"\|WxH` | `deck` (default) uses the slide aspect via `prefer_css_page_size` for the 1-up master; for a multi-up handout `deck` falls back to `letter` (a deck-shaped sheet leaves tiled slides tiny). Named sizes letterbox the slide for standard paper. |
 | `posters = "auto"\|"explicit"\|"off"` | How live embeds become stills (next section). |
 
 Because these change printed pixels, they are set when the master is rendered.
@@ -104,7 +104,9 @@ row a slide thumbnail (~58% width, left) with its notes column (right). Use
 ones Lectern already parses from `<!-- notes -->` / `::: notes`, so handouts carry
 your script, not blank lines.
 
-Imposition controls: `paper`, `orientation`, `margins`, `gutter`,
+Imposition controls: `paper`, `orientation` (`auto` by default — the sheet is
+turned to match the deck aspect, so wide 16:9 slides tile without big margins),
+`margins`, `gutter`,
 `frame = true|false` (hairline border per thumbnail), `slide_numbers`,
 `header` / `footer` (e.g. title, date, page x/y). All vector; text stays
 selectable.

@@ -21,7 +21,7 @@ COLORS = ("color", "bw")
 BW_ENGINES = ("tokens", "ghostscript")
 FRAGMENTS = ("flatten", "steps")
 POSTERS = ("auto", "explicit", "off")
-ORIENTATIONS = ("portrait", "landscape")
+ORIENTATIONS = ("auto", "portrait", "landscape")
 
 
 @dataclass(frozen=True)
@@ -76,11 +76,18 @@ def resolve(pdf: PdfConfig) -> PdfOptions:
     layout = "2x2" if pdf.layout == "4up" else pdf.layout
     _check(layout, LAYOUTS, "layout")
 
+    # `deck` paper is the slide's own aspect — sensible for a 1-up master, but for
+    # a handout it yields an awkward sheet (a 16:9 deck rotated to a tall portrait
+    # page leaves slides tiny). Multi-up handouts default to a real sheet instead.
+    paper = pdf.paper
+    if paper.strip().lower() == "deck" and layout != "1up":
+        paper = "letter"
+
     return PdfOptions(
         backgrounds=backgrounds,
         light_inverse=light_inverse,
         fragments=_check(pdf.fragments, FRAGMENTS, "fragments"),
-        paper=pdf.paper,
+        paper=paper,
         posters=_check(pdf.posters, POSTERS, "posters"),
         poster_at=pdf.poster_at,
         color=color,
