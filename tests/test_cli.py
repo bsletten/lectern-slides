@@ -56,6 +56,14 @@ def test_build_rejects_unsupported_format(fixtures, tmp_path):
     assert "pdf" in result.stderr
 
 
+def test_watch_fails_fast_on_bad_source(tmp_path):
+    # A resolution error must surface before the server starts (so the command
+    # exits instead of blocking). A valid source would block on the server.
+    result = runner.invoke(app, ["watch", str(tmp_path / "nope.md")])
+    assert result.exit_code == 1
+    assert "error:" in result.stderr
+
+
 def test_version():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0

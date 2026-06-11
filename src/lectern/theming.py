@@ -66,7 +66,8 @@ def slide_dimensions(aspect: str) -> tuple[int, int]:
     )
 
 
-def _is_path_like(theme: str) -> bool:
+def is_theme_path(theme: str) -> bool:
+    """Whether ``theme`` is a path (vs a bundled theme name like ``base``)."""
     return (
         theme.endswith(".css")
         or "/" in theme
@@ -77,7 +78,7 @@ def _is_path_like(theme: str) -> bool:
 
 def resolve_theme_css(theme: str, root: Path) -> tuple[str, str]:
     """Return ``(name, css)`` for a bundled theme name or a deck-relative path."""
-    if _is_path_like(theme):
+    if is_theme_path(theme):
         p = Path(theme).expanduser()
         if not p.is_absolute():
             p = root / p

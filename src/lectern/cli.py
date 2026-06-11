@@ -157,6 +157,58 @@ def build(
     )
 
 
+@app.command()
+def watch(
+    source: Path = typer.Argument(
+        ..., metavar="SOURCE", help="Manifest, deck dir, or .md file."
+    ),
+    host: str | None = typer.Option(None, "--host", help="Bind host."),
+    port: int | None = typer.Option(None, "--port", help="Bind port."),
+    open_browser: bool | None = typer.Option(
+        None, "--open/--no-open", help="Open a browser on start."
+    ),
+    coi: bool | None = typer.Option(
+        None, "--coi/--no-coi", help="Send COOP/COEP isolation headers."
+    ),
+    theme: str | None = typer.Option(
+        None, "-t", "--theme", help="Override the theme (bundled name or path)."
+    ),
+    asset_base: str | None = typer.Option(
+        None, "--asset-base", help="Override the asset base (local dir or URL)."
+    ),
+    config: Path | None = typer.Option(
+        None, "--config", help="Override the deck manifest (.toml)."
+    ),
+) -> None:
+    """Serve a live, reloading preview that rebuilds on source changes."""
+    from .serve import LiveReloadServer, watch_paths
+
+    overrides = {"theme": theme, "asset_base": asset_base}
+    try:
+        resolved = resolve_source(
+            source, config_override=config, cli_overrides=overrides
+        )
+        # Surface a config/render error immediately rather than after the server
+        # is up (the running server then shows build errors as an overlay).
+        get_renderer(resolved.config.renderer)
+    except LecternError as e:
+        raise _fail(e) from None
+
+    serve_cfg = resolved.config.serve
+    server = LiveReloadServer(
+        source,
+        out_dir=resolved.out_dir,
+        host=host or serve_cfg.host,
+        port=port or serve_cfg.port,
+        coi=serve_cfg.coi if coi is None else coi,
+        open_browser=serve_cfg.open if open_browser is None else open_browser,
+        config_override=config,
+        cli_overrides=overrides,
+        watch=watch_paths(resolved),
+    )
+    server.run()
+
+
 def _version_callback(value: bool) -> None:
     if value:
         typer.echo(f"lectern {__version__}")
