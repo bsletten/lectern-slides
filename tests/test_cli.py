@@ -66,6 +66,49 @@ def test_build_rejects_unknown_format(fixtures, tmp_path):
     assert "xyz" in result.stderr
 
 
+def test_config_shows_provenance(fixtures):
+    result = runner.invoke(
+        app, ["config", str(fixtures / "render-deck"), "--theme", "japandi"]
+    )
+    assert result.exit_code == 0
+    assert "deck root:" in result.stdout
+    assert "renderer" in result.stdout
+    # The CLI override is attributed to the cli layer.
+    assert "japandi" in result.stdout
+    assert "(cli)" in result.stdout
+    # An unset key falls back to the built-in default.
+    assert "(default)" in result.stdout
+
+
+def test_config_override_flags_flow_through(fixtures):
+    result = runner.invoke(
+        app,
+        ["config", str(fixtures / "render-deck"), "--remark-compat", "--aspect", "4:3"],
+    )
+    assert result.exit_code == 0
+    assert "remark_compat" in result.stdout
+    assert "4:3" in result.stdout
+
+
+def test_assemble_remark_compat_flag(tmp_path):
+    write(tmp_path, "s.md", "class: center\n\n# T\n\n.accent[x] here\n")
+    result = runner.invoke(app, ["assemble", str(tmp_path / "s.md"), "--remark-compat"])
+    assert result.exit_code == 0
+    assert "<!-- slide: .center -->" in result.stdout
+    assert "[x]{.accent}" in result.stdout
+
+
+def test_partial_flag_replaces_search_dirs(tmp_path):
+    write(tmp_path, "lib/shared.md", "shared body")
+    write(tmp_path, "main.md", "<!-- include: shared.md -->\n")
+    # No partials configured; the flag supplies the search dir.
+    result = runner.invoke(
+        app, ["assemble", str(tmp_path / "main.md"), "--partial", str(tmp_path / "lib")]
+    )
+    assert result.exit_code == 0
+    assert "shared body" in result.stdout
+
+
 def test_watch_fails_fast_on_bad_source(tmp_path):
     # A resolution error must surface before the server starts (so the command
     # exits instead of blocking). A valid source would block on the server.

@@ -37,6 +37,13 @@ def test_unknown_bundled_theme_raises(tmp_path):
         resolve_theme_css("does-not-exist", tmp_path)
 
 
+@pytest.mark.parametrize("name", ["base", "cartesian", "soft-editorial", "grove"])
+def test_bundled_themes_resolve_by_name(name, tmp_path):
+    resolved_name, css = resolve_theme_css(name, tmp_path)
+    assert resolved_name == name
+    assert "--" in css  # carries design tokens / custom properties
+
+
 def test_theme_path_resolves_against_root(tmp_path):
     write(tmp_path, "themes/custom.css", ":root { --accent: #abcdef; }")
     name, css = resolve_theme_css("./themes/custom.css", tmp_path)

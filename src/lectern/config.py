@@ -128,6 +128,9 @@ class ResolvedSource:
     out_dir: Path = field(default_factory=lambda: Path("dist"))
     build_dir: Path = field(default_factory=lambda: Path("build"))
     mode: str = "manifest"  # "manifest" | "directory" | "single"
+    # Raw per-layer dicts (before merge), for config-provenance reporting.
+    layers: dict[str, dict] = field(default_factory=dict)
+    user_config_path: Path | None = None
 
 
 def user_config_path() -> Path:
@@ -175,16 +178,19 @@ def _layer(
     deck_data: dict,
     cli_overrides: dict | None,
     user_config: Path | None,
-) -> dict:
-    """Merge user config < deck.toml < CLI flags into one raw config dict."""
+) -> tuple[dict, dict, Path]:
+    """Merge user config < deck.toml < CLI flags into one raw config dict.
+
+    Returns ``(merged, layers, user_path)`` where ``layers`` keeps the raw
+    per-layer dicts (``user``/``deck``/``cli``) so callers can report where each
+    effective value came from.
+    """
     path = user_config if user_config is not None else user_config_path()
     user_data = load_toml(path) if path.is_file() else {}
-    merged = _deep_merge(user_data, deck_data)
-    if cli_overrides:
-        merged = _deep_merge(
-            merged, {k: v for k, v in cli_overrides.items() if v is not None}
-        )
-    return merged
+    cli_data = {k: v for k, v in (cli_overrides or {}).items() if v is not None}
+    merged = _deep_merge(_deep_merge(user_data, deck_data), cli_data)
+    layers = {"user": user_data, "deck": deck_data, "cli": cli_data}
+    return merged, layers, path
 
 
 def resolve_source(
@@ -246,7 +252,8 @@ def resolve_source(
     # Anchor the deck root absolutely: everything below is CWD-independent.
     root = root.resolve()
 
-    config = _validate(_layer(deck_data, cli_overrides, user_config))
+    merged, layers, user_path = _layer(deck_data, cli_overrides, user_config)
+    config = _validate(merged)
 
     if single is not None:
         entries, mode = [single], "single"
@@ -267,4 +274,6 @@ def resolve_source(
         out_dir=_under_root(config.out_dir, root),
         build_dir=_under_root(config.build_dir, root),
         mode=mode,
+        layers=layers,
+        user_config_path=user_path,
     )

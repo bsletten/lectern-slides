@@ -1,0 +1,137 @@
+/* ============================================================================
+   Theme — CARTESIAN  (after "Cartesian" by Zara Zhang,
+   zarazhangrui/beautiful-html-templates, MIT)
+   A museum-catalog / Vignelli register: warm-stone neutrals, NO saturated color.
+   Playfair Display 400 headlines in ink (never bold, never taupe); Inter body in
+   grey; small text is Inter UPPERCASE tracked in taupe. A single 1px taupe
+   hairline is the entire structural vocabulary — no shadows, no rounded corners
+   (except true circles). The whole system runs on tonal contrast and typography.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Playfair Display (400 + italic) · Inter (400/500) [+ Noto Serif SC for CJK]
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 100px; --pad-y: 80px;
+
+  --bg: #ede8e0;        /* warm bone canvas */
+  --bg-alt: #e2dbd1;    /* stone — cards, placeholders, the "moment" field */
+  --fg: #1a1a1a;        /* ink — headlines & emphasis */
+  --body: #5a5a5a;      /* text-secondary — body copy */
+  --accent: #8a8178;    /* taupe — small text, numerals, rings (the only "accent") */
+  --line: #b8b0a4;      /* the 1px hairline — Cartesian's identity */
+  --rule: #b8b0a4;
+  --card-fill: rgba(255, 255, 255, 0.30);
+  --inverse-bg: #e2dbd1; /* a subtle stone shift for covers / closers */
+  --inverse-fg: #1a1a1a;
+  --code-bg: rgba(255, 255, 255, 0.30); --code-fg: #1a1a1a;
+
+  --font-display: "Playfair Display", "Noto Serif SC", serif;
+  --font-body: "Inter", "Noto Serif SC", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;  /* Lectern addition — system has no code */
+  --fs-h1: 70px; --fs-h2: 28px; --fs-body: 24px; --fs-code: 18px; --fs-small: 14px;
+  --track: 2.5px;
+
+  /* near-tonal highlighting — warm neutrals only, no populist color */
+  --hl-comment: #8a8178; --hl-keyword: #1a1a1a; --hl-string: #76714f;
+  --hl-number: #92745a; --hl-function: #1a1a1a; --hl-builtin: #6f6a5e;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--body);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--body); page-break-after: always;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — Playfair 400, ink, never bold; <em> uses the loaded italic */
+.slide h1 { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-h1);
+            color: var(--fg); line-height: 1.1; margin: 0 0 0.45em; }
+.slide.center h1 { font-size: 96px; }
+.slide.center h1::after {           /* the horizontal-accent — a 1px ink terminal rule */
+  content: ""; display: block; width: 240px; height: 1px; background: var(--fg); margin: 0.55em auto 0;
+}
+.slide h2 { font-family: var(--font-body); font-weight: 400; font-size: var(--fs-h2);
+            color: var(--body); margin: 0 0 0.6em; line-height: 1.5; }
+.slide em { font-family: var(--font-display); font-style: italic; color: var(--fg); }
+
+/* body — Inter, grey, generous leading */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400; color: var(--body);
+                      font-size: var(--fs-body); line-height: 1.6; }
+.slide ul, .slide ol { padding-left: 1.1em; }
+.slide li { margin: 0.3em 0; }
+.slide li::marker { color: var(--accent); }
+.slide a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* small text — Inter UPPERCASE, tracked, taupe (labels, kickers, sources, footers) */
+.kicker, .label, .footnote, .quotation-source, .slide th {
+  font-family: var(--font-body); font-weight: 500; text-transform: uppercase;
+  letter-spacing: var(--track); color: var(--accent);
+}
+
+/* tracing-paper card — 1px taupe border, white-overlay fill, NO radius, NO shadow */
+.card { border: 1px solid var(--line); background: var(--card-fill); padding: 30px 34px; }
+/* ringed numeral / icon — the only round shape (true circle) */
+.ring { display: inline-flex; align-items: center; justify-content: center;
+        width: 48px; height: 48px; border: 1px solid var(--line); border-radius: 50%;
+        font-family: var(--font-display); color: var(--accent); }
+
+/* code — a flat, square light card (no radius, per the system) */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 24px 28px; border: 1px solid var(--line); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em;
+             padding: 0.08em 0.34em; background: var(--bg-alt); }
+
+/* syntax highlighting — near-tonal, warm neutrals only */
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — a subtle stone field for cover / closer "moments" */
+.slide.inverse { background: var(--inverse-bg); color: var(--body); }
+.slide.inverse h1 { color: var(--inverse-fg); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-weight: 400; color: var(--fg);
+             font-size: 48px; line-height: 1.15; max-width: 84%; }
+.quotation::before { content: "\201C"; display: block; font-family: var(--font-display);
+             font-size: 90px; line-height: 0.5; color: var(--accent); opacity: 0.5; margin-bottom: 0.1em; }
+.quotation-source { display: block; margin-top: 0.7em; font-size: var(--fs-small); }
+.footnote { position: absolute; bottom: 40px; left: var(--pad-x); right: var(--pad-x);
+            font-size: var(--fs-small); text-align: center; }
+
+/* tables — 1px taupe hairlines, uppercase taupe headers */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-size: var(--fs-small); padding: 12px 15px;
+            border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.slide td { font-family: var(--font-body); color: var(--body); padding: 12px 15px;
+            border-bottom: 1px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

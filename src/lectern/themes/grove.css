@@ -1,0 +1,148 @@
+/* ============================================================================
+   Theme — GROVE   (after "Grove" by Zara Zhang, zarazhangrui/beautiful-html-templates, MIT)
+   A literary-monograph register: deep forest-green canvas, warm bone text, a single
+   terracotta-coral accent. Playfair Display at weight 400 (never bold) carries every
+   headline; its signature move is <em> emphasis rendered italic-coral — which markdown
+   `*emphasis*` produces for free. Jost 300 body, JetBrains-Mono coral em-dash bullets,
+   1px hairlines, generous silence. `.inverse` flips to cream paper for breathing room.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Playfair Display (400) · Jost (300) · JetBrains Mono (300) [+ Noto *SC for CJK]
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 104px; --pad-y: 84px;
+
+  --bg: #192b1b;                       /* deep forest green */
+  --bg-alt: #1e3221;
+  --fg: #d4cfbf;                       /* warm bone */
+  --muted: rgba(212, 207, 191, 0.60);  /* fg-2 */
+  --faint: rgba(212, 207, 191, 0.32);  /* fg-3 */
+  --accent: #c8524a;                   /* terracotta coral — the only color */
+  --rule: rgba(212, 207, 191, 0.14);   /* 1px hairline */
+  --inverse-bg: #e8e4d6;               /* cream paper */
+  --inverse-fg: #192b1b;               /* green on cream */
+  --inverse-muted: rgba(25, 43, 27, 0.58);
+  --inverse-rule: rgba(25, 43, 27, 0.14);
+  --code-bg: #14241a; --code-fg: #d4cfbf;
+
+  --font-display: "Playfair Display", "Noto Serif SC", Georgia, serif;
+  --font-body: "Jost", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --fs-h1: 60px; --fs-h2: 34px; --fs-body: 26px; --fs-code: 19px;
+  --fs-small: 13px; --fs-kicker: 15px;
+
+  --hl-comment: rgba(212,207,191,0.42); --hl-keyword: #c8524a; --hl-string: #9bbf8e;
+  --hl-number: #d9a06a; --hl-function: #d4cfbf; --hl-builtin: #8fb6a0;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 300; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--fg); page-break-after: always;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — Playfair 400, NEVER bold; <em> is italic coral (the signature) */
+.slide h1 { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-h1);
+            line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 0.5em; }
+.slide.center h1 { font-size: 100px; line-height: 1.0; }
+.slide:not(.center) h1::before {           /* the 36px coral rule */
+  content: ""; display: block; width: 36px; height: 2px; background: var(--accent); margin: 0 0 0.55em;
+}
+.slide h2 { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-h2);
+            color: var(--muted); margin: 0 0 0.5em; line-height: 1.2; }
+.slide em, .slide h1 em, .slide h2 em, .quotation em {
+  color: var(--accent); font-style: italic; font-weight: inherit;
+}
+
+/* body — Jost 300, airy */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 300;
+                      font-size: var(--fs-body); line-height: 1.7; }
+.slide a { color: var(--accent); text-decoration: none;
+           border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* coral em-dash bullets in mono */
+.slide ul { list-style: none; padding-left: 0; }
+.slide ul > li { position: relative; padding-left: 1.7em; margin: 0.3em 0; }
+.slide ul > li::before { content: "—"; position: absolute; left: 0; color: var(--accent);
+            font-family: var(--font-mono); font-weight: 300; }
+.slide ol { padding-left: 1.3em; }
+.slide ol > li { margin: 0.3em 0; }
+.slide ol > li::marker { color: var(--accent); font-family: var(--font-mono); }
+
+/* mono kicker / label utility */
+.kicker, .label { font-family: var(--font-mono); font-weight: 300; font-size: var(--fs-kicker);
+            text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); }
+
+/* code */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 24px 28px; border: 1px solid var(--rule); border-radius: 4px; }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.9em;
+             padding: 0.08em 0.34em; border-radius: 3px;
+             background: color-mix(in srgb, var(--accent) 16%, transparent); }
+
+/* syntax highlighting — restrained, in the Grove palette */
+.hljs { color: var(--code-fg); background: var(--code-bg); }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — cream paper mode */
+.slide.inverse { background: var(--inverse-bg); color: var(--inverse-fg); }
+.slide.inverse h1, .slide.inverse h2 { color: var(--inverse-fg); }
+.slide.inverse h2 { color: var(--inverse-muted); }
+.slide.inverse em, .slide.inverse h1 em, .slide.inverse a { color: var(--accent); }
+.slide.inverse ul > li::before, .slide.inverse ol > li::marker { color: var(--accent); }
+.slide.inverse td { border-bottom-color: var(--inverse-rule); }
+.slide.inverse .footnote { color: var(--inverse-muted); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-style: italic; font-weight: 400;
+             font-size: 44px; line-height: 1.35; max-width: 82%; letter-spacing: -0.01em; }
+.quotation-source { display: block; margin-top: 0.7em; font-family: var(--font-mono);
+             font-weight: 300; font-size: var(--fs-kicker); text-transform: uppercase;
+             letter-spacing: 0.14em; color: var(--muted); }
+.quotation-source::before { content: "— "; color: var(--accent); }
+.footnote { position: absolute; bottom: 40px; left: var(--pad-x); right: var(--pad-x);
+            font-family: var(--font-mono); font-weight: 300; font-size: var(--fs-small);
+            text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); text-align: center; }
+
+/* tables — hairlines, coral header rule */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-family: var(--font-mono); font-weight: 300;
+            text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;
+            color: var(--accent); padding: 11px 14px; border-bottom: 1px solid var(--accent); }
+.slide td { font-weight: 300; padding: 11px 14px; border-bottom: 1px solid var(--rule); }
+
+/* a faint Playfair numeral in the corner — nods to Grove's watermark numeral */
+.reveal .slide-number { background: transparent; color: var(--faint);
+            font-family: var(--font-display); font-size: 60px; right: 36px; bottom: 4px; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

@@ -12,10 +12,13 @@ Commands so far:
   to their binaries — marp also does pdf/pptx). The requested format is gated by
   the adapter's capabilities, with a hint toward an adapter that supports it.
 * ``lectern watch SOURCE`` — serve a live, reloading preview.
+* ``lectern config SOURCE`` — show the effective merged config (CLI > deck.toml >
+  user config > defaults) and where each value came from.
 """
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -49,6 +52,49 @@ def _emit_warnings(warnings: list[str]) -> None:
         typer.secho(f"warning: {w}", fg=typer.colors.YELLOW, err=True)
 
 
+def _assembly_overrides(
+    remark_compat: bool | None,
+    partials: list[str] | None,
+    max_include_depth: int | None,
+    aspect: str | None = None,
+) -> dict:
+    """Build the config-override dict for assembly/resolution flags.
+
+    A ``--partial`` list *replaces* the configured ``partials`` for this run
+    (CLI wins; lists are not merged).
+    """
+    overrides: dict = {}
+    if remark_compat is not None:
+        overrides["remark_compat"] = remark_compat
+    if partials:
+        overrides["partials"] = list(partials)
+    if max_include_depth is not None:
+        overrides["max_include_depth"] = max_include_depth
+    if aspect is not None:
+        overrides["aspect"] = aspect
+    return overrides
+
+
+_SECTION_KEYS = ("serve", "reveal", "marp", "quarto", "pdf")
+_LAYER_LABEL = {"cli": "cli", "deck": "deck.toml", "user": "user"}
+
+
+def _leaf_origin(keys: list[str], layers: dict[str, dict]) -> str:
+    """Which layer (highest precedence) last set the value at ``keys``."""
+    for name in ("cli", "deck", "user"):
+        cur = layers.get(name) or {}
+        ok = True
+        for k in keys:
+            if isinstance(cur, dict) and k in cur:
+                cur = cur[k]
+            else:
+                ok = False
+                break
+        if ok:
+            return _LAYER_LABEL[name]
+    return "default"
+
+
 @app.command(name="assemble")
 def assemble_cmd(
     source: Path = typer.Argument(
@@ -57,13 +103,25 @@ def assemble_cmd(
     out: Path | None = typer.Option(
         None, "-o", "--out", help="Write assembled Markdown here (default: stdout)."
     ),
+    remark_compat: bool | None = typer.Option(
+        None,
+        "--remark-compat/--no-remark-compat",
+        help="Normalize legacy Remark syntax.",
+    ),
+    partial: list[str] = typer.Option(
+        None, "--partial", help="Replace the partials search dirs (repeatable)."
+    ),
+    max_include_depth: int | None = typer.Option(
+        None, "--max-include-depth", help="Max nested-include depth."
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
 ) -> None:
     """Expand includes/ranges/partials into a single assembled deck."""
+    overrides = _assembly_overrides(remark_compat, partial, max_include_depth)
     try:
-        deck = assemble(source, config_override=config)
+        deck = assemble(source, config_override=config, cli_overrides=overrides)
     except LecternError as e:
         raise _fail(e) from None
 
@@ -87,13 +145,25 @@ def check(
     source: Path = typer.Argument(
         ..., metavar="SOURCE", help="Manifest, deck dir, or .md file."
     ),
+    remark_compat: bool | None = typer.Option(
+        None,
+        "--remark-compat/--no-remark-compat",
+        help="Normalize legacy Remark syntax.",
+    ),
+    partial: list[str] = typer.Option(
+        None, "--partial", help="Replace the partials search dirs (repeatable)."
+    ),
+    max_include_depth: int | None = typer.Option(
+        None, "--max-include-depth", help="Max nested-include depth."
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
 ) -> None:
     """Validate includes, ranges, and partials without rendering."""
+    overrides = _assembly_overrides(remark_compat, partial, max_include_depth)
     try:
-        deck = assemble(source, config_override=config)
+        deck = assemble(source, config_override=config, cli_overrides=overrides)
     except LecternError as e:
         raise _fail(e) from None
 
@@ -118,6 +188,20 @@ def build(
     ),
     asset_base: str | None = typer.Option(
         None, "--asset-base", help="Override the asset base (local dir or URL)."
+    ),
+    aspect: str | None = typer.Option(
+        None, "--aspect", help="Override the aspect ratio (e.g. 16:9, 4:3, 1280x720)."
+    ),
+    remark_compat: bool | None = typer.Option(
+        None,
+        "--remark-compat/--no-remark-compat",
+        help="Normalize legacy Remark syntax.",
+    ),
+    partial: list[str] = typer.Option(
+        None, "--partial", help="Replace the partials search dirs (repeatable)."
+    ),
+    max_include_depth: int | None = typer.Option(
+        None, "--max-include-depth", help="Max nested-include depth."
     ),
     out: Path | None = typer.Option(
         None,
@@ -171,6 +255,7 @@ def build(
         "asset_base": asset_base,
         "out_dir": str(out) if out is not None else None,
         "pdf": pdf_over or None,
+        **_assembly_overrides(remark_compat, partial, max_include_depth, aspect),
     }
     try:
         if fmt not in FORMATS:
@@ -223,6 +308,20 @@ def watch(
     asset_base: str | None = typer.Option(
         None, "--asset-base", help="Override the asset base (local dir or URL)."
     ),
+    aspect: str | None = typer.Option(
+        None, "--aspect", help="Override the aspect ratio (e.g. 16:9, 4:3, 1280x720)."
+    ),
+    remark_compat: bool | None = typer.Option(
+        None,
+        "--remark-compat/--no-remark-compat",
+        help="Normalize legacy Remark syntax.",
+    ),
+    partial: list[str] = typer.Option(
+        None, "--partial", help="Replace the partials search dirs (repeatable)."
+    ),
+    max_include_depth: int | None = typer.Option(
+        None, "--max-include-depth", help="Max nested-include depth."
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
@@ -230,7 +329,11 @@ def watch(
     """Serve a live, reloading preview that rebuilds on source changes."""
     from .serve import LiveReloadServer, watch_paths
 
-    overrides = {"theme": theme, "asset_base": asset_base}
+    overrides = {
+        "theme": theme,
+        "asset_base": asset_base,
+        **_assembly_overrides(remark_compat, partial, max_include_depth, aspect),
+    }
     try:
         resolved = resolve_source(
             source, config_override=config, cli_overrides=overrides
@@ -254,6 +357,80 @@ def watch(
         watch=watch_paths(resolved),
     )
     server.run()
+
+
+@app.command(name="config")
+def config_cmd(
+    source: Path = typer.Argument(
+        ..., metavar="SOURCE", help="Manifest, deck dir, or .md file."
+    ),
+    renderer: str | None = typer.Option(None, "-r", "--renderer"),
+    theme: str | None = typer.Option(None, "-t", "--theme"),
+    asset_base: str | None = typer.Option(None, "--asset-base"),
+    aspect: str | None = typer.Option(None, "--aspect"),
+    remark_compat: bool | None = typer.Option(
+        None, "--remark-compat/--no-remark-compat"
+    ),
+    partial: list[str] = typer.Option(
+        None, "--partial", help="Replace the partials search dirs (repeatable)."
+    ),
+    max_include_depth: int | None = typer.Option(None, "--max-include-depth"),
+    config: Path | None = typer.Option(
+        None, "--config", help="Override the deck manifest (.toml)."
+    ),
+) -> None:
+    """Show the effective merged config and where each value came from."""
+    overrides = {
+        "renderer": renderer,
+        "theme": theme,
+        "asset_base": asset_base,
+        **_assembly_overrides(remark_compat, partial, max_include_depth, aspect),
+    }
+    try:
+        resolved = resolve_source(
+            source, config_override=config, cli_overrides=overrides
+        )
+    except LecternError as e:
+        raise _fail(e) from None
+
+    cfg = resolved.config
+    ucp = resolved.user_config_path
+    user_state = "present" if (ucp and ucp.is_file()) else "absent"
+    manifest = "(none)" if resolved.mode == "single" else resolved.origin_display
+
+    typer.secho(f"lectern config — {source}", bold=True)
+    typer.echo(f"  mode:        {resolved.mode}")
+    typer.echo(f"  deck root:   {resolved.root}")
+    typer.echo(f"  manifest:    {manifest}")
+    typer.echo(f"  user config: {ucp} ({user_state})")
+    typer.echo("")
+    typer.secho("config  (value · source layer)", bold=True)
+
+    dump = cfg.model_dump()
+    for key, value in dump.items():
+        if key == "slides":
+            continue
+        if key in _SECTION_KEYS and isinstance(value, dict):
+            for sub, subval in value.items():
+                origin = _leaf_origin([key, sub], resolved.layers)
+                _emit_kv(f"[{key}] {sub}", subval, origin)
+        else:
+            _emit_kv(key, value, _leaf_origin([key], resolved.layers))
+
+    typer.echo("")
+    typer.secho("resolved paths", bold=True)
+    typer.echo(f"  out_dir:   {resolved.out_dir}")
+    typer.echo(f"  build_dir: {resolved.build_dir}")
+    typer.echo(f"  partials:  {[str(p) for p in resolved.partial_dirs]}")
+    typer.echo(f"  slides:    {len(resolved.entries)} entr(ies) [{resolved.mode}]")
+
+
+def _emit_kv(label: str, value: object, origin: str) -> None:
+    rendered = json.dumps(value)
+    dim = origin == "default"
+    line = f"  {label:<22} = {rendered}"
+    typer.echo(line, nl=False)
+    typer.secho(f"   ({origin})", fg=(typer.colors.BRIGHT_BLACK if dim else None))
 
 
 def _version_callback(value: bool) -> None:

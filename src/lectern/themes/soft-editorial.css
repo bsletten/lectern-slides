@@ -1,0 +1,146 @@
+/* ============================================================================
+   Theme — SOFT EDITORIAL  (after "Soft Editorial" by Zara Zhang,
+   zarazhangrui/beautiful-html-templates, MIT)
+   A warm magazine-spread register: cream paper, deep ink, Cormorant Garamond 500
+   headlines with Work Sans body. Signature is the typographic weight-drop —
+   `<em>` emphasis becomes italic Cormorant 400 (markdown `*…*` gives it for free).
+   Color comes from five pastels used as CARD fills on the cream field, never as
+   text. All ornament is italic serif — no mono, no uppercase, sentence case.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Cormorant Garamond (400/500 + italics) · Work Sans (400/500)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 96px; --pad-y: 78px;
+
+  --bg: #f2eedf;        /* cream paper */
+  --bg-alt: #ece6d2;
+  --fg: #2a241b;        /* ink */
+  --muted: #5c5345;     /* ink-soft */
+  --accent: #bf6f8d;    /* deepened rose — the few legible text-accent touches */
+  --rule: rgba(42, 36, 27, 0.18);
+  --rule-med: rgba(42, 36, 27, 0.35);
+  --inverse-bg: #e8c9b6; /* blush — the full-field "moment" (covers/closers) */
+  --inverse-fg: #2a241b;
+  --code-bg: rgba(255, 255, 255, 0.55);  /* translucent white card */
+  --code-fg: #2a241b;
+
+  /* the closed five-pastel set — card / pill fills only */
+  --pink: #e1a4c2; --lemon: #d6dd63; --blush: #e8c9b6; --sage: #b7c7a8; --lilac: #c9bedc;
+  --card-fill: rgba(255, 255, 255, 0.55);
+
+  --font-display: "Cormorant Garamond", Garamond, serif;
+  --font-body: "Work Sans", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;  /* Lectern addition — system has no code */
+  --fs-h1: 72px; --fs-h2: 40px; --fs-body: 24px; --fs-code: 18px; --fs-small: 23px;
+
+  --hl-comment: #5c5345; --hl-keyword: #9c5a78; --hl-string: #6e7a3a;
+  --hl-number: #a0623f; --hl-function: #2a241b; --hl-builtin: #5a7a63;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--fg); page-break-after: always;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — Cormorant 500 roman; <em> drops to italic 400 (the signature) */
+.slide h1 { font-family: var(--font-display); font-weight: 500; font-size: var(--fs-h1);
+            line-height: 1.0; letter-spacing: -0.01em; margin: 0 0 0.4em; }
+.slide.center h1 { font-size: 120px; line-height: 0.95; }
+.slide h2 { font-family: var(--font-display); font-weight: 500; font-style: italic;
+            font-size: var(--fs-h2); color: var(--muted); margin: 0 0 0.5em; line-height: 1.1; }
+.slide em { font-family: var(--font-display); font-style: italic; font-weight: 400; }
+.slide p em, .slide li em { font-weight: 500; }       /* serif-italic emphasis inside sans body */
+
+/* body — Work Sans, airy editorial measure */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400;
+                      font-size: var(--fs-body); line-height: 1.6; }
+.slide ul, .slide ol { padding-left: 1.1em; }
+.slide li { margin: 0.3em 0; }
+.slide li::marker { color: var(--muted); }
+.slide a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); }
+.slide img { max-width: 100%; height: auto; border-radius: 18px; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* drop cap — the system's most distinctive editorial moment */
+.lead::first-letter, .dropcap::first-letter {
+  font-family: var(--font-display); font-weight: 500; font-size: 3.1em; line-height: 0.78;
+  float: left; margin: 0.06em 0.1em 0 0; color: var(--fg);
+}
+.lead { font-size: 27px; line-height: 1.55; }
+
+/* ornament — ALL small text is italic serif, sentence case, never mono/uppercase */
+.kicker, .footnote, .quotation-source, .slide th {
+  font-family: var(--font-display); font-style: italic; font-weight: 500; color: var(--muted);
+  text-transform: none; letter-spacing: 0;
+}
+
+/* cards & pills — translucent white by default, pastel fills for moments (ink text) */
+.card { background: var(--card-fill); border-radius: 28px; padding: 34px 38px; }
+.pill { display: inline-block; border-radius: 999px; padding: 0.28em 1em; background: var(--card-fill); }
+.card.pink, .pill.pink { background: var(--pink); }
+.card.lemon, .pill.lemon { background: var(--lemon); }
+.card.blush, .pill.blush { background: var(--blush); }
+.card.sage, .pill.sage { background: var(--sage); }
+.card.lilac, .pill.lilac { background: var(--lilac); }
+
+/* code — a light rounded card, not a dark panel */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 24px 28px; border-radius: 18px; border: 1px solid var(--rule); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em;
+             padding: 0.08em 0.34em; border-radius: 6px;
+             background: color-mix(in srgb, var(--sage) 45%, transparent); }
+
+/* syntax highlighting — darkened pastel family, readable on the light card */
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — a full pastel field for cover / closer "moments" */
+.slide.inverse { background: var(--inverse-bg); color: var(--inverse-fg); }
+.slide.inverse h1, .slide.inverse h2 { color: var(--inverse-fg); }
+.slide.inverse h2 { color: color-mix(in srgb, var(--inverse-fg) 60%, transparent); }
+.slide.inverse a { color: var(--fg); border-color: var(--fg); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-style: italic; font-weight: 500;
+             font-size: 50px; line-height: 1.1; max-width: 84%; letter-spacing: -0.01em; }
+.quotation-source { display: block; margin-top: 0.6em; font-size: var(--fs-small); }
+.quotation-source::before { content: "— "; }
+.footnote { position: absolute; bottom: 40px; left: var(--pad-x); right: var(--pad-x);
+            font-size: var(--fs-small); text-align: center; }
+
+/* tables — italic-serif headers, hairline rules, sentence case */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-size: 24px; padding: 11px 15px; border-bottom: 1px solid var(--rule-med); }
+.slide td { font-family: var(--font-body); padding: 11px 15px; border-bottom: 1px solid var(--rule); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

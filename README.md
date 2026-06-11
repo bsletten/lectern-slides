@@ -47,6 +47,9 @@ lectern assemble ./talks/ai-sec -o assembled.md     # omit -o to write to stdout
 # Check: validate includes/ranges/partials (and surface warnings), no render
 lectern check ./talks/ai-sec
 
+# Config: show the effective merged config and where each value came from
+lectern config ./talks/ai-sec
+
 # Build: render to the deck's out_dir (default: reveal HTML)
 lectern build ./talks/ai-sec                         # -> dist/index.html
 lectern build ./talks/ai-sec -t ./themes/mine.css -o site
@@ -54,6 +57,68 @@ lectern build ./talks/ai-sec -t ./themes/mine.css -o site
 # Live preview: rebuilds on change with SSE reload + build-error overlay
 lectern watch ./talks/ai-sec                         # serves http://127.0.0.1:8080
 ```
+
+### Configuration
+
+A deck is **external** to this tool. `SOURCE`'s directory (the manifest's folder)
+is the **deck root**, resolved to an absolute path, and **every relative path in
+the config — `slides`, `partials`, `asset_base`, `theme`, `out_dir`, `build_dir`
+— resolves against it**, never your CWD or where Lectern is installed. Absolute
+paths and `~` pass through; URLs pass through. So `out_dir`/`build_dir` default to
+`dist`/`build` *inside the deck's own repo*.
+
+Config is merged from three layers, **highest precedence first**, over the
+built-in defaults:
+
+1. **CLI flags** — `--theme`, `--renderer`, `--asset-base`, `--aspect`, `--out`,
+   `--remark-compat`, `--partial` (repeatable), `--max-include-depth`, the PDF
+   flags, …
+2. the deck's **`deck.toml`** (or `lectern.toml`),
+3. a **user config** at `$XDG_CONFIG_HOME/lectern/config.toml` (fallback
+   `~/.config/lectern/config.toml`).
+
+The merge is a deep, per-key merge, so a user config can set a house theme and a
+shared partials library once and every separate deck repo inherits them (use
+absolute/`~` paths there, since relative paths resolve against each deck's root):
+
+```toml
+# ~/.config/lectern/config.toml
+theme    = "house"                # a bundled name, or an absolute/~ path
+partials = ["~/talks/_lib"]
+```
+
+Inspect the effective, merged config and **where each value came from** with:
+
+```bash
+lectern config ./talks/ai-sec                 # value · (cli | deck.toml | user | default)
+lectern config ./talks/ai-sec --theme grove   # preview an override before building
+```
+
+The full key reference (top-level + `[serve]`/`[reveal]`/`[marp]`/`[quarto]`/`[pdf]`)
+is in `SPECIFICATION.md`. Note: not every key has a flag — `partials`,
+`remark_compat`, `max_include_depth`, and `aspect` are exposed on
+`build`/`watch`/`assemble`/`check`; the rest are config-only.
+
+### Themes
+
+`theme =` is either a **bundled name** or a **path**:
+
+- **bundled name** (e.g. `theme = "base"`, `"cartesian"`, `"grove"`,
+  `"soft-editorial"`) → the CSS shipped inside the package at
+  **`src/lectern/themes/<name>.css`**. This is the home for **reusable themes**:
+  drop a `.css` there and it's available by name to every deck on every machine
+  that installs Lectern. (The top-level `themes/` directory and the sample deck's
+  `themes/` are *not* search paths — the former is unshipped design source, the
+  latter is deck-local to the sample.)
+- **path** (`./themes/mine.css`, `~/talks/house.css`, or absolute) → loaded
+  directly; a relative path resolves against the deck root. Use this for a
+  one-off deck theme, or a personal theme shared across decks via an absolute/`~`
+  path (or set once in your user config).
+
+Themes are CSS driven by design tokens (`--bg`, `--accent`, `--font-display`, the
+size scale, …) and the Remark-parity classes; the structural layout layer
+(`.slide` anchor grid, `.place` boxes) is theme-independent, so a theme swap never
+moves content.
 
 ### Renderers (`-r/--renderer`, or `renderer =` in the manifest)
 
@@ -95,13 +160,13 @@ config reference. Run `lectern --help` (or `lectern build --help`) for everythin
 
 ```
 src/lectern/       ← the implementation: assemble · render adapters · pdf · serve · theming
+src/lectern/themes/     ← bundled themes (base, cartesian, grove, soft-editorial); add one here to ship it by name
 tests/             ← unit + golden-file + render/PDF tests
 SPECIFICATION.md   ← the full functional + technical spec (the substance)
 PDF-EXPORT.md      ← the PDF strategy (vector master → 2-up-with-notes, B&W, posters)
 CLAUDE.md          ← the operating manual: build order, conventions, milestones
 ROADMAP.md         ← phases: assemble → render/watch → adapters → components → CMS
 deck.toml          ← a minimal starter manifest (root example)
-themes/base.css    ← the token contract + Remark-parity classes
 examples/sample-deck/   ← a complete reference deck that exercises every feature
     deck.toml · slides/ · _partials/ · assets/ · themes/ (japandi · midnight · paper)
     README.md           ← how the sample maps to features
