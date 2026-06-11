@@ -99,6 +99,7 @@ class Config(BaseModel):
     aspect: str = "16:9"
     asset_base: str | None = None
     partials: list[str] = Field(default_factory=list)
+    theme_paths: list[str] = Field(default_factory=list)
     out_dir: str = "dist"
     build_dir: str = "build"
     max_include_depth: int = 16
@@ -125,6 +126,7 @@ class ResolvedSource:
     entries: list[str]  # ordered include targets ("path" or "path#ranges")
     origin_display: str  # what to cite for top-level (manifest/dir) errors
     partial_dirs: list[Path] = field(default_factory=list)
+    theme_dirs: list[Path] = field(default_factory=list)
     out_dir: Path = field(default_factory=lambda: Path("dist"))
     build_dir: Path = field(default_factory=lambda: Path("build"))
     mode: str = "manifest"  # "manifest" | "directory" | "single"
@@ -271,6 +273,7 @@ def resolve_source(
         entries=entries,
         origin_display=origin,
         partial_dirs=[_under_root(p, root) for p in config.partials],
+        theme_dirs=[_under_root(p, root) for p in config.theme_paths],
         out_dir=_under_root(config.out_dir, root),
         build_dir=_under_root(config.build_dir, root),
         mode=mode,

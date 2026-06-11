@@ -104,16 +104,31 @@ is in `SPECIFICATION.md`. Note: not every key has a flag — `partials`,
 `theme =` is either a **bundled name** or a **path**:
 
 - **bundled name** (e.g. `theme = "base"`, `"cartesian"`, `"grove"`,
-  `"soft-editorial"`) → the CSS shipped inside the package at
-  **`src/lectern/themes/<name>.css`**. This is the home for **reusable themes**:
-  drop a `.css` there and it's available by name to every deck on every machine
-  that installs Lectern. (The top-level `themes/` directory and the sample deck's
-  `themes/` are *not* search paths — the former is unshipped design source, the
-  latter is deck-local to the sample.)
+  `"soft-editorial"`) → resolved from the `theme_paths` dirs first (see below),
+  then the CSS shipped inside the package at **`src/lectern/themes/<name>.css`**.
+  Drop a `.css` in the package dir to ship it by name with the tool. (The
+  top-level `themes/` directory and the sample deck's `themes/` are *not* search
+  paths — the former is unshipped design source, the latter is deck-local.)
 - **path** (`./themes/mine.css`, `~/talks/house.css`, or absolute) → loaded
-  directly; a relative path resolves against the deck root. Use this for a
-  one-off deck theme, or a personal theme shared across decks via an absolute/`~`
-  path (or set once in your user config).
+  directly; a relative path resolves against the deck root.
+
+**`theme_paths` — a reusable theme library without bundling.** Like `partials`,
+it's a list of directories where a *bare theme name* resolves (in order, before
+the package themes). Set it once in your user config to point at a themes folder
+you control, and every deck can use those themes by name — no `~`/absolute path
+per deck, no editing the package:
+
+```toml
+# ~/.config/lectern/config.toml
+theme_paths = ["~/talks/_themes"]    # contains house.css, dark.css, …
+
+# any deck.toml, on any machine that shares that folder:
+theme = "house"
+```
+
+Relative `theme_paths` entries resolve against the deck root; use absolute/`~`
+for a global library. `lectern config SOURCE` shows the resolved `theme_paths`
+and which layer set `theme`.
 
 Themes are CSS driven by design tokens (`--bg`, `--accent`, `--font-display`, the
 size scale, …) and the Remark-parity classes; the structural layout layer

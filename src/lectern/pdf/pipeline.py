@@ -56,7 +56,7 @@ def _render_master(
     """Build the print HTML and render (or reuse a cached) 1-up vector master."""
     from ..render.reveal import build_html
 
-    theme = build_theme(config.theme, config.aspect, deck.root)
+    theme = build_theme(config.theme, config.aspect, deck.root, config.theme_paths)
     print_css = _printcss.build(opts, theme.css)
     extra_head = f'<style id="lectern-print">\n{print_css}</style>' if print_css else ""
     # Notes layouts need exactly one master page per slide so notes map 1:1.

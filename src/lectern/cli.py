@@ -419,10 +419,11 @@ def config_cmd(
 
     typer.echo("")
     typer.secho("resolved paths", bold=True)
-    typer.echo(f"  out_dir:   {resolved.out_dir}")
-    typer.echo(f"  build_dir: {resolved.build_dir}")
-    typer.echo(f"  partials:  {[str(p) for p in resolved.partial_dirs]}")
-    typer.echo(f"  slides:    {len(resolved.entries)} entr(ies) [{resolved.mode}]")
+    typer.echo(f"  out_dir:     {resolved.out_dir}")
+    typer.echo(f"  build_dir:   {resolved.build_dir}")
+    typer.echo(f"  partials:    {[str(p) for p in resolved.partial_dirs]}")
+    typer.echo(f"  theme_paths: {[str(p) for p in resolved.theme_dirs]}")
+    typer.echo(f"  slides:      {len(resolved.entries)} entr(ies) [{resolved.mode}]")
 
 
 def _emit_kv(label: str, value: object, origin: str) -> None:

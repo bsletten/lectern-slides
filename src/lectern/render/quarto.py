@@ -145,7 +145,7 @@ class QuartoRenderer:
         out_dir.mkdir(parents=True, exist_ok=True)
         warnings = list(deck.warnings)
         resolver = AssetResolver(deck.root, config.asset_base, out_dir, warnings)
-        theme = build_theme(config.theme, config.aspect, deck.root)
+        theme = build_theme(config.theme, config.aspect, deck.root, config.theme_paths)
 
         slides = []
         for group in deck.slides():

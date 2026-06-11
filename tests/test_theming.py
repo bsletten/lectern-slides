@@ -1,5 +1,7 @@
 """Theme resolution and aspect-driven token injection."""
 
+from pathlib import Path
+
 import pytest
 from conftest import write
 
@@ -33,7 +35,7 @@ def test_bundled_theme_by_name(tmp_path):
 
 
 def test_unknown_bundled_theme_raises(tmp_path):
-    with pytest.raises(ConfigError, match="unknown bundled theme"):
+    with pytest.raises(ConfigError, match="unknown theme"):
         resolve_theme_css("does-not-exist", tmp_path)
 
 
@@ -42,6 +44,39 @@ def test_bundled_themes_resolve_by_name(name, tmp_path):
     resolved_name, css = resolve_theme_css(name, tmp_path)
     assert resolved_name == name
     assert "--" in css  # carries design tokens / custom properties
+
+
+def test_theme_path_search_dir_resolves_bare_name(tmp_path):
+    write(tmp_path, "lib/house.css", "/* HOUSE */")
+    name, css = resolve_theme_css("house", tmp_path, [tmp_path / "lib"])
+    assert name == "house"
+    assert "HOUSE" in css
+
+
+def test_theme_paths_searched_before_bundled(tmp_path):
+    # A theme dir shadows a bundled name of the same stem.
+    write(tmp_path, "lib/base.css", "/* SHADOW BASE */")
+    _name, css = resolve_theme_css("base", tmp_path, [tmp_path / "lib"])
+    assert "SHADOW BASE" in css
+
+
+def test_unknown_theme_error_mentions_theme_paths(tmp_path):
+    with pytest.raises(ConfigError, match="theme_paths"):
+        resolve_theme_css("nope", tmp_path, [tmp_path / "lib"])
+
+
+def test_resolve_theme_dirs_against_root(tmp_path):
+    from lectern.theming import resolve_theme_dirs
+
+    dirs = resolve_theme_dirs(["./local", "/abs/themes"], tmp_path)
+    assert dirs == [tmp_path / "local", Path("/abs/themes")]
+
+
+def test_build_theme_uses_theme_paths(tmp_path):
+    write(tmp_path, "lib/house.css", ":root { --slide-w: 1px; }")
+    theme = build_theme("house", "16:9", tmp_path, ["./lib"])
+    assert theme.name == "house"
+    assert "--slide-w" in theme.css
 
 
 def test_theme_path_resolves_against_root(tmp_path):

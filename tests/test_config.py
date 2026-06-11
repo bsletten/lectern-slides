@@ -1,5 +1,7 @@
 """Entry resolution: manifest / directory / single-file modes."""
 
+from pathlib import Path
+
 import pytest
 from conftest import write
 
@@ -56,6 +58,16 @@ def test_partial_dirs_resolved_against_root(tmp_path):
     rs = resolve_source(tmp_path)
     assert rs.partial_dirs[0] == tmp_path / ".." / "shared"
     assert rs.partial_dirs[1] == tmp_path / "_lib"
+
+
+def test_theme_dirs_resolved_against_root(tmp_path):
+    write(
+        tmp_path, "deck.toml", 'theme_paths = ["./_themes", "/abs/lib"]\nslides = []\n'
+    )
+    write(tmp_path, "x.md", "x")
+    rs = resolve_source(tmp_path)
+    assert rs.theme_dirs[0] == tmp_path / "_themes"
+    assert rs.theme_dirs[1] == Path("/abs/lib")
 
 
 def test_unknown_source_type_errors(tmp_path):
