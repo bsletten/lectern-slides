@@ -31,6 +31,9 @@
 }
 .reveal .slides section.slide > *:first-child { margin-top: 0; }
 </style>
+{% if extra_head %}
+{{ extra_head }}
+{% endif %}
 </head>
 <body>
 <div class="reveal">
@@ -62,7 +65,7 @@
         { left: '$', right: '$', display: false }
       ]
     }{% endif %}
-  }));
+  }{% if init_extra %}, {{ init_extra }}{% endif %}));
 </script>
 </body>
 </html>

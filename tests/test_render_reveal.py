@@ -21,7 +21,7 @@ def test_reveal_registered_with_caps():
     adapter = get_renderer("reveal")
     assert adapter.name == "reveal"
     assert adapter.available() is True
-    assert adapter.capabilities() == Caps(html=True, pdf=False, pptx=False, embeds=True)
+    assert adapter.capabilities() == Caps(html=True, pdf=True, pptx=False, embeds=True)
 
 
 def test_section_per_slide_with_classes_and_id(fixtures, tmp_path):

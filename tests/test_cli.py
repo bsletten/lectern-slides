@@ -49,11 +49,21 @@ def test_build_writes_index_and_reports(fixtures, tmp_path):
 
 
 def test_build_rejects_unsupported_format(fixtures, tmp_path):
+    # reveal can't make pptx; the error should name the format and suggest marp.
     result = runner.invoke(
-        app, ["build", str(fixtures / "render-deck"), "-o", str(tmp_path), "-f", "pdf"]
+        app, ["build", str(fixtures / "render-deck"), "-o", str(tmp_path), "-f", "pptx"]
     )
     assert result.exit_code == 1
-    assert "pdf" in result.stderr
+    assert "pptx" in result.stderr
+    assert "marp" in result.stderr
+
+
+def test_build_rejects_unknown_format(fixtures, tmp_path):
+    result = runner.invoke(
+        app, ["build", str(fixtures / "render-deck"), "-o", str(tmp_path), "-f", "xyz"]
+    )
+    assert result.exit_code == 1
+    assert "xyz" in result.stderr
 
 
 def test_watch_fails_fast_on_bad_source(tmp_path):

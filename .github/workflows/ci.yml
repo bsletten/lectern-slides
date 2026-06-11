@@ -42,7 +42,7 @@ jobs:
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
-      - name: Sync (runtime + dev group)
-        run: uv sync
+      - name: Sync (runtime + dev group + pdf extra)
+        run: uv sync --extra pdf
       - name: pytest
         run: uv run pytest

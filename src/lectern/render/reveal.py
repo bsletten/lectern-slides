@@ -54,32 +54,60 @@ class RevealRenderer:
         return True
 
     def capabilities(self) -> Caps:
-        return Caps(html=True, pdf=False, pptx=False, embeds=True)
+        # PDF is produced by the headless-Chromium master pipeline (the [pdf] extra).
+        return Caps(html=True, pdf=True, pptx=False, embeds=True)
 
     def render(
         self, deck: AssembledDeck, config: Config, out_dir: Path, fmt: str = "html"
     ) -> RenderResult:
+        if fmt == "pdf":
+            from ..pdf.pipeline import build_pdf
+
+            return build_pdf(deck, config, out_dir)
+
         out_dir.mkdir(parents=True, exist_ok=True)
         warnings = list(deck.warnings)
-        resolver = AssetResolver(deck.root, config.asset_base, out_dir, warnings)
-        theme = build_theme(config.theme, config.aspect, deck.root)
-
-        slides = []
-        for group in deck.slides():
-            if is_blank_group(group):
-                continue
-            lowered = scan_slide(group, resolver, deck.root, incremental="fragment")
-            warnings.extend(lowered.warnings)
-            slides.append(_format_slide(lowered))
-
-        html_text = _render_template(config, theme, slides)
+        html_text, resolver, _theme = build_html(deck, config, out_dir, warnings)
         output = out_dir / "index.html"
         output.write_text(html_text, encoding="utf-8")
 
         return RenderResult(output=output, assets=resolver.copied, warnings=warnings)
 
 
-def _render_template(config, theme, slides) -> str:
+def build_html(
+    deck: AssembledDeck,
+    config: Config,
+    out_dir: Path,
+    warnings: list[str],
+    *,
+    init_extra: dict | None = None,
+    extra_head: str = "",
+):
+    """Assemble the reveal HTML; copy assets into ``out_dir``.
+
+    Returns ``(html_text, resolver, theme)``. ``init_extra`` merges into the reveal
+    ``initialize`` config and ``extra_head`` is injected at the end of ``<head>`` —
+    the seams the PDF master uses to flatten fragments and inject print CSS.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    resolver = AssetResolver(deck.root, config.asset_base, out_dir, warnings)
+    theme = build_theme(config.theme, config.aspect, deck.root)
+
+    slides = []
+    for group in deck.slides():
+        if is_blank_group(group):
+            continue
+        lowered = scan_slide(group, resolver, deck.root, incremental="fragment")
+        warnings.extend(lowered.warnings)
+        slides.append(_format_slide(lowered))
+
+    html_text = _render_template(
+        config, theme, slides, init_extra=init_extra, extra_head=extra_head
+    )
+    return html_text, resolver, theme
+
+
+def _render_template(config, theme, slides, *, init_extra=None, extra_head="") -> str:
     rc = config.reveal.model_dump()
     math = rc.get("math") or False
     highlight = bool(rc.get("highlight", True))
@@ -116,6 +144,8 @@ def _render_template(config, theme, slides) -> str:
         reveal_cdn=REVEAL_CDN,
         katex_cdn=KATEX_CDN,
         init_json=json.dumps(init),
+        init_extra=json.dumps(init_extra) if init_extra else "",
+        extra_head=extra_head,
         plugins=plugins,
         highlight=highlight,
         math=math,

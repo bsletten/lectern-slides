@@ -128,16 +128,49 @@ def build(
     fmt: str = typer.Option(
         "html", "-f", "--format", help="Output format: html | pdf | pptx."
     ),
+    layout: str | None = typer.Option(
+        None,
+        "--layout",
+        help="PDF layout: 1up | 2up | 2up-notes | 4up | 6up | 3up-notes.",
+    ),
+    bw: bool = typer.Option(False, "--bw", help="PDF: grayscale output."),
+    backgrounds: bool | None = typer.Option(
+        None, "--backgrounds/--no-backgrounds", help="PDF: keep slide backgrounds."
+    ),
+    light_inverse: bool = typer.Option(
+        False, "--light-inverse", help="PDF: flip dark slides to light for ink economy."
+    ),
+    ink_saver: bool = typer.Option(
+        False, "--ink-saver", help="PDF: bw + no backgrounds + light inverse."
+    ),
+    paper: str | None = typer.Option(
+        None, "--paper", help="PDF paper: deck | letter | a4 | WxH."
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
 ) -> None:
     """Assemble and render the deck into the deck's output dir."""
+    pdf_over: dict = {}
+    if layout is not None:
+        pdf_over["layout"] = layout
+    if bw:
+        pdf_over["color"] = "bw"
+    if backgrounds is not None:
+        pdf_over["backgrounds"] = backgrounds
+    if light_inverse:
+        pdf_over["light_inverse"] = True
+    if ink_saver:
+        pdf_over["ink_saver"] = True
+    if paper is not None:
+        pdf_over["paper"] = paper
+
     overrides = {
         "renderer": renderer,
         "theme": theme,
         "asset_base": asset_base,
         "out_dir": str(out) if out is not None else None,
+        "pdf": pdf_over or None,
     }
     try:
         if fmt not in FORMATS:

@@ -59,6 +59,34 @@ class RevealConfig(_Section):
     math: str | bool = False
 
 
+class PdfConfig(_Section):
+    """PDF export settings (see ``PDF-EXPORT.md``). All have sensible defaults;
+    CLI flags and the ``ink_saver`` preset layer on top in ``pdf.options``."""
+
+    # render-time (change the master)
+    backgrounds: bool = True
+    light_inverse: bool = False
+    fragments: str = "flatten"  # flatten | steps
+    paper: str = "deck"  # deck | letter | a4 | WxH
+    posters: str = "auto"  # auto | explicit | off
+    poster_at: int = 1200  # ms
+
+    # color / B&W
+    color: str = "color"  # color | bw
+    bw_engine: str = "tokens"  # tokens | ghostscript
+    ink_saver: bool = False
+
+    # imposition / layout
+    layout: str = "2up-notes"  # 1up | 2up | 2up-notes | 4up | 6up | 3up-notes
+    orientation: str = "portrait"  # portrait | landscape
+    margins: str = "12mm"
+    gutter: str = "10mm"
+    frame: bool = True
+    slide_numbers: bool = True
+    header: str = ""
+    footer: str = "{title} · {date} · {page}/{pages}"
+
+
 class Config(BaseModel):
     """The validated, merged deck configuration."""
 
@@ -81,7 +109,7 @@ class Config(BaseModel):
     reveal: RevealConfig = Field(default_factory=RevealConfig)
     marp: dict = Field(default_factory=dict)
     quarto: dict = Field(default_factory=dict)
-    pdf: dict = Field(default_factory=dict)
+    pdf: PdfConfig = Field(default_factory=PdfConfig)
 
 
 @dataclass
