@@ -83,6 +83,20 @@ def per_page(layout: str) -> int:
     return rows * cols
 
 
+def auto_orientation(layout: str, master: tuple[float, float]) -> str:
+    """Orient the sheet to the grid's aggregate aspect so slides fill it.
+
+    Compares the total width the slide columns want against the total height the
+    rows want: two stacked 16:9 slides (``2up``) want a tall portrait page, while
+    a 2×2 grid wants landscape. Notes layouts add a notes column to the width.
+    """
+    rows, cols, notes = _LAYOUTS[layout]
+    mw, mh = master
+    wide = (mw / _NOTES_SLIDE_FRACTION) if notes else (cols * mw)
+    tall = rows * mh
+    return "landscape" if wide >= tall else "portrait"
+
+
 def is_notes_layout(layout: str) -> bool:
     return _LAYOUTS[layout][2]
 

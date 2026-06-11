@@ -141,6 +141,14 @@ def test_sheet_size_auto_matches_deck_aspect():
     assert h > w
 
 
+def test_auto_orientation_follows_grid_not_just_deck():
+    wide = (960, 540)  # 16:9 deck
+    # two stacked 16:9 slides want a tall page; a 2x2 grid wants a wide one
+    assert geometry.auto_orientation("2up", wide) == "portrait"
+    assert geometry.auto_orientation("2x2", wide) == "landscape"
+    assert geometry.auto_orientation("2up-notes", wide) == "landscape"
+
+
 def test_sheet_size_wxh_pixels_to_points():
     # 1280x720 px -> *0.75 -> 960x540 pt, oriented landscape
     w, h = geometry.sheet_size("1280x720", "landscape", (0, 0))

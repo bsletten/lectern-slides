@@ -138,7 +138,10 @@ def impose(
         writer.write(out)
         return out.getvalue()
 
-    sheet = geometry.sheet_size(options.paper, options.orientation, master_size)
+    orientation = options.orientation
+    if orientation == "auto":
+        orientation = geometry.auto_orientation(options.layout, master_size)
+    sheet = geometry.sheet_size(options.paper, orientation, master_size)
     margin = geometry.length_to_pt(options.margins)
     gutter = geometry.length_to_pt(options.gutter)
     cells = geometry.page_cells(options.layout, sheet, margin, gutter)

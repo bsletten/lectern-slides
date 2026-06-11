@@ -86,6 +86,14 @@ def test_theme_css_and_layer_injected(fixtures, tmp_path):
     assert "--slide-w: 1024px" in html  # aspect override present
 
 
+def test_print_pdf_layout_bridge_present(fixtures, tmp_path):
+    # reveal's print-pdf wraps each slide in `.pdf-page`; the bridge rule keyed
+    # on `.print-pdf` re-asserts the slide padding/centering so the PDF master
+    # isn't jammed into the page edge. Guard the selector against regressions.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert ".print-pdf .slides .pdf-page > section.slide" in html
+
+
 def test_renderer_override_via_cli(fixtures, tmp_path):
     # An unknown renderer override surfaces as a clean error at lookup time.
     from lectern.errors import ConfigError

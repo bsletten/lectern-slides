@@ -30,6 +30,26 @@
   box-sizing: border-box;
 }
 .reveal .slides section.slide > *:first-child { margin-top: 0; }
+
+/* print-pdf wraps each slide in a `.pdf-page`, which breaks the `>` selectors
+   above and lets reveal force `display:block; padding:0` — that jams content
+   into the page edge and drops the anchor-grid centering. Re-assert the slide
+   layout for the printed master (and anyone using reveal's own Ctrl-P export). */
+.print-pdf .slides .pdf-page > section.slide {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: var(--pad-y, 64px) var(--pad-x, 88px) !important;
+  box-sizing: border-box !important;
+  /* reveal's print `center` mode offsets the section's `top` to center its
+     content, which double-counts against our flex anchor grid and shoves a
+     `.middle` slide into the lower page. Pin it and let the slide fill the
+     page so the flex layout is the single source of vertical placement. */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
 </style>
 {% if extra_head %}
 {{ extra_head }}
