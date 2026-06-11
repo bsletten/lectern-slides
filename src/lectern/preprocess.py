@@ -31,6 +31,7 @@ import frontmatter
 from .config import ResolvedSource, resolve_source
 from .errors import CycleError, DepthError, IncludeError, RangeError
 from .ranges import parse_ranges
+from .remark_compat import normalize_remark_slide
 from .slides import closes_fence, fence_marker, split_slides
 from .source import FilesystemSource, Source
 from .sourcemap import OutLine, SourceLocation, SourceMap
@@ -49,6 +50,7 @@ class _Ctx:
     partial_dirs: list[Path]
     max_depth: int
     origin_display: str
+    remark_compat: bool = False
     warnings: list[str] = field(default_factory=list)
 
 
@@ -126,6 +128,7 @@ def assemble_resolved(
         partial_dirs=resolved.partial_dirs,
         max_depth=resolved.config.max_include_depth,
         origin_display=resolved.origin_display,
+        remark_compat=getattr(resolved.config, "remark_compat", False),
     )
 
     # Each top-level entry is itself an include resolved against the deck root,
@@ -195,8 +198,12 @@ def _resolve_include(
             f"{_PROVENANCE_PREFIX}{display} slide={n} -->",
             SourceLocation(display, slide.start_line),
         )
+        text = slide.text
+        if ctx.remark_compat:
+            text, warns = normalize_remark_slide(text)
+            ctx.warnings.extend(f"{display} slide={n}: {w}" for w in warns)
         body_lines = _expand_lines(
-            slide.text, display, child_dir, child_stack, ctx, slide.start_line
+            text, display, child_dir, child_stack, ctx, slide.start_line
         )
         groups.append([provenance, *body_lines])
 

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }}</title>
+{% if author %}
+<meta name="author" content="{{ author }}">
+{% endif %}
+<style id="lectern-theme">
+{{ theme_css }}
+</style>
+<style id="lectern-remark-layout">
+/* bridge: map remark's slide container onto the neutral .slide model so the
+   .slide-targeted theme (anchor grid, padding, colours) applies. Every slide
+   carries the `slide` class via the injected layout template. */
+html, body { height: 100%; }
+.remark-slide-content { padding: 0; }
+.remark-slide-content.slide {
+  width: 100%;
+  height: 100%;
+  padding: var(--pad-y, 64px) var(--pad-x, 88px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-size: var(--fs-body, 27px);
+}
+.remark-slide-content.slide > *:first-child { margin-top: 0; }
+</style>
+</head>
+<body>
+<script src="{{ remark_cdn }}"></script>
+<script>
+  var slideshow = remark.create({
+    source: {{ source_json }},
+    ratio: "{{ ratio }}",
+    highlightStyle: "",
+    highlightLines: true,
+    countIncrementalSlides: false,
+    navigation: { scroll: false, touch: true }
+  });
+</script>
+</body>
+</html>

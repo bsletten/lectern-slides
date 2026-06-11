@@ -4,6 +4,7 @@ changes downstream.
 """
 
 # Import adapters for their registration side effects.
+from . import remark as _remark  # noqa: F401
 from . import reveal as _reveal  # noqa: F401
 from .base import Caps, Renderer, RenderResult, get_renderer, register, renderers
 

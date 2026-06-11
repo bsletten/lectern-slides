@@ -74,6 +74,7 @@ class Config(BaseModel):
     out_dir: str = "dist"
     build_dir: str = "build"
     max_include_depth: int = 16
+    remark_compat: bool = False
     slides: list[str] | None = None
 
     serve: ServeConfig = Field(default_factory=ServeConfig)

@@ -1,0 +1,10 @@
+title    = "Legacy Remark Deck"
+author   = "Test Harness"
+renderer = "remark"
+theme    = "base"
+aspect   = "16:9"
+
+slides = [
+  "title.md",
+  "builds.md",
+]
