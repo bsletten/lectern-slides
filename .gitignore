@@ -15,3 +15,6 @@ dist/
 # Lectern build artifacts (deck out_dir / build_dir defaults)
 /dist/
 /build/
+
+# PDF master cache (written into the output dir on -f pdf)
+.lectern-cache/
