@@ -78,7 +78,7 @@ class RemarkRenderer:
         return Caps(html=True, pdf=False, pptx=False, embeds=True)
 
     def render(
-        self, deck: AssembledDeck, config: Config, out_dir: Path
+        self, deck: AssembledDeck, config: Config, out_dir: Path, fmt: str = "html"
     ) -> RenderResult:
         out_dir.mkdir(parents=True, exist_ok=True)
         warnings = list(deck.warnings)

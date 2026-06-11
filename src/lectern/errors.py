@@ -46,3 +46,7 @@ class CycleError(LecternError):
 
 class DepthError(LecternError):
     """``max_include_depth`` was exceeded."""
+
+
+class RenderError(LecternError):
+    """A renderer failed — typically an external tool (marp/quarto) errored."""

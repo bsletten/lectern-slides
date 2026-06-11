@@ -47,11 +47,26 @@ class Renderer(Protocol):
     def capabilities(self) -> Caps: ...
 
     def render(
-        self, deck: AssembledDeck, config: Config, out_dir: Path
+        self, deck: AssembledDeck, config: Config, out_dir: Path, fmt: str = "html"
     ) -> RenderResult: ...
 
 
+# Output formats a build can request, mapped to the ``Caps`` flag that gates them.
+FORMATS = ("html", "pdf", "pptx")
+
 renderers: dict[str, Renderer] = {}
+
+
+def supports_format(caps: Caps, fmt: str) -> bool:
+    """Whether ``caps`` advertises the requested output ``fmt``."""
+    return {"html": caps.html, "pdf": caps.pdf, "pptx": caps.pptx}.get(fmt, False)
+
+
+def renderers_supporting(fmt: str) -> list[str]:
+    """Names of registered adapters that can produce ``fmt`` (sorted)."""
+    return sorted(
+        name for name, r in renderers.items() if supports_format(r.capabilities(), fmt)
+    )
 
 
 def register(renderer: Renderer) -> Renderer:

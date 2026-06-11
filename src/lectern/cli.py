@@ -7,9 +7,11 @@ Commands so far:
   hatch). Provenance comments are kept so the output is self-describing.
 * ``lectern check SOURCE`` — validate includes/ranges (and surface warnings)
   without writing anything.
-* ``lectern build SOURCE`` — assemble and render to ``out_dir`` (reveal HTML).
-
-Watch/serve and the other adapters arrive in later milestones.
+* ``lectern build SOURCE [-f html|pdf|pptx]`` — assemble and render to ``out_dir``
+  via the configured adapter (reveal/remark are native HTML; marp/quarto shell out
+  to their binaries — marp also does pdf/pptx). The requested format is gated by
+  the adapter's capabilities, with a hint toward an adapter that supports it.
+* ``lectern watch SOURCE`` — serve a live, reloading preview.
 """
 
 from __future__ import annotations
@@ -23,7 +25,12 @@ from . import __version__
 from .config import resolve_source
 from .errors import ConfigError, LecternError
 from .preprocess import assemble, assemble_resolved
-from .render import get_renderer
+from .render import (
+    FORMATS,
+    get_renderer,
+    renderers_supporting,
+    supports_format,
+)
 
 app = typer.Typer(
     add_completion=False,
@@ -118,12 +125,14 @@ def build(
         "--out",
         help="Override the output directory (default: deck out_dir).",
     ),
-    fmt: str = typer.Option("html", "-f", "--format", help="Output format (html)."),
+    fmt: str = typer.Option(
+        "html", "-f", "--format", help="Output format: html | pdf | pptx."
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
 ) -> None:
-    """Assemble and render the deck (reveal HTML) into the deck's output dir."""
+    """Assemble and render the deck into the deck's output dir."""
     overrides = {
         "renderer": renderer,
         "theme": theme,
@@ -131,21 +140,26 @@ def build(
         "out_dir": str(out) if out is not None else None,
     }
     try:
+        if fmt not in FORMATS:
+            raise ConfigError(
+                f"unknown output format '{fmt}' (expected one of: {', '.join(FORMATS)})"
+            )
         resolved = resolve_source(
             source, config_override=config, cli_overrides=overrides
         )
         adapter = get_renderer(resolved.config.renderer)
-        caps = adapter.capabilities()
-        if fmt != "html" or not caps.html:
-            raise ConfigError(
-                f"renderer '{adapter.name}' cannot produce '{fmt}' yet "
-                "(only 'html' is supported in this build)"
-            )
+        if not supports_format(adapter.capabilities(), fmt):
+            alt = renderers_supporting(fmt)
+            hint = f" (try renderer: {', '.join(alt)})" if alt else ""
+            raise ConfigError(f"renderer '{adapter.name}' cannot produce '{fmt}'{hint}")
         if not adapter.available():
-            raise ConfigError(f"renderer '{adapter.name}' is not available")
+            raise ConfigError(
+                f"renderer '{adapter.name}' is not available "
+                "(its external tool is not installed or not on PATH)"
+            )
 
         deck = assemble_resolved(resolved)
-        result = adapter.render(deck, resolved.config, resolved.out_dir)
+        result = adapter.render(deck, resolved.config, resolved.out_dir, fmt)
     except LecternError as e:
         raise _fail(e) from None
 
