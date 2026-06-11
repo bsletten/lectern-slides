@@ -1,0 +1,161 @@
+/* ============================================================================
+   Theme — SAKURA CHROMA  (after "Sakura Chroma" by Zara Zhang,
+   zarazhangrui/beautiful-html-templates, MIT)
+   A 1970s cassette-package catalogue: warm cream paper, warm-brown ink, a locked
+   six-colour primary palette (red/pink/orange/yellow/green/blue) used as flat
+   blocks, chips, and card topstrips. Big Shoulders Display 900 (condensed
+   industrial) for hero type; Albert Sans body; JetBrains Mono for spec rows and
+   page numbers. `<em>` is a RED (or blue) color shift, never italic. Strict
+   rectangles (no rounded corners); borders are always ink; one hard 8px ink
+   offset shadow on callouts. A faint paper-grain dot texture sits on every slide.
+   --- PARTIAL CONVERSION: the ribbons, petal clusters, starburst seals, stamps,
+   and the cassette compositions live in per-slide markup, not this stylesheet. ---
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Big Shoulders Display (900) · Albert Sans (400/600/700) · JetBrains Mono (400/500)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 88px; --pad-y: 72px;
+
+  --bg: #f1e6cb;        /* warm cream paper */
+  --bg-alt: #e5d6b0;    /* paper-dk */
+  --fg: #3a2516;        /* warm-brown ink — text, borders, lines */
+  --muted: #7a6850;     /* muted brown */
+  --accent: #e5392a;    /* red — default emphasis / hero numerals */
+  --red: #e5392a; --pink: #e54489; --orange: #f09131;
+  --yellow: #f0bc2a; --green: #3d9f47; --blue: #3f8bc4;
+  --line: #3a2516;
+  --inverse-bg: #3a2516; --inverse-fg: #f1e6cb;   /* ink statement / colophon moment */
+  --code-bg: #e5d6b0; --code-fg: #3a2516;
+
+  --font-display: "Big Shoulders Display", sans-serif;   /* 900 */
+  --font-body: "Albert Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --fs-h1: 84px; --fs-h2: 46px; --fs-body: 22px; --fs-code: 17px; --fs-small: 14px;
+
+  --hl-comment: rgba(58,37,22,0.5); --hl-keyword: #e5392a; --hl-string: #3d9f47;
+  --hl-number: #3f8bc4; --hl-function: #3a2516; --hl-builtin: #f09131;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* slide + faint paper-grain halftone dots (4px period) */
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  color: var(--fg); page-break-after: always; display: flex; flex-direction: column;
+  background:
+    radial-gradient(circle, rgba(58,37,22,0.06) 1px, transparent 1.4px) 0 0 / 4px 4px,
+    var(--bg);
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — Big Shoulders 900 condensed; <em> is a red color shift (never italic) */
+.slide h1 { font-family: var(--font-display); font-weight: 900; font-size: var(--fs-h1);
+            line-height: 0.88; letter-spacing: -0.02em; margin: 0 0 0.35em; text-transform: none; }
+.slide.center h1 { font-size: 150px; line-height: 0.84; letter-spacing: -0.025em; }
+.slide h2 { font-family: var(--font-display); font-weight: 900; font-size: var(--fs-h2);
+            line-height: 0.9; letter-spacing: -0.018em; margin: 0 0 0.45em; }
+.slide em { color: var(--accent); font-style: normal; }
+.slide em.blue { color: var(--blue); }
+
+/* body — Albert Sans (inherits slide color so .inverse flips cleanly) */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400;
+                      font-size: var(--fs-body); line-height: 1.5; }
+.slide a { color: var(--accent); text-decoration: none; border-bottom: 2px solid var(--accent); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* color-block square bullets, cycling the six primaries */
+.slide ul { list-style: none; padding-left: 0; }
+.slide ul > li { position: relative; padding-left: 1.7em; margin: 0.32em 0; }
+.slide ul > li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 13px; height: 13px; background: var(--red); }
+.slide ul > li:nth-child(6n+2)::before { background: var(--blue); }
+.slide ul > li:nth-child(6n+3)::before { background: var(--orange); }
+.slide ul > li:nth-child(6n+4)::before { background: var(--green); }
+.slide ul > li:nth-child(6n+5)::before { background: var(--pink); }
+.slide ul > li:nth-child(6n+6)::before { background: var(--yellow); }
+.slide ol { padding-left: 1.3em; }
+.slide ol > li { margin: 0.32em 0; }
+.slide ol > li::marker { color: var(--accent); font-family: var(--font-display); font-weight: 900; }
+
+/* tracked uppercase micro-labels — Albert 700 */
+.kicker, .micro, .label { font-family: var(--font-body); font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.2em; color: var(--fg); font-size: var(--fs-small); }
+
+/* mono chips with primary-palette fills */
+.chip { display: inline-block; font-family: var(--font-mono); font-weight: 500; font-size: 13px;
+        padding: 0.18em 0.7em; background: var(--line); color: var(--bg); text-transform: uppercase; letter-spacing: 0.04em; }
+.chip.red { background: var(--red); } .chip.pink { background: var(--pink); }
+.chip.orange { background: var(--orange); color: var(--fg); } .chip.yellow { background: var(--yellow); color: var(--fg); }
+.chip.green { background: var(--green); } .chip.blue { background: var(--blue); }
+
+/* card — strict rectangle, 1.5px INK border, optional colored topstrip via .red/.pink/... */
+.card { background: var(--bg-alt); border: 1.5px solid var(--line); padding: 22px 26px; }
+.card h1, .card h2, .card h3 { font-family: var(--font-display); font-weight: 900; }
+.card.red { border-top: 7px solid var(--red); } .card.pink { border-top: 7px solid var(--pink); }
+.card.orange { border-top: 7px solid var(--orange); } .card.yellow { border-top: 7px solid var(--yellow); }
+.card.green { border-top: 7px solid var(--green); } .card.blue { border-top: 7px solid var(--blue); }
+
+/* callout — the one hard 8px ink offset shadow in the system */
+.callout { border: 1.5px solid var(--line); background: var(--bg); padding: 24px 28px; box-shadow: 8px 8px 0 var(--line); }
+
+/* code — flat spec-sheet panel, 1.5px ink border, square; six-colour highlighting */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg); padding: 22px 26px; border: 1.5px solid var(--line); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em; padding: 0.08em 0.34em; background: var(--bg-alt); }
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — a full ink statement / colophon field (cream dots, cream text) */
+.slide.inverse { color: var(--inverse-fg);
+  background:
+    radial-gradient(circle, rgba(241,230,203,0.07) 1px, transparent 1.4px) 0 0 / 4px 4px,
+    var(--inverse-bg); }
+.slide.inverse .card { border-color: var(--bg); background: transparent; }
+.slide.inverse th, .slide.inverse td { border-bottom-color: rgba(241,230,203,0.22); }
+.slide.inverse :not(pre) > code { background: rgba(241,230,203,0.12); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-weight: 900; font-size: 64px; line-height: 0.92;
+             letter-spacing: -0.018em; max-width: 88%; }
+.quotation em { color: var(--accent); }
+.quotation-source { display: block; margin-top: 0.5em; font-family: var(--font-mono); font-weight: 500;
+             font-size: var(--fs-small); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.footnote { position: absolute; bottom: 30px; left: var(--pad-x); right: var(--pad-x);
+            font-family: var(--font-mono); font-size: var(--fs-small); color: var(--muted); text-align: center; }
+
+/* tables — ledger style: ink header underline, hairline body dividers */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-family: var(--font-body); font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; font-size: var(--fs-small); padding: 11px 14px; border-bottom: 1.5px solid var(--line); }
+.slide td { font-family: var(--font-body); padding: 11px 14px; border-bottom: 1px solid rgba(58,37,22,0.18); }
+
+/* page number — JetBrains Mono, bottom-right */
+.reveal .slide-number { background: transparent; color: var(--fg); font-family: var(--font-mono);
+            font-size: 15px; right: 34px; bottom: 22px; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

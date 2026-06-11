@@ -1,0 +1,162 @@
+/* ============================================================================
+   Theme — LONG TABLE  (after "Long Table" by Zara Zhang,
+   zarazhangrui/beautiful-html-templates, MIT)
+   A supper-club / Risograph-program register: strictly bichromatic — one warm
+   rust terracotta ink on buttery cream paper, at three opacities (100% primary,
+   78% metadata, 32% dividers). Bricolage Grotesque 800 UPPERCASE display; Fraunces
+   serif ITALIC body as the lyrical voice (roman only for keys & emphasis). A 4px
+   radial-dot paper texture on every slide. Outlined-shape vocabulary: pills
+   (rounded buttons), rect-tags (sharp metadata), outlined cards, the circular
+   edition badge, and the jumbo italic Fraunces cover numeral. No second colour —
+   emphasis is an italic→roman + weight switch.
+   --- PARTIAL: ribbon/ledger/topbar compositions live in per-slide markup. ---
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Bricolage Grotesque (700/800) · Fraunces (italic 400/600 + roman)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 84px; --pad-y: 68px;
+
+  --bg: #faf1e2;        /* buttery cream paper */
+  --bg-alt: #f2e5cf; --bg-vd: #e8d7b6;
+  --fg: #b53d2a;        /* rust terracotta — the only ink */
+  --ink-dp: #8e2d1f;
+  --muted: rgba(181, 61, 42, 0.78);   /* de-emphasized metadata */
+  --faint: rgba(181, 61, 42, 0.32);   /* dashed / internal dividers */
+  --accent: #b53d2a; --line: #b53d2a;
+  --inverse-bg: #b53d2a; --inverse-fg: #faf1e2;   /* deep-rust poster moment */
+  --code-bg: #f2e5cf; --code-fg: #b53d2a;
+
+  --font-display: "Bricolage Grotesque", sans-serif;   /* 800 uppercase */
+  --font-body: "Fraunces", Georgia, serif;             /* italic 400 default */
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;  /* Lectern addition — system has no mono */
+  --fs-h1: 88px; --fs-h2: 48px; --fs-body: 22px; --fs-code: 17px; --fs-small: 15px;
+
+  --hl-comment: rgba(181,61,42,0.5); --hl-keyword: #b53d2a; --hl-string: rgba(181,61,42,0.78);
+  --hl-number: #8e2d1f; --hl-function: #b53d2a; --hl-builtin: rgba(181,61,42,0.78);
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-style: italic; font-weight: 400; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* slide + 4px radial-dot paper texture */
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  color: var(--fg); page-break-after: always; display: flex; flex-direction: column;
+  background:
+    radial-gradient(circle, rgba(181,61,42,0.11) 1px, transparent 1.4px) 0 0 / 4px 4px,
+    var(--bg);
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — Bricolage 800 UPPERCASE, negative tracking */
+.slide h1 { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-h1);
+            text-transform: uppercase; line-height: 0.9; letter-spacing: -0.012em; margin: 0 0 0.35em; }
+.slide.center h1 { font-size: 150px; line-height: 0.88; }
+.slide h2 { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-h2);
+            text-transform: uppercase; line-height: 0.92; letter-spacing: -0.012em; margin: 0 0 0.4em; }
+.slide em { font-style: normal; font-weight: 600; }   /* single-ink: emphasis is italic→roman + weight */
+
+/* the jumbo italic Fraunces cover numeral — the system's hero anchor */
+.jumbo { font-family: var(--font-body); font-style: italic; font-weight: 400;
+         font-size: 200px; line-height: 0.86; letter-spacing: -0.02em; color: var(--fg); }
+
+/* body — Fraunces italic (inherits slide color so .inverse flips cleanly) */
+.slide p, .slide li { font-family: var(--font-body); font-style: italic; font-weight: 400;
+                      font-size: var(--fs-body); line-height: 1.5; }
+.slide a { font-style: normal; color: var(--fg); text-decoration: none; border-bottom: 1.5px solid var(--fg); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* outlined square bullets — the hollow-shape vocabulary */
+.slide ul { list-style: none; padding-left: 0; }
+.slide ul > li { position: relative; padding-left: 1.6em; margin: 0.3em 0; }
+.slide ul > li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 9px; height: 9px; border: 1.5px solid var(--line); }
+.slide ol { padding-left: 1.3em; }
+.slide ol > li { margin: 0.3em 0; }
+.slide ol > li::marker { color: var(--fg); font-family: var(--font-display); font-weight: 800; }
+
+/* tracked uppercase labels — Bricolage */
+.kicker, .label, .edition { font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.18em; color: var(--fg); font-style: normal; font-size: var(--fs-small); }
+
+/* pill — rounded outlined action button (italic Fraunces label) */
+.pill, .button { display: inline-block; border: 1.5px solid var(--line); border-radius: 999px;
+        padding: 0.4em 1.3em; font-family: var(--font-body); font-style: italic; color: var(--fg); }
+/* rect-tag — sharp-cornered metadata tag (tracked Bricolage) */
+.tag, .rect-tag { display: inline-block; border: 1.5px solid var(--line); padding: 0.24em 0.7em;
+        font-family: var(--font-display); font-weight: 700; font-style: normal; font-size: 13px;
+        text-transform: uppercase; letter-spacing: 0.12em; color: var(--fg); }
+/* circular edition badge */
+.ed-badge { display: inline-flex; align-items: center; justify-content: center; width: 96px; height: 96px;
+        border: 1.5px solid var(--line); border-radius: 50%; font-family: var(--font-body); font-style: italic;
+        font-size: 30px; color: var(--fg); }
+
+/* outlined card — 1.5px ink border; title carries the solid internal divider above content */
+.card { border: 1.5px solid var(--line); padding: 26px 30px; }
+.card > h1, .card > h2, .card > h3 { font-family: var(--font-display); font-weight: 800; text-transform: uppercase;
+        border-bottom: 1px solid var(--faint); padding-bottom: 0.35em; margin: 0 0 0.5em; }
+.rule-dashed { border: 0; border-top: 1px dashed var(--faint); margin: 0.6em 0; }
+
+/* code — outlined rect, paper-d fill; single-ink rust-tonal highlighting */
+.slide pre { font-family: var(--font-mono); font-style: normal; font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg); padding: 22px 26px; border: 1.5px solid var(--line); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-style: normal; font-size: 0.86em;
+             padding: 0.08em 0.34em; background: var(--bg-alt); }
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — the deep-rust poster field (cream ink, cream outlines, cream dots) */
+.slide.inverse { color: var(--inverse-fg);
+  background:
+    radial-gradient(circle, rgba(250,241,226,0.10) 1px, transparent 1.4px) 0 0 / 4px 4px,
+    var(--inverse-bg); }
+.slide.inverse a, .slide.inverse ul > li::before, .slide.inverse .pill, .slide.inverse .tag,
+.slide.inverse .card, .slide.inverse .ed-badge { border-color: var(--inverse-fg); }
+.slide.inverse th, .slide.inverse td { border-bottom-color: rgba(250,241,226,0.28); }
+.slide.inverse .card > h1, .slide.inverse .card > h2, .slide.inverse .card > h3 { border-bottom-color: rgba(250,241,226,0.3); }
+.slide.inverse :not(pre) > code { background: rgba(250,241,226,0.12); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-weight: 700; font-style: normal; text-transform: uppercase;
+             font-size: 54px; line-height: 0.95; letter-spacing: -0.012em; max-width: 88%; }
+.quotation-source { display: block; margin-top: 0.5em; font-family: var(--font-body); font-style: italic;
+             font-weight: 400; font-size: var(--fs-small); text-transform: none; color: var(--muted); }
+.footnote { position: absolute; bottom: 30px; left: var(--pad-x); right: var(--pad-x);
+            font-family: var(--font-body); font-style: italic; font-size: var(--fs-small); color: var(--muted); text-align: center; }
+
+/* tables — ledger rows: Bricolage header, 1.5px ink underline, 32% body dividers */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-family: var(--font-display); font-weight: 700; font-style: normal;
+            text-transform: uppercase; letter-spacing: 0.1em; font-size: var(--fs-small);
+            padding: 11px 14px; border-bottom: 1.5px solid var(--line); }
+.slide td { font-family: var(--font-body); font-style: italic; padding: 11px 14px; border-bottom: 1px solid var(--faint); }
+
+/* page number — Fraunces italic, bottom-right */
+.reveal .slide-number { background: transparent; color: var(--fg); font-family: var(--font-body);
+            font-style: italic; font-size: 15px; right: 34px; bottom: 22px; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

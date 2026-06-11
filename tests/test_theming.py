@@ -39,7 +39,17 @@ def test_unknown_bundled_theme_raises(tmp_path):
         resolve_theme_css("does-not-exist", tmp_path)
 
 
-@pytest.mark.parametrize("name", ["base", "cartesian", "soft-editorial", "grove"])
+def _bundled_theme_names():
+    from importlib.resources import files
+
+    return sorted(
+        p.name.removesuffix(".css")
+        for p in files("lectern.themes").iterdir()
+        if p.name.endswith(".css")
+    )
+
+
+@pytest.mark.parametrize("name", _bundled_theme_names())
 def test_bundled_themes_resolve_by_name(name, tmp_path):
     resolved_name, css = resolve_theme_css(name, tmp_path)
     assert resolved_name == name

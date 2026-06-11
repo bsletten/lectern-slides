@@ -1,0 +1,152 @@
+/* ============================================================================
+   Theme — MAT  (after "Mat" by Zara Zhang, zarazhangrui/beautiful-html-templates, MIT)
+   Industrial-design-portfolio register: a dark sage-green canvas warmed by a
+   wood-brown atmospheric glow in the bottom-right of every dark slide, cream type
+   floating on the field, a single burnt-orange accent (kicker, em-dash bullets,
+   inline emphasis — never a fill). Heavy rounded Bricolage Grotesque carries
+   display (no serif, no italic anywhere); DM Sans body; DM Mono uppercase labels.
+   `<em>` is an orange UPRIGHT color switch, not italic. The signature material
+   move is a borderless bone-paper info-card whose edge is the tonal jump itself.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Bricolage Grotesque (700/800) · DM Sans (400) · DM Mono (400)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 96px; --pad-y: 72px;
+
+  --bg: #232e26;        /* dark sage green */
+  --bg-alt: #2e3d30;
+  --fg: #f0e8d2;        /* cream type */
+  --muted: rgba(240, 232, 210, 0.58);
+  --faint: rgba(240, 232, 210, 0.30);
+  --accent: #c07030;    /* burnt orange — the single accent, inline only */
+  --wood: #7a4e24;      /* atmospheric glow */
+  --rule: rgba(240, 232, 210, 0.12);   /* 1px hairline on dark */
+  --paper: #ede6d0;     /* bone paper — info-card & tonal-break inverse */
+  --paper-ink: #1e2820; /* ink on cream */
+  --paper-rule: rgba(30, 40, 32, 0.14);
+  --inverse-bg: #ede6d0; --inverse-fg: #1e2820;
+  --code-bg: #1a221c; --code-fg: #f0e8d2;
+
+  --font-display: "Bricolage Grotesque", "Noto Sans SC", sans-serif;  /* 700/800 */
+  --font-body: "DM Sans", "Noto Sans SC", sans-serif;                 /* 400 */
+  --font-mono: "DM Mono", monospace;                                  /* uppercase labels */
+  --fs-h1: 76px; --fs-h2: 42px; --fs-body: 24px; --fs-code: 18px; --fs-small: 14px;
+
+  --hl-comment: rgba(240,232,210,0.45); --hl-keyword: #c07030; --hl-string: #9fae7e;
+  --hl-number: #cda06a; --hl-function: #f0e8d2; --hl-builtin: #8aa382;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* dark slide + the wood-brown glow in the bottom-right corner */
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  color: var(--fg); page-break-after: always;
+  background:
+    radial-gradient(58% 55% at 100% 100%, color-mix(in srgb, var(--wood) 50%, transparent), transparent 70%),
+    var(--bg);
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — heavy Bricolage, mixed case (never uppercase); content h1 gets the 32px orange rule */
+.slide h1 { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-h1);
+            color: var(--fg); line-height: 0.95; letter-spacing: -0.025em; margin: 0 0 0.4em; }
+.slide.center h1 { font-size: 118px; line-height: 0.9; letter-spacing: -0.03em; }
+.slide:not(.center) h1::before {           /* the 32px orange accent rule */
+  content: ""; display: block; width: 32px; height: 1px; background: var(--accent); margin: 0 0 0.55em;
+}
+.slide h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-h2);
+            color: var(--fg); margin: 0 0 0.5em; line-height: 1.0; letter-spacing: -0.02em; }
+.slide em { color: var(--accent); font-style: normal; }   /* orange inline switch, UPRIGHT — never italic */
+
+/* body — DM Sans */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+                      font-size: var(--fs-body); line-height: 1.6; }
+.slide a { color: var(--accent); text-decoration: none;
+           border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* bullets — orange em-dash in DM Mono */
+.slide ul { list-style: none; padding-left: 0; }
+.slide ul > li { position: relative; padding-left: 1.7em; margin: 0.3em 0; }
+.slide ul > li::before { content: "—"; position: absolute; left: 0; color: var(--accent);
+            font-family: var(--font-mono); }
+.slide ol { padding-left: 1.3em; }
+.slide ol > li { margin: 0.3em 0; }
+.slide ol > li::marker { color: var(--accent); font-family: var(--font-mono); }
+
+/* small text — DM Mono uppercase tracked; kicker is orange, other chrome is muted cream */
+.kicker { font-family: var(--font-mono); font-weight: 400; text-transform: uppercase;
+          letter-spacing: 0.12em; color: var(--accent); font-size: var(--fs-small); }
+.label, .footnote, .quotation-source, .slide th {
+  font-family: var(--font-mono); font-weight: 400; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--muted);
+}
+
+/* info-card — bone-paper inset, NO border, NO shadow, square; the edge is the tonal jump */
+.card { background: var(--paper); color: var(--paper-ink); padding: 32px 36px; }
+.card h1, .card h2, .card h3 { color: var(--paper-ink); }
+.card h1::before { content: none; }
+.card p, .card li { color: var(--paper-ink); }
+.card ul > li::before { color: var(--accent); }
+
+/* code — flat deep-green panel, 1px hairline, square */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 24px 28px; border: 1px solid var(--rule); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em;
+             padding: 0.08em 0.34em; background: rgba(240, 232, 210, 0.10); }
+
+/* syntax highlighting — pre owns the fill; code stays transparent */
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — the cream tonal-break slide (no glow), used once per deck */
+.slide.inverse { background: var(--paper); color: var(--paper-ink); }
+.slide.inverse h1, .slide.inverse h2 { color: var(--paper-ink); }
+.slide.inverse p, .slide.inverse li, .slide.inverse td, .slide.inverse .quotation { color: var(--paper-ink); }
+.slide.inverse .footnote, .slide.inverse th, .slide.inverse .quotation-source { color: var(--paper-ink); opacity: 0.6; }
+.slide.inverse td { border-bottom-color: var(--paper-rule); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-weight: 600; color: var(--fg);
+             font-size: 46px; line-height: 1.2; max-width: 84%; letter-spacing: -0.02em; }
+.quotation-source { display: block; margin-top: 0.7em; font-size: var(--fs-small); }
+.footnote { position: absolute; bottom: 40px; left: var(--pad-x); right: var(--pad-x);
+            font-size: var(--fs-small); text-align: center; }
+
+/* tables — 1px hairlines, DM Mono uppercase headers */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-size: var(--fs-small); padding: 12px 15px;
+            border-bottom: 1px solid var(--rule); }
+.slide td { font-family: var(--font-body); color: var(--fg); padding: 12px 15px;
+            border-bottom: 1px solid var(--rule); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

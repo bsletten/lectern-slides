@@ -1,0 +1,134 @@
+/* ============================================================================
+   Theme — VELLUM  (after "Vellum" by Zara Zhang, zarazhangrui/beautiful-html-templates, MIT)
+   A gallery-wall / archive register: one monochromatic deep-periwinkle field on
+   EVERY slide (no inversion), warm chartreuse-yellow type floating centered on it.
+   Italic Cormorant Garamond is the default for all headlines — italic is the
+   personality, so `<em>` inverts to UPRIGHT roman in a brighter yellow. DM Sans
+   body; Courier Prime mono for the teal "pin-note" in the bottom-left corner of
+   every slide. Lists are numbered with teal mono counters — no dots, no dashes.
+   Content is centered; density is low; nothing moves.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Cormorant Garamond (italic 400/500 + roman 600) · DM Sans (400) · Courier Prime (400)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 100px; --pad-y: 82px;
+
+  --bg: #2a3870;        /* deep periwinkle navy — the only surface */
+  --bg-alt: #343f80;    /* a whisper-lighter navy (compare panels only) */
+  --bg-deep: #1f2858;   /* navy-deep — code panel */
+  --fg: #e8d85c;        /* warm chartreuse-yellow type */
+  --muted: rgba(232, 216, 92, 0.62);
+  --faint: rgba(232, 216, 92, 0.32);
+  --emphasis: #f5e168;  /* brighter yellow — the upright <em> moment */
+  --accent: #3a7878;    /* dusty teal — quote marks, counters, kickers, pin-note, rule */
+  --rule: rgba(232, 216, 92, 0.20);   /* 1px hairline at 20% yellow */
+  --inverse-bg: #343f80; --inverse-fg: #e8d85c;  /* there is no real inversion */
+  --code-bg: #1f2858; --code-fg: #e8d85c;
+
+  --font-display: "Cormorant Garamond", "Noto Serif SC", Georgia, serif;  /* italic 400 default */
+  --font-body: "DM Sans", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "Courier Prime", "Courier New", monospace;
+  --fs-h1: 78px; --fs-h2: 44px; --fs-body: 24px; --fs-code: 18px; --fs-small: 16px;
+
+  --hl-comment: rgba(232,216,92,0.42); --hl-keyword: #f5e168; --hl-string: #6fa8a2;
+  --hl-number: #f5e168; --hl-function: #e8d85c; --hl-builtin: #6fa8a2;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* gallery register: every slide is the same navy, content centered */
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--fg); page-break-after: always;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — italic Cormorant is the DEFAULT; content h1 gets a 28px teal rule */
+.slide h1 { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: var(--fs-h1);
+            color: var(--fg); line-height: 0.95; letter-spacing: -0.01em; margin: 0 0 0.4em; }
+.slide.center h1 { font-size: 120px; line-height: 0.9; }
+.slide:not(.center) h1::before {           /* 28px teal accent rule, centered */
+  content: ""; display: block; width: 28px; height: 1px; background: var(--accent); margin: 0 auto 0.5em;
+}
+.slide h2 { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: var(--fs-h2);
+            color: var(--fg); margin: 0 0 0.5em; line-height: 1.05; }
+.slide em { font-style: normal; font-weight: 600; color: var(--emphasis); }   /* italic → UPRIGHT roman, brighter */
+
+/* body — DM Sans */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+                      font-size: var(--fs-body); line-height: 1.6; }
+.slide a { color: var(--emphasis); text-decoration: none; border-bottom: 1px solid var(--accent); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* lists — numbered with teal Courier-Prime counters; no dots or dashes exist here */
+.slide ul, .slide ol { list-style: none; counter-reset: item; padding: 0;
+                       display: inline-block; text-align: left; max-width: 80%; }
+.slide ul > li, .slide ol > li { counter-increment: item; position: relative; padding-left: 2.6em; margin: 0.35em 0; }
+.slide ul > li::before, .slide ol > li::before {
+  content: counter(item, decimal-leading-zero) "."; position: absolute; left: 0; top: 0.05em;
+  color: var(--accent); font-family: var(--font-mono); font-size: 0.8em;
+}
+
+/* small text — Courier Prime, teal; kicker and the pin-note (bottom-left, every slide) */
+.kicker { font-family: var(--font-mono); font-weight: 400; letter-spacing: 0.06em;
+          color: var(--accent); font-size: var(--fs-small); }
+.footnote, .pin { position: absolute; bottom: 34px; left: var(--pad-x); right: auto; text-align: left;
+          font-family: var(--font-mono); font-weight: 500; font-size: var(--fs-small);
+          color: var(--accent); letter-spacing: 0.01em; }
+
+/* code — flat navy-deep panel, left-aligned, 1px hairline, square */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55; text-align: left;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 24px 28px; border: 1px solid var(--rule); max-width: 100%; }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em;
+             padding: 0.08em 0.34em; background: rgba(232, 216, 92, 0.10); }
+
+/* syntax highlighting — pre owns the fill; code stays transparent */
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (override the centered default when needed) */
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; text-align: left; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — no true inversion; just the whisper-lighter navy */
+.slide.inverse { background: var(--bg-alt); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-style: italic; font-weight: 400; color: var(--fg);
+             font-size: 48px; line-height: 1.25; max-width: 84%; }
+.quotation::before { content: "\201C"; display: block; font-family: var(--font-display); font-style: italic;
+             font-size: 92px; line-height: 0.6; color: var(--accent); margin-bottom: 0.02em; }
+.quotation-source { display: block; margin-top: 0.6em; font-family: var(--font-mono);
+             font-weight: 500; font-size: var(--fs-small); color: var(--accent); }
+
+/* tables — left-aligned, 1px hairlines, mono headers */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; text-align: left; }
+.slide th { font-family: var(--font-mono); font-weight: 400; font-size: var(--fs-small); color: var(--muted);
+            padding: 12px 15px; border-bottom: 1px solid var(--rule); }
+.slide td { font-family: var(--font-body); color: var(--fg); padding: 12px 15px; border-bottom: 1px solid var(--rule); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

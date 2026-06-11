@@ -1,0 +1,145 @@
+/* ============================================================================
+   Theme — MONOCHROME  (a.k.a. "Ivory Ledger"; after Zara Zhang,
+   zarazhangrui/beautiful-html-templates, MIT)
+   Black ink on cream paper, no chromatic color anywhere — "accent" just means
+   darker ink. Ultra-light Jost 200 carries every headline; Jost 300 the body;
+   JetBrains Mono uppercase the structural chrome; Lora italic is reserved for
+   pull-quotes (the human voice) and Lora roman for card titles. Bullets are
+   graphite em-dashes; every divider is a 1px solid black rule; the only rounded
+   thing is the 16px insight card. Reads like a hand-typeset ledger.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Jost (200/300/400) · Lora (italic 400 + roman) · JetBrains Mono (400)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 104px; --pad-y: 74px;
+
+  --bg: #fafadf;        /* ivory / cream paper */
+  --bg-alt: #f5f0e4;    /* cream-warm — insight surface, the "moment" field */
+  --bg-code: #f2f2d2;   /* cream-paper-2 — code card */
+  --fg: #1a1a16;        /* ink-black — headlines, rules, "accent" */
+  --body: #5e5e54;      /* ink-graphite — body copy */
+  --muted: #8a8a80;     /* ink-graphite-light — mono labels, bullet dashes */
+  --accent: #1a1a16;    /* there is no color; the accent is darker ink */
+  --line: #1a1a16;      /* every rule is 1px solid black */
+  --rule: #1a1a16;
+  --inverse-bg: #f5f0e4; --inverse-fg: #1a1a16;
+  --code-bg: #f2f2d2; --code-fg: #1a1a16;
+
+  --font-display: "Jost", "Noto Sans SC", system-ui, sans-serif;  /* weight 200 */
+  --font-body: "Jost", "Noto Sans SC", system-ui, sans-serif;     /* weight 300 */
+  --font-serif: "Lora", "Noto Serif SC", Georgia, serif;          /* italic quotes / roman card titles */
+  --font-mono: "JetBrains Mono", monospace;                       /* uppercase chrome */
+  --fs-h1: 66px; --fs-h2: 34px; --fs-body: 23px; --fs-code: 18px; --fs-small: 14px;
+  --track: 0.13em;
+
+  /* highlighting — pure tonal, ink + graphite only, no chroma */
+  --hl-comment: #8a8a80; --hl-keyword: #1a1a16; --hl-string: #5e5e54;
+  --hl-number: #5e5e54; --hl-function: #1a1a16; --hl-builtin: #5e5e54;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 300; color: var(--body);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--body); page-break-after: always;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — ultra-light Jost 200, ink, mixed case; content h1 gets the 36px rule */
+.slide h1 { font-family: var(--font-display); font-weight: 200; font-size: var(--fs-h1);
+            color: var(--fg); line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 0.45em; }
+.slide.center h1 { font-size: 100px; line-height: 0.98; letter-spacing: -0.02em; }
+.slide:not(.center) h1::before {           /* the 36px hairline — the system's signature mark */
+  content: ""; display: block; width: 36px; height: 1px; background: var(--fg); margin: 0 0 0.6em;
+}
+.slide h2 { font-family: var(--font-display); font-weight: 300; font-size: var(--fs-h2);
+            color: var(--body); margin: 0 0 0.55em; line-height: 1.25; }
+.slide em { font-family: var(--font-serif); font-style: italic; font-weight: 400; color: var(--fg); }
+
+/* body — Jost 300 graphite */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 300; color: var(--body);
+                      font-size: var(--fs-body); line-height: 1.7; }
+.slide a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* bullets — graphite em-dash in mono, the system's only list mark */
+.slide ul { list-style: none; padding-left: 0; }
+.slide ul > li { position: relative; padding-left: 1.7em; margin: 0.3em 0; }
+.slide ul > li::before { content: "—"; position: absolute; left: 0; color: var(--muted);
+            font-family: var(--font-mono); }
+.slide ol { padding-left: 1.3em; }
+.slide ol > li { margin: 0.3em 0; }
+.slide ol > li::marker { color: var(--muted); font-family: var(--font-mono); }
+
+/* small text — JetBrains Mono uppercase tracked, graphite-light */
+.kicker, .label, .footnote, .quotation-source, .slide th {
+  font-family: var(--font-mono); font-weight: 400; text-transform: uppercase;
+  letter-spacing: var(--track); color: var(--muted);
+}
+/* bordered tag */
+.tag { display: inline-block; border: 1px solid var(--fg); padding: 0.3em 0.8em;
+       font-family: var(--font-mono); font-size: var(--fs-small); text-transform: uppercase;
+       letter-spacing: 0.12em; color: var(--fg); }
+
+/* insight card — cream-warm fill, 16px radius (the only rounded block), Lora roman title, no shadow */
+.card { background: var(--bg-alt); border-radius: 16px; padding: 32px 36px; }
+.card h2, .card h3, .card-title { font-family: var(--font-serif); font-weight: 400; color: var(--fg); }
+.card h2::before, .card h3::before { content: none; }
+
+/* code — flat square card, opaque cream fill, 1px black border */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 24px 28px; border: 1px solid var(--line); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em;
+             padding: 0.08em 0.34em; background: var(--bg-code); }
+
+/* syntax highlighting — pre owns the fill; code stays transparent */
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — the cream-warm field for covers / closers */
+.slide.inverse { background: var(--inverse-bg); color: var(--body); }
+.slide.inverse h1 { color: var(--inverse-fg); }
+
+/* content classes */
+.quotation { font-family: var(--font-serif); font-style: italic; font-weight: 400;
+             font-size: 42px; line-height: 1.35; max-width: 84%; color: var(--fg); }
+.quotation-source { display: block; margin-top: 0.7em; font-size: var(--fs-small); }
+.footnote { position: absolute; bottom: 40px; left: var(--pad-x); right: var(--pad-x);
+            font-size: var(--fs-small); text-align: center; }
+
+/* tables — 1px black hairlines, mono uppercase headers */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-size: var(--fs-small); padding: 12px 15px;
+            border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.slide td { font-family: var(--font-body); font-weight: 300; color: var(--body);
+            padding: 12px 15px; border-bottom: 1px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

@@ -1,0 +1,150 @@
+/* ============================================================================
+   Theme — BROADSIDE  (after "Broadside" by Zara Zhang, zarazhangrui/beautiful-html-templates, MIT)
+   A protest-poster / broadside-newspaper system: "ink on fire." TWO registers —
+   near-black documentation slides (cream text, fire-orange accent) and full
+   fire-orange declaration slides (ink-black text), the latter reached via
+   `.inverse`. One workhorse grotesk (Barlow) pushed to weight-900 LOWERCASE at
+   display size — the signature move; words as graphic elements. IBM Plex Mono
+   uppercase chrome; the fire-orange `/` is the bullet marker. Flat, 1px hairlines,
+   no rounded corners, no italic/underline — emphasis is weight, size, or orange.
+   --- PARTIAL: the catalogue/stat/chart compositions live in per-slide markup. ---
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Barlow (400/700/800/900) · IBM Plex Mono (500)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 88px; --pad-y: 68px;
+
+  --bg: #111111; --bg-alt: #1a1a18;     /* near-black documentation canvas */
+  --fg: #f0ece5;                         /* warm cream */
+  --muted: #888880; --faint: #505048;
+  --accent: #e85d26;                     /* fire orange — the only color */
+  --rule: #282826;                       /* 1px hairline on dark */
+  --ink: #111111;                        /* ink on the orange register */
+  --ink-muted: rgba(17, 17, 17, 0.75); --ink-faint: rgba(17, 17, 17, 0.45); --ink-rule: rgba(17, 17, 17, 0.20);
+  --inverse-bg: #e85d26; --inverse-fg: #111111;   /* the orange declaration register */
+  --code-bg: #1a1a18; --code-fg: #f0ece5;
+
+  --font-display: "Barlow", "Noto Sans SC", sans-serif;   /* 900 lowercase */
+  --font-body: "Barlow", "Noto Sans SC", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --fs-h1: 84px; --fs-h2: 52px; --fs-body: 23px; --fs-code: 17px; --fs-small: 14px;
+
+  --hl-comment: #505048; --hl-keyword: #e85d26; --hl-string: #c4c0b4;
+  --hl-number: #e85d26; --hl-function: #f0ece5; --hl-builtin: #888880;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--fg); page-break-after: always; display: flex; flex-direction: column;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — massive Barlow, LOWERCASE (the signature), negative tracking */
+.slide h1 { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-h1);
+            text-transform: lowercase; line-height: 0.9; letter-spacing: -0.03em; margin: 0 0 0.3em; }
+.slide.center h1 { font-weight: 900; font-size: 150px; line-height: 0.88; letter-spacing: -0.04em; }
+.slide h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-h2);
+            text-transform: lowercase; line-height: 1.0; letter-spacing: -0.02em; margin: 0 0 0.4em; }
+.slide em { color: var(--accent); font-style: normal; font-weight: 700; }   /* emphasis = orange (no italic) */
+
+/* body — Barlow (inherits slide color so the orange register flips cleanly) */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400;
+                      font-size: var(--fs-body); line-height: 1.6; }
+.slide a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* the fire-orange "/" mono bullet marker */
+.slide ul { list-style: none; padding-left: 0; }
+.slide ul > li { position: relative; padding-left: 1.6em; margin: 0.3em 0; }
+.slide ul > li::before { content: "/"; position: absolute; left: 0; color: var(--accent);
+            font-family: var(--font-mono); font-weight: 500; }
+.slide ol { padding-left: 1.3em; }
+.slide ol > li { margin: 0.3em 0; }
+.slide ol > li::marker { color: var(--accent); font-family: var(--font-mono); font-weight: 500; }
+
+/* chrome — IBM Plex Mono uppercase tracked; kicker is fire orange */
+.kicker { font-family: var(--font-mono); font-weight: 500; text-transform: uppercase;
+          letter-spacing: 0.14em; color: var(--accent); font-size: var(--fs-small); }
+.label, .footnote, .quotation-source, .broadside-num, .slide th {
+  font-family: var(--font-mono); font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--muted); }
+
+/* stat — Barlow 900 in orange; tag — 1px orange outline + mono orange */
+.stat { font-family: var(--font-display); font-weight: 900; color: var(--accent);
+        font-size: 76px; letter-spacing: -0.04em; line-height: 1; }
+.tag { display: inline-block; border: 1px solid var(--accent); padding: 0.24em 0.7em;
+       font-family: var(--font-mono); font-weight: 500; font-size: 13px; text-transform: uppercase;
+       letter-spacing: 0.12em; color: var(--accent); }
+
+/* card / stat-card — top-border-only, flat, square */
+.card { border-top: 2px solid var(--accent); padding: 18px 0 0; }
+.card h1, .card h2, .card h3 { font-family: var(--font-display); text-transform: lowercase; }
+
+/* code — flat dark panel, 1px hairline, square */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg); padding: 22px 26px; border: 1px solid var(--rule); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em; padding: 0.08em 0.34em; background: var(--bg-alt); }
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: normal; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — the ORANGE declaration register: full fire-orange field, ink-black type */
+.slide.inverse { background: var(--inverse-bg); color: var(--inverse-fg); }
+.slide.inverse em { color: var(--ink); font-weight: 800; }
+.slide.inverse a { color: var(--ink); }
+.slide.inverse ul > li::before, .slide.inverse ol > li::marker { color: var(--ink); }
+.slide.inverse .kicker { color: var(--ink); }
+.slide.inverse .label, .slide.inverse .footnote, .slide.inverse .quotation-source,
+.slide.inverse .broadside-num, .slide.inverse th { color: var(--ink-muted); }
+.slide.inverse .stat { color: var(--ink); }
+.slide.inverse .tag { border-color: var(--ink); color: var(--ink); }
+.slide.inverse .card { border-top-color: var(--ink); }
+.slide.inverse td, .slide.inverse th { border-bottom-color: var(--ink-rule); }
+.slide.inverse :not(pre) > code { background: var(--ink-rule); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-weight: 700; font-size: 58px; line-height: 1.12;
+             letter-spacing: -0.02em; max-width: 80%; }
+.quotation::before { content: "\201C"; display: block; font-family: var(--font-display); font-weight: 900;
+             font-size: 120px; line-height: 0.6; color: var(--accent); margin-bottom: 0.02em; }
+.slide.inverse .quotation::before { color: var(--ink); }
+.quotation-source { display: block; margin-top: 0.6em; }
+.footnote { position: absolute; bottom: 30px; left: var(--pad-x); right: var(--pad-x); text-align: center; }
+
+/* tables — mono headers, 1px hairlines */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-size: var(--fs-small); padding: 11px 14px; border-bottom: 1px solid var(--rule); }
+.slide td { font-family: var(--font-body); padding: 11px 14px; border-bottom: 1px solid var(--rule); }
+
+/* page number — mono, bottom-right */
+.reveal .slide-number { background: transparent; color: var(--accent); font-family: var(--font-mono);
+            font-size: 14px; letter-spacing: 0.12em; right: 34px; bottom: 22px; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

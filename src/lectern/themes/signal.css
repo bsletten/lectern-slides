@@ -1,0 +1,152 @@
+/* ============================================================================
+   Theme — SIGNAL  (after "Signal" by Zara Zhang, zarazhangrui/beautiful-html-templates, MIT)
+   Intelligence-briefing register — The Economist's restraint with quiet weight.
+   A dual-surface system: deep editorial navy and warm cream paper are BOTH
+   first-class (alternate freely via `.inverse`), joined by a single antique-gold
+   accent used only on rules, italic emphasis, and numerals. Source Serif 4 leads
+   (roman, with the signature `<em>` → italic-gold mid-sentence); DM Sans supports
+   body; IBM Plex Mono runs the uppercase gold kickers and chrome. Em-dash bullets
+   in gold; 1px hairlines everywhere; a near-invisible 80px grid on every dark slide.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Source Serif 4 (600/700 + italic) · DM Sans (400) · IBM Plex Mono (500)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 96px; --pad-y: 68px;
+
+  --bg: #1c2644;        /* deep editorial navy */
+  --bg-alt: #232f55;
+  --fg: #e2dcd0;        /* warm off-white — never pure white */
+  --muted: #8a96a8;     /* text-muted-dark */
+  --faint: #4e5a6e;     /* text-hint-dark */
+  --accent: #c8a870;    /* antique gold — rules, italic emphasis, numerals only */
+  --rule: #2e3d5c;      /* border-dark hairline */
+  --paper: #f0ece3;     /* cream — the co-equal alternate surface */
+  --paper-ink: #1a2030; --paper-muted: #5a6270; --paper-rule: #cac4b4;
+  --inverse-bg: #f0ece3; --inverse-fg: #1a2030;
+  --code-bg: #161f38; --code-fg: #e2dcd0;
+
+  --font-display: "Source Serif 4", "Noto Serif SC", Georgia, serif;
+  --font-body: "DM Sans", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
+  --fs-h1: 66px; --fs-h2: 38px; --fs-body: 23px; --fs-code: 18px; --fs-small: 14px;
+
+  --hl-comment: #4e5a6e; --hl-keyword: #c8a870; --hl-string: #8aa0b8;
+  --hl-number: #c8a870; --hl-function: #e2dcd0; --hl-builtin: #8a96a8;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* dark slide + the near-invisible 80px grid fingerprint */
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  color: var(--fg); page-break-after: always; display: flex; flex-direction: column;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 79px, rgba(226,220,208,0.035) 79px 80px),
+    repeating-linear-gradient(90deg, transparent 0 79px, rgba(226,220,208,0.035) 79px 80px),
+    var(--bg);
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — Source Serif 4 roman; <em> is the italic-gold Signal moment */
+.slide h1 { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-h1);
+            color: var(--fg); line-height: 1.05; letter-spacing: -0.01em; margin: 0 0 0.45em; }
+.slide.center h1 { font-weight: 700; font-size: 116px; line-height: 0.96; letter-spacing: -0.02em; }
+.slide:not(.center) h1::before {           /* the 36px gold rule — the system's small punctuation */
+  content: ""; display: block; width: 36px; height: 2px; background: var(--accent); margin: 0 0 0.5em;
+}
+.slide h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-h2);
+            color: var(--fg); margin: 0 0 0.5em; line-height: 1.18; }
+.slide em { font-family: var(--font-display); font-style: italic; color: var(--accent); }
+
+/* body — DM Sans (serif leads, sans supports) */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400; color: var(--fg);
+                      font-size: var(--fs-body); line-height: 1.6; }
+.slide a { color: var(--accent); text-decoration: none;
+           border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.slide img { max-width: 100%; height: auto; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* gold em-dash bullets in mono */
+.slide ul { list-style: none; padding-left: 0; }
+.slide ul > li { position: relative; padding-left: 1.7em; margin: 0.3em 0; }
+.slide ul > li::before { content: "—"; position: absolute; left: 0; color: var(--accent);
+            font-family: var(--font-mono); }
+.slide ol { padding-left: 1.3em; }
+.slide ol > li { margin: 0.3em 0; }
+.slide ol > li::marker { color: var(--accent); font-family: var(--font-mono); }
+
+/* statistical figure — gold serif, the second-most-recognizable element */
+.stat { font-family: var(--font-display); font-weight: 600; color: var(--accent);
+        font-size: 64px; letter-spacing: -0.02em; line-height: 1; }
+
+/* small text — mono uppercase; kicker is gold, chrome is muted */
+.kicker { font-family: var(--font-mono); font-weight: 500; text-transform: uppercase;
+          letter-spacing: 0.14em; color: var(--accent); font-size: var(--fs-small); }
+.label, .footnote, .quotation-source, .slide th {
+  font-family: var(--font-mono); font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--muted);
+}
+
+/* code — flat deep-navy panel, 1px hairline, square */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 24px 28px; border: 1px solid var(--rule); }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em;
+             padding: 0.08em 0.34em; background: rgba(226, 220, 208, 0.08); }
+
+/* syntax highlighting — pre owns the fill; code stays transparent */
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — the cream surface, a co-equal first-class field (no grid) */
+.slide.inverse { background: var(--paper); color: var(--paper-ink); }
+.slide.inverse h1, .slide.inverse h2 { color: var(--paper-ink); }
+.slide.inverse p, .slide.inverse li, .slide.inverse td, .slide.inverse .quotation { color: var(--paper-ink); }
+.slide.inverse em { color: var(--accent); }
+.slide.inverse ul > li::before, .slide.inverse ol > li::marker { color: var(--accent); }
+.slide.inverse .footnote, .slide.inverse th, .slide.inverse .quotation-source { color: var(--paper-muted); }
+.slide.inverse td { border-bottom-color: var(--paper-rule); }
+.slide.inverse :not(pre) > code { background: rgba(26, 32, 48, 0.08); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-weight: 400; color: var(--fg);
+             font-size: 46px; line-height: 1.28; max-width: 84%; letter-spacing: -0.01em; }
+.quotation::before { content: "\201C"; display: block; font-family: var(--font-display); font-weight: 300;
+             font-size: 96px; line-height: 0.6; color: var(--faint); margin-bottom: 0.05em; }
+.quotation-source { display: block; margin-top: 0.7em; font-size: var(--fs-small); }
+.footnote { position: absolute; bottom: 38px; left: var(--pad-x); right: var(--pad-x);
+            font-size: var(--fs-small); text-align: center; }
+
+/* tables — 1px hairlines, mono uppercase headers */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-size: var(--fs-small); padding: 12px 15px;
+            border-bottom: 1px solid var(--rule); }
+.slide td { font-family: var(--font-body); color: var(--fg); padding: 12px 15px; border-bottom: 1px solid var(--rule); }
+.slide.inverse th, .slide.inverse td { border-bottom-color: var(--paper-rule); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

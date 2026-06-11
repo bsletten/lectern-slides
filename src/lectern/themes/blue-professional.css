@@ -1,0 +1,148 @@
+/* ============================================================================
+   Theme — BLUE PROFESSIONAL  (after "Blue Professional" by Zara Zhang,
+   zarazhangrui/beautiful-html-templates, MIT)
+   Consulting-grade / dashboard register: a constant warm-cream ground with a
+   single saturated cobalt accent carrying every emphasis moment. All-sans —
+   Space Grotesk for headlines & numerals, Inter for body & chrome. Cards are
+   soft cobalt-tinted (4% fill, 20% border, rounded). Numbers are the accent
+   moment (cobalt Space Grotesk); the 60×4 cobalt accent-line is the chrome.
+   No dark mode — the cream ground is constant. Rounded, never bordered in solid.
+   Adapted to Lectern's token contract — credit the original.
+   Fonts: Space Grotesk (500/600/700) · Inter (400/600)
+   ============================================================================ */
+
+:root {
+  --slide-w: 1280px; --slide-h: 720px; --pad-x: 96px; --pad-y: 72px;
+
+  --bg: #fdfae7;        /* warm cream ground — constant, never flips */
+  --fg: #111111;        /* near-black headlines */
+  --body: #6b6b6b;      /* muted grey body */
+  --muted: #9a9a9a;     /* lighter grey */
+  --accent: #1e2bfa;    /* saturated cobalt — the only accent */
+  --accent-soft: rgba(30, 43, 250, 0.08);
+  --card-bg: rgba(30, 43, 250, 0.04);
+  --card-border: rgba(30, 43, 250, 0.20);
+  --rule: rgba(30, 43, 250, 0.20);
+  --positive: #059669; --negative: #dc2626;   /* directional chips, inline only */
+  --inverse-bg: #fdfae7; --inverse-fg: #111111;  /* no dark mode */
+  --code-bg: rgba(30, 43, 250, 0.04); --code-fg: #111111;
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;  /* Lectern addition — system has no mono */
+  --fs-h1: 60px; --fs-h2: 36px; --fs-body: 23px; --fs-code: 18px; --fs-small: 15px;
+
+  --hl-comment: #9a9a9a; --hl-keyword: #1e2bfa; --hl-string: #059669;
+  --hl-number: #1e2bfa; --hl-function: #111111; --hl-builtin: #6b6b6b;
+}
+
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); font-weight: 400; color: var(--body);
+       background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+.slide {
+  width: var(--slide-w); height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x); position: relative; overflow: hidden;
+  background: var(--bg); color: var(--body); page-break-after: always;
+  display: flex; flex-direction: column;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* headlines — Space Grotesk near-black; content h1 carries the 60×4 cobalt accent-line */
+.slide h1 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-h1);
+            color: var(--fg); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 0.45em; }
+.slide.center h1 { font-size: 92px; }
+.slide:not(.center) h1::before {
+  content: ""; display: block; width: 60px; height: 4px; border-radius: 2px;
+  background: var(--accent); margin: 0 0 0.55em;
+}
+.slide h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-h2);
+            color: var(--fg); margin: 0 0 0.5em; line-height: 1.1; letter-spacing: -0.02em; }
+.slide em { color: var(--accent); font-style: normal; font-weight: 600; }   /* cobalt emphasis, upright */
+
+/* body — Inter, muted grey */
+.slide p, .slide li { font-family: var(--font-body); font-weight: 400;
+                      font-size: var(--fs-body); line-height: 1.6; }
+.slide a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--card-border); }
+.slide img { max-width: 100%; height: auto; border-radius: 12px; }
+.embed { display: block; margin: 0.5em auto 0; }
+
+/* lists — cobalt markers; numbers are the accent moment */
+.slide ul, .slide ol { padding-left: 1.2em; }
+.slide li { margin: 0.32em 0; }
+.slide li::marker { color: var(--accent); }
+.slide ol > li::marker { font-family: var(--font-display); font-weight: 700; }
+
+/* eyebrow / kicker — Space Grotesk uppercase cobalt */
+.kicker, .eyebrow { font-family: var(--font-display); font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.08em; color: var(--accent); font-size: 16px; }
+
+/* numeric callout — cobalt Space Grotesk, the accent moment */
+.stat, .metric { font-family: var(--font-display); font-weight: 700; color: var(--accent);
+                 font-size: 56px; letter-spacing: -0.02em; line-height: 1; }
+.up { color: var(--positive); } .down { color: var(--negative); }
+
+/* soft cobalt-tinted card — 4% fill, 20% border, rounded, no shadow */
+.card { background: var(--card-bg); border: 1.5px solid var(--card-border);
+        border-radius: 12px; padding: 24px 28px; }
+/* pill / tag and the cobalt CTA */
+.pill, .tag { display: inline-block; border: 1.5px solid var(--card-border); border-radius: 100px;
+        padding: 0.26em 0.9em; font-family: var(--font-display); font-weight: 600; font-size: 14px;
+        color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
+.cta { display: inline-block; background: var(--accent); color: var(--bg); border-radius: 100px;
+        padding: 0.6em 1.5em; font-family: var(--font-display); font-weight: 600; }
+
+/* code — rounded cobalt-tinted card (matches the system), 1.5px cobalt border */
+.slide pre { font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.55;
+             background: var(--code-bg); color: var(--code-fg);
+             padding: 22px 26px; border: 1.5px solid var(--card-border); border-radius: 12px; }
+.slide :not(pre) > code { font-family: var(--font-mono); font-size: 0.86em;
+             padding: 0.08em 0.34em; border-radius: 5px; background: var(--accent-soft); color: var(--fg); }
+
+/* syntax highlighting — pre owns the fill; code stays transparent */
+.hljs { color: var(--code-fg); background: transparent; }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-tag { color: var(--hl-string); }
+.hljs-number, .hljs-meta { color: var(--hl-number); }
+.hljs-title, .hljs-title.function_, .hljs-name { color: var(--hl-function); }
+.hljs-built_in, .hljs-type, .hljs-attr, .hljs-attribute, .hljs-variable { color: var(--hl-builtin); }
+
+/* layout: composable nine-point anchors (matches base / other sample themes) */
+.slide.top    { justify-content: flex-start; }
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+.place { position: absolute; max-width: 72%; }
+.place.top { top: var(--pad-y); }  .place.bottom { bottom: var(--pad-y); }
+.place.left { left: var(--pad-x); }  .place.right { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* inverse — the cream ground is constant; no flip (kept for markup parity) */
+.slide.inverse { background: var(--bg); color: var(--body); }
+
+/* content classes */
+.quotation { font-family: var(--font-display); font-weight: 500; color: var(--fg);
+             font-size: 40px; line-height: 1.35; max-width: 84%; letter-spacing: -0.01em; }
+.quotation::before { content: "\201C"; display: block; font-family: var(--font-display); font-weight: 700;
+             font-size: 80px; line-height: 0.6; color: var(--accent); margin-bottom: 0.05em; }
+.quotation-source { display: block; margin-top: 0.6em; font-family: var(--font-body);
+             font-size: var(--fs-small); color: var(--muted); }
+.footnote { position: absolute; bottom: 38px; left: var(--pad-x); right: var(--pad-x);
+            font-family: var(--font-body); font-size: var(--fs-small); color: var(--muted); text-align: center; }
+
+/* tables — cobalt eyebrow headers, soft cobalt rules */
+.slide table { width: 100%; border-collapse: collapse; font-size: 21px; margin-top: 0.5em; }
+.slide th { text-align: left; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-small);
+            text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent);
+            padding: 11px 15px; border-bottom: 1.5px solid var(--card-border); }
+.slide td { font-family: var(--font-body); color: var(--fg); padding: 11px 15px;
+            border-bottom: 1px solid var(--accent-soft); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
