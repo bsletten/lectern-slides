@@ -77,6 +77,20 @@
 .reveal .slides section.slide.on-dark .quotation-source,
 .reveal .slides section.slide.on-dark .quotation-source::before {
   color: #f5f5f7 !important;
+}
+/* Full-opacity text over the backdrop — but NOT on the section itself: reveal
+   animates the *section's* opacity for fade transitions, so forcing it to 1 kept
+   this slide fully visible while it was an off-screen neighbour (its text bled
+   onto adjacent slides). Restrict the override to the text elements. */
+.reveal .slides section.slide.on-dark h1,
+.reveal .slides section.slide.on-dark h2,
+.reveal .slides section.slide.on-dark h3,
+.reveal .slides section.slide.on-dark p,
+.reveal .slides section.slide.on-dark li,
+.reveal .slides section.slide.on-dark a,
+.reveal .slides section.slide.on-dark .quotation,
+.reveal .slides section.slide.on-dark .quotation-source,
+.reveal .slides section.slide.on-dark .quotation-source::before {
   opacity: 1 !important;
 }
 .reveal .slides section.slide.on-dark a { text-decoration: underline; }

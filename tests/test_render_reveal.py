@@ -93,6 +93,11 @@ def test_on_dark_helper_forces_light_text(fixtures, tmp_path):
     assert "section.slide.on-dark" in html
     assert "color: #f5f5f7 !important;" in html
     assert "text-shadow:" in html  # legibility over busy imagery
+    # Regression: the section-level color rule must NOT also force `opacity: 1`
+    # on the section — reveal animates section opacity for fade transitions, and
+    # pinning it kept this slide visible as an off-screen neighbour (its text
+    # flashed onto adjacent slides). The color block ends right after `color`.
+    assert "color: #f5f5f7 !important;\n}" in html
 
 
 def test_quotation_source_standardized_to_slide_color(fixtures, tmp_path):

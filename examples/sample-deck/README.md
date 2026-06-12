@@ -58,6 +58,26 @@ is the recommended pattern for any live visualization — the WebGL slide
 (`assets/webgl-triangle.html`) uses the very same shape, including the `?static`
 deterministic frame and `window.lecternReady` poster-capture signal.
 
+**Authoring an embed (the one contract to honor).** Lectern caps an
+`iframe.embed` to a fraction of the slide height so it always leaves room for the
+heading/body and never overflows the frame — under *any* theme, whose type scale
+you don't control. That means **your embed page must be responsive**: fill the
+iframe and scale its own content, because the iframe it's given may be shorter
+than your art's natural size. Concretely:
+
+- `html, body { height: 100%; margin: 0 }` — so a `height: 100%` child resolves
+  against the iframe instead of collapsing to 0.
+- Size your canvas/SVG to the box: a `<canvas>` reads `clientWidth/clientHeight`
+  on resize (see `webgl-triangle.html`); an `<svg>` uses a `viewBox` with
+  `width/height: 100%` so it scales (see `d3-bars.html`). A fixed-pixel `<svg>`
+  or `<canvas>` gets clipped at the bottom when the iframe is capped.
+- Honor `?static` / `prefers-reduced-motion`: paint one deterministic frame and
+  set `window.lecternReady = true` so PDF export can capture a clean poster.
+
+The two sample embeds are working templates — copy one. Everything outside the
+iframe (centering, the height cap, light text on dark backdrops) is handled for
+you in the renderer's layout layer and needs nothing per-slide or per-theme.
+
 **Math plugin.** `[reveal].math = "katex"` in `deck.toml` tells the reveal adapter
 to load the math plugin so `$…$` / `$$…$$` typeset. Without it they render as
 literal text.

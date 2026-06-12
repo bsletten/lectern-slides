@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <title>D3 — token probabilities</title>
 <style>
-  html, body { margin: 0; background: transparent; }
+  /* Full height + a viewBox-scaled SVG so the chart fits whatever box the embed
+     gets (the slide caps embed height), instead of being clipped at the bottom
+     when the iframe is shorter than the SVG's intrinsic 380px. */
+  html, body { margin: 0; height: 100%; background: transparent; }
   body { font: 14px/1.4 "Inter", system-ui, sans-serif; color: #889; }
+  #chart { display: block; width: 100%; height: 100%; }
   .bar { fill: #38bdf8; }
   .label { fill: currentColor; }
   @media (prefers-reduced-motion: reduce) { .bar { transition: none; } }
