@@ -132,6 +132,22 @@
   max-width: 100%;
 }
 
+/* A standalone image (Markdown `![alt](src)` on its own line → a single-child
+   <p>) is centered and capped to a fraction of the slide height, so a tall
+   image never bumps the bottom edge — under any theme. Collapsing the <p> with
+   display:contents makes the image a direct flex child of the slide, so it
+   centers on the anchor grid and the % cap resolves against the slide's definite
+   height (the same mechanism as iframe.embed, which leaves room for the
+   heading/body regardless of a theme's type scale). */
+.reveal .slides section.slide p:has(> img:only-child) { display: contents; }
+.reveal .slides section.slide p:has(> img:only-child) > img {
+  display: block;
+  margin: 0 auto;
+  max-height: 66%;
+  width: auto;
+  min-height: 0;
+}
+
 /* print-pdf wraps each slide in a `.pdf-page`, which breaks the `>` selectors
    above and lets reveal force `display:block; padding:0` — that jams content
    into the page edge and drops the anchor-grid centering. Re-assert the slide

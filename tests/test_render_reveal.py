@@ -100,6 +100,16 @@ def test_on_dark_helper_forces_light_text(fixtures, tmp_path):
     assert "color: #f5f5f7 !important;\n}" in html
 
 
+def test_standalone_image_centered_and_height_capped(fixtures, tmp_path):
+    # A Markdown image on its own line (a single-child <p>) is centered and
+    # capped to a fraction of the slide height in the layout layer, so a tall
+    # image never bumps the bottom — under any theme. Scoped via `:only-child`
+    # so inline images are left alone.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "p:has(> img:only-child)" in html
+    assert "max-height: 66%;" in html
+
+
 def test_quotation_source_standardized_to_slide_color(fixtures, tmp_path):
     # The cross-theme bridge gives `.quotation-source` the slide text colour
     # (`--fg`, `--inverse-fg` on dark slides) so it matches the quote in every
