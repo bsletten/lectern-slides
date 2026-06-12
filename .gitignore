@@ -18,3 +18,8 @@ dist/
 
 # PDF master cache (written into the output dir on -f pdf)
 .lectern-cache/
+
+# Editor backups (Emacs undo-tree, backups, autosaves)
+*.~undo-tree~
+*~
+\#*\#

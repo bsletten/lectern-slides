@@ -1,5 +1,3 @@
-<!-- slide: .center .middle .inverse data-background-image="bg-grid.svg" data-background-size="cover" -->
+<!-- slide: .center .middle .inverse data-background-image="stars.jpg" data-background-size="cover" -->
 
-# Content is a graph.
-
-## A slide is just one projection of it.
+# "Ye stars! which are the poetry of heaven!" - Lord Byron
