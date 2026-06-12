@@ -64,6 +64,17 @@ def test_build_sets_and_clears_error(fixtures, tmp_path):
     assert (tmp_path / "index.html").is_file()
 
 
+def test_build_honors_renderer_override(fixtures, tmp_path):
+    # `lectern watch -r remark` routes the override through to rebuilds.
+    server = _server(
+        fixtures / "render-deck", tmp_path, cli_overrides={"renderer": "remark"}
+    )
+    server.build()
+    assert server.error is None
+    html = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert "remarkjs.com" in html  # the remark adapter rendered, not reveal
+
+
 def test_build_records_error_without_crashing(tmp_path):
     write(tmp_path, "main.md", "# A\n\n<!-- include: missing.md -->\n")
     server = _server(tmp_path / "main.md", tmp_path / "out")

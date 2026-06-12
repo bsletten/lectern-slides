@@ -109,6 +109,14 @@ def test_partial_flag_replaces_search_dirs(tmp_path):
     assert "shared body" in result.stdout
 
 
+def test_watch_renderer_override_validated(fixtures):
+    # -r flows into the resolved config; an unknown renderer fails fast (before
+    # the server starts), which proves the override reaches config.renderer.
+    result = runner.invoke(app, ["watch", str(fixtures / "render-deck"), "-r", "bogus"])
+    assert result.exit_code == 1
+    assert "bogus" in result.stderr
+
+
 def test_watch_fails_fast_on_bad_source(tmp_path):
     # A resolution error must surface before the server starts (so the command
     # exits instead of blocking). A valid source would block on the server.

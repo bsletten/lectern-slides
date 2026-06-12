@@ -302,6 +302,12 @@ def watch(
     coi: bool | None = typer.Option(
         None, "--coi/--no-coi", help="Send COOP/COEP isolation headers."
     ),
+    renderer: str | None = typer.Option(
+        None,
+        "-r",
+        "--renderer",
+        help="Override the renderer (reveal/remark/marp/quarto).",
+    ),
     theme: str | None = typer.Option(
         None, "-t", "--theme", help="Override the theme (bundled name or path)."
     ),
@@ -330,6 +336,7 @@ def watch(
     from .serve import LiveReloadServer, watch_paths
 
     overrides = {
+        "renderer": renderer,
         "theme": theme,
         "asset_base": asset_base,
         **_assembly_overrides(remark_compat, partial, max_include_depth, aspect),
