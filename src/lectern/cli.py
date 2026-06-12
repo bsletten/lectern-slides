@@ -95,6 +95,138 @@ def _leaf_origin(keys: list[str], layers: dict[str, dict]) -> str:
     return "default"
 
 
+def _titleize(name: str) -> str:
+    """A human title from a directory name (``my-talk`` -> ``My Talk``)."""
+    cleaned = name.replace("-", " ").replace("_", " ").strip()
+    return cleaned.title() if cleaned else "My Deck"
+
+
+def _user_config_author() -> str | None:
+    """The ``author`` from the user config (``~/.config/lectern/config.toml``),
+    if set — so ``new`` can inherit it instead of writing a name into the deck."""
+    from .config import load_toml, user_config_path
+
+    path = user_config_path()
+    if not path.is_file():
+        return None
+    try:
+        data = load_toml(path)
+    except LecternError:
+        return None  # a malformed user config is reported by other commands
+    author = data.get("author")
+    return author.strip() if isinstance(author, str) and author.strip() else None
+
+
+_TITLE_SLIDE = """\
+<!-- slide: .center .middle -->
+
+# {title}
+
+A new deck, assembled by Lectern.
+"""
+
+_CONTENT_SLIDE = """\
+# Getting Started
+
+- Edit these slides in `slides/`, and list them in `deck.toml`.
+- Live, reloading preview: `lectern watch {where}`
+- Build static HTML:       `lectern build {where}`
+- Export a PDF:            `lectern build {where} -f pdf`
+"""
+
+
+@app.command(name="new")
+def new_cmd(
+    directory: Path = typer.Argument(
+        Path("."),
+        metavar="[DIRECTORY]",
+        help="Where to scaffold the deck — created if missing (default: current dir).",
+    ),
+    title: str | None = typer.Option(
+        None, "--title", help="Deck title (default: derived from the directory name)."
+    ),
+    author: str | None = typer.Option(
+        None,
+        "--author",
+        help="Author name. Default: your user config's author, else 'Deck Author'.",
+    ),
+    theme: str = typer.Option(
+        "base", "-t", "--theme", help="Bundled theme name (default: base)."
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Overwrite deck.toml / starter slides if they exist."
+    ),
+) -> None:
+    """Scaffold a new deck (deck.toml + a couple of slides) in DIRECTORY."""
+    target = directory.expanduser()
+    where = str(directory)  # echo next-step commands with what the user typed
+
+    deck_toml = target / "deck.toml"
+    slides_dir = target / "slides"
+    title_md = slides_dir / "00-title.md"
+    content_md = slides_dir / "10-content.md"
+
+    existing = [p for p in (deck_toml, title_md, content_md) if p.exists()]
+    if existing and not force:
+        names = ", ".join(p.name for p in existing)
+        raise _fail(
+            ConfigError(
+                f"would overwrite existing file(s): {names} — pass --force to replace"
+            )
+        )
+
+    deck_title = title or _titleize(target.resolve().name)
+
+    # Author: an explicit flag wins; otherwise inherit from the user config so a
+    # personal name is never written into (and committed with) the deck. Only
+    # fall back to a placeholder when there's nothing to inherit.
+    inherited = None if author else _user_config_author()
+    if author:
+        author_line = f'author   = "{author}"'
+    elif inherited:
+        author_line = (
+            "# author is inherited from your user config "
+            "(~/.config/lectern/config.toml)"
+        )
+    else:
+        author_line = (
+            'author   = "Deck Author"   '
+            "# your name, or set it once in ~/.config/lectern/config.toml"
+        )
+
+    deck = (
+        f'title    = "{deck_title}"\n'
+        f"{author_line}\n"
+        'renderer = "reveal"\n'
+        f'theme    = "{theme}"\n'
+        'aspect   = "16:9"\n'
+        "\n"
+        "slides = [\n"
+        '  "slides/00-title.md",\n'
+        '  "slides/10-content.md",\n'
+        "]\n"
+    )
+
+    slides_dir.mkdir(parents=True, exist_ok=True)
+    deck_toml.write_text(deck, encoding="utf-8")
+    title_md.write_text(_TITLE_SLIDE.format(title=deck_title), encoding="utf-8")
+    content_md.write_text(_CONTENT_SLIDE.format(where=where), encoding="utf-8")
+
+    typer.secho(f"scaffolded a new deck in {target.resolve()}", fg=typer.colors.GREEN)
+    typer.echo("  + deck.toml")
+    typer.echo("  + slides/00-title.md")
+    typer.echo("  + slides/10-content.md")
+    if inherited:
+        typer.echo(f"  author inherited from your user config: {inherited}")
+    elif not author:
+        typer.echo(
+            '  author: "Deck Author" — set `author = "…"` in '
+            "~/.config/lectern/config.toml to reuse it across decks"
+        )
+    typer.secho("\nnext:", bold=True)
+    typer.echo(f"  lectern watch {where}")
+
+
 @app.command(name="assemble")
 def assemble_cmd(
     source: Path = typer.Argument(

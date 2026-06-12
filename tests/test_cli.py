@@ -129,3 +129,70 @@ def test_version():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "lectern" in result.stdout
+
+
+def _xdg(tmp_path, author=None):
+    """An isolated XDG_CONFIG_HOME env, optionally with a user-config author."""
+    cfg = tmp_path / "xdg"
+    if author is not None:
+        d = cfg / "lectern"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "config.toml").write_text(f'author = "{author}"\n', encoding="utf-8")
+    return {"XDG_CONFIG_HOME": str(cfg)}
+
+
+def test_new_scaffolds_and_checks_clean(tmp_path):
+    deck = tmp_path / "talk"
+    result = runner.invoke(app, ["new", str(deck)], env=_xdg(tmp_path))
+    assert result.exit_code == 0
+    assert (deck / "deck.toml").is_file()
+    assert (deck / "slides" / "00-title.md").is_file()
+    assert (deck / "slides" / "10-content.md").is_file()
+    # the scaffolded deck assembles cleanly
+    check = runner.invoke(app, ["check", str(deck)], env=_xdg(tmp_path))
+    assert check.exit_code == 0
+
+
+def test_new_defaults_to_current_directory(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["new"], env=_xdg(tmp_path))
+    assert result.exit_code == 0
+    assert (tmp_path / "deck.toml").is_file()
+    # title is derived from the directory name (`-`/`_` become spaces)
+    expected = tmp_path.name.replace("-", " ").replace("_", " ").title()
+    assert f'title    = "{expected}"' in (tmp_path / "deck.toml").read_text("utf-8")
+
+
+def test_new_author_defaults_to_placeholder(tmp_path):
+    deck = tmp_path / "talk"
+    runner.invoke(app, ["new", str(deck)], env=_xdg(tmp_path))  # no user-config author
+    assert 'author   = "Deck Author"' in (deck / "deck.toml").read_text("utf-8")
+
+
+def test_new_author_inherited_from_user_config_not_written(tmp_path):
+    deck = tmp_path / "talk"
+    result = runner.invoke(
+        app, ["new", str(deck)], env=_xdg(tmp_path, author="Ada Lovelace")
+    )
+    assert result.exit_code == 0
+    toml = (deck / "deck.toml").read_text("utf-8")
+    assert "Ada Lovelace" not in toml  # the name is never committed into the deck
+    assert "inherited from your user config" in toml
+
+
+def test_new_author_flag_wins(tmp_path):
+    deck = tmp_path / "talk"
+    runner.invoke(
+        app, ["new", str(deck), "--author", "Grace H."], env=_xdg(tmp_path, author="X")
+    )
+    assert 'author   = "Grace H."' in (deck / "deck.toml").read_text("utf-8")
+
+
+def test_new_refuses_overwrite_without_force(tmp_path):
+    deck = tmp_path / "talk"
+    assert runner.invoke(app, ["new", str(deck)], env=_xdg(tmp_path)).exit_code == 0
+    again = runner.invoke(app, ["new", str(deck)], env=_xdg(tmp_path))
+    assert again.exit_code == 1
+    assert "overwrite" in again.stderr
+    forced = runner.invoke(app, ["new", str(deck), "--force"], env=_xdg(tmp_path))
+    assert forced.exit_code == 0

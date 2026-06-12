@@ -41,6 +41,10 @@ playwright install chromium           # one-time: the headless browser for PDF
 directory order), a **`.toml` manifest**, or a single **`.md` file**.
 
 ```bash
+# New: scaffold a deck (deck.toml + a couple of slides) in a dir — default: cwd
+lectern new                                          # scaffold in the current dir
+lectern new ./talks/ai-sec                           # ...or in a dir (created if missing)
+
 # Assemble: expand includes / #1-3 ranges / partials into one Markdown deck
 lectern assemble ./talks/ai-sec -o assembled.md     # omit -o to write to stdout
 
@@ -83,9 +87,16 @@ absolute/`~` paths there, since relative paths resolve against each deck's root)
 
 ```toml
 # ~/.config/lectern/config.toml
+author   = "Your Name"            # inherited by every deck — never committed per-deck
 theme    = "house"                # a bundled name, or an absolute/~ path
 partials = ["~/talks/_lib"]
 ```
+
+Putting `author` here is the recommended way to set your name: `lectern new`
+reads it and **leaves it out of the generated `deck.toml`** (a comment notes it's
+inherited), so your name is never committed into a deck repo — it's filled in at
+build time from this file. With no user-config author, `lectern new` writes an
+`author = "Deck Author"` placeholder instead (override with `--author`).
 
 Inspect the effective, merged config and **where each value came from** with:
 
