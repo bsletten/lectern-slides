@@ -196,3 +196,62 @@ def test_new_refuses_overwrite_without_force(tmp_path):
     assert "overwrite" in again.stderr
     forced = runner.invoke(app, ["new", str(deck), "--force"], env=_xdg(tmp_path))
     assert forced.exit_code == 0
+
+
+def _deck_with_dirs(tmp_path):
+    """A minimal manifest deck plus a populated dist/ and build/ cache."""
+    write(tmp_path, "deck.toml", 'slides = ["slides/a.md"]\n')
+    write(tmp_path, "slides/a.md", "# A\n")
+    write(tmp_path, "dist/index.html", "<html></html>")
+    write(tmp_path, "build/.lectern-cache/master-x.pdf", "%PDF")
+    return tmp_path
+
+
+def test_clean_removes_out_dir_keeps_build(tmp_path):
+    deck = _deck_with_dirs(tmp_path)
+    result = runner.invoke(app, ["clean", str(deck), "-y"])
+    assert result.exit_code == 0
+    assert not (deck / "dist").exists()
+    assert (deck / "build" / ".lectern-cache").exists()  # cache preserved
+
+
+def test_clean_all_removes_build_too(tmp_path):
+    deck = _deck_with_dirs(tmp_path)
+    result = runner.invoke(app, ["clean", str(deck), "--all", "-y"])
+    assert result.exit_code == 0
+    assert not (deck / "dist").exists()
+    assert not (deck / "build").exists()
+
+
+def test_clean_dry_run_removes_nothing(tmp_path):
+    deck = _deck_with_dirs(tmp_path)
+    result = runner.invoke(app, ["clean", str(deck), "--all", "--dry-run"])
+    assert result.exit_code == 0
+    assert "would remove" in result.stdout
+    assert (deck / "dist").exists() and (deck / "build").exists()
+
+
+def test_clean_prompts_without_yes(tmp_path):
+    deck = _deck_with_dirs(tmp_path)
+    # answering "n" aborts and leaves everything in place
+    result = runner.invoke(app, ["clean", str(deck)], input="n\n")
+    assert result.exit_code != 0
+    assert (deck / "dist").exists()
+
+
+def test_clean_refuses_deck_root_as_out_dir(tmp_path):
+    write(tmp_path, "deck.toml", 'out_dir = "."\nslides = ["slides/a.md"]\n')
+    write(tmp_path, "slides/a.md", "# A\n")
+    result = runner.invoke(app, ["clean", str(tmp_path), "-y"])
+    assert result.exit_code == 0
+    assert "is the deck root" in result.stderr
+    assert (tmp_path / "slides" / "a.md").exists()  # source untouched
+
+
+def test_clean_refuses_source_dir_as_out_dir(tmp_path):
+    write(tmp_path, "deck.toml", 'out_dir = "slides"\nslides = ["slides/a.md"]\n')
+    write(tmp_path, "slides/a.md", "# A\n")
+    result = runner.invoke(app, ["clean", str(tmp_path), "-y"])
+    assert result.exit_code == 0
+    assert "source/input directory" in result.stderr
+    assert (tmp_path / "slides" / "a.md").exists()

@@ -584,6 +584,112 @@ def _emit_kv(label: str, value: object, origin: str) -> None:
     typer.secho(f"   ({origin})", fg=(typer.colors.BRIGHT_BLACK if dim else None))
 
 
+def _clean_protected(resolved) -> set[Path]:
+    """Directories `clean` must never remove: the deck root, partials/theme
+    search dirs, a local ``asset_base``, the theme file's dir, and every dir that
+    holds a source slide. Used to keep `clean` to disposable output only."""
+    root = resolved.root
+    prot = {root, *resolved.partial_dirs, *resolved.theme_dirs}
+    for entry in resolved.entries:
+        prot.add((root / entry.split("#", 1)[0]).parent)
+    ab = resolved.config.asset_base
+    if ab and "://" not in ab:
+        p = Path(ab).expanduser()
+        prot.add(p if p.is_absolute() else root / p)
+    theme = resolved.config.theme
+    if theme and theme.endswith(".css"):
+        p = Path(theme).expanduser()
+        prot.add((p if p.is_absolute() else root / p).parent)
+    return {p.resolve() for p in prot}
+
+
+def _clean_unsafe(candidate: Path, resolved) -> str | None:
+    """Why ``candidate`` must NOT be removed, or ``None`` if it's safe — a
+    disposable directory strictly inside the deck root that holds no source."""
+    root = resolved.root.resolve()
+    c = candidate.resolve()
+    if c == root:
+        return "is the deck root"
+    if root not in c.parents:
+        return "is outside the deck root"
+    protected = _clean_protected(resolved)
+    if c in protected:
+        return "is a deck source/input directory"
+    if any(c in p.parents for p in protected):
+        return "contains deck source files"
+    return None
+
+
+@app.command(name="clean")
+def clean_cmd(
+    source: Path = typer.Argument(
+        Path("."),
+        metavar="[SOURCE]",
+        help="Deck dir, manifest, or .md file (default: current dir).",
+    ),
+    remove_cache: bool = typer.Option(
+        False,
+        "--all",
+        "--cache",
+        help="Also remove the build dir (the cached PDF master).",
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="List what would be removed; delete nothing."
+    ),
+    yes: bool = typer.Option(
+        False, "-y", "--yes", help="Skip the confirmation prompt."
+    ),
+    config: Path | None = typer.Option(
+        None, "--config", help="Override the deck manifest (.toml)."
+    ),
+) -> None:
+    """Remove a deck's generated output (the out_dir; also the build_dir with --all).
+
+    Only ever removes the deck's configured, deck-root-relative ``out_dir`` /
+    ``build_dir`` — never a source, partials, theme, or asset directory.
+    """
+    try:
+        resolved = resolve_source(source, config_override=config)
+    except LecternError as e:
+        raise _fail(e) from None
+
+    candidates = [("out_dir", resolved.out_dir)]
+    if remove_cache:
+        candidates.append(("build_dir", resolved.build_dir))
+
+    targets: list[tuple[str, Path]] = []
+    for label, path in candidates:
+        reason = _clean_unsafe(path, resolved)
+        if reason is not None:
+            typer.secho(
+                f"  skip {label} ({path}) — {reason}",
+                fg=typer.colors.YELLOW,
+                err=True,
+            )
+        elif not path.exists():
+            typer.echo(f"  {label}: {path} — nothing to remove")
+        else:
+            targets.append((label, path))
+
+    if not targets:
+        typer.secho("nothing to clean.", fg=typer.colors.GREEN)
+        return
+
+    typer.secho("would remove:" if dry_run else "to remove:", bold=True)
+    for label, path in targets:
+        typer.echo(f"  {label}: {path}")
+    if dry_run:
+        return
+    if not yes:
+        typer.confirm("proceed?", abort=True)
+
+    import shutil
+
+    for _label, path in targets:
+        shutil.rmtree(path)
+        typer.secho(f"  removed {path}", fg=typer.colors.GREEN)
+
+
 def _version_callback(value: bool) -> None:
     if value:
         typer.echo(f"lectern {__version__}")

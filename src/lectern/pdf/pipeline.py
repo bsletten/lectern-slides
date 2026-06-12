@@ -1,9 +1,11 @@
 """Orchestrate the PDF export: master (cached) → impose → grayscale → write.
 
 ``build_pdf`` is what the reveal adapter calls for ``-f pdf``. The slow part — the
-Chromium master render — is content-hashed and cached under the output dir, so
-re-exporting the same deck at a different ``layout`` or in B&W re-runs only the
-cheap imposition / conversion, never Chromium (``PDF-EXPORT.md`` § Caching).
+Chromium master render — is content-hashed and cached under the deck's
+``build_dir`` (so ``lectern clean`` of the ``out_dir`` keeps it; ``clean --all``
+drops it), so re-exporting the same deck at a different ``layout`` or in B&W
+re-runs only the cheap imposition / conversion, never Chromium
+(``PDF-EXPORT.md`` § Caching).
 """
 
 from __future__ import annotations
@@ -29,6 +31,15 @@ if TYPE_CHECKING:
     from ..preprocess import AssembledDeck
 
 _CACHE_DIR = ".lectern-cache"
+
+
+def _cache_dir(root: Path, config: Config) -> Path:
+    """The PDF master cache, kept under the deck's ``build_dir`` (a reusable
+    cache) so cleaning the ``out_dir`` doesn't discard it — only ``clean --all``
+    (which removes ``build_dir``) does. Resolves like every deck path: relative
+    to the deck root, absolute/``~`` pass through."""
+    build = Path(config.build_dir).expanduser()
+    return (build if build.is_absolute() else root / build) / _CACHE_DIR
 
 
 def _slide_notes(
@@ -76,7 +87,7 @@ def _render_master(
     key = hashlib.sha256(
         f"{html_text}|bg={opts.backgrounds}|steps={steps}".encode()
     ).hexdigest()[:16]
-    cache_dir = work_dir.parent / _CACHE_DIR
+    cache_dir = _cache_dir(deck.root, config)
     cache_dir.mkdir(parents=True, exist_ok=True)
     cached = cache_dir / f"master-{key}.pdf"
     if cached.is_file():

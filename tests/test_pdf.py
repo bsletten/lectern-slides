@@ -24,6 +24,19 @@ needs_pdf_libs = pytest.mark.skipif(
 
 
 # --------------------------------------------------------------------------- #
+# cache location (lives under build_dir, not out_dir)
+# --------------------------------------------------------------------------- #
+def test_cache_dir_under_build_dir(tmp_path):
+    from lectern.config import Config
+    from lectern.pdf.pipeline import _cache_dir
+
+    cfg = Config(build_dir="build")
+    assert _cache_dir(tmp_path, cfg) == tmp_path / "build" / ".lectern-cache"
+    # a custom (relative) build_dir is honored, resolved against the deck root
+    assert _cache_dir(tmp_path, Config(build_dir="cache")).parent.name == "cache"
+
+
+# --------------------------------------------------------------------------- #
 # options
 # --------------------------------------------------------------------------- #
 def test_defaults_resolve():
@@ -302,7 +315,13 @@ def test_end_to_end_pdf_build(fixtures, tmp_path):
     from lectern.render import get_renderer
 
     resolved = resolve_source(
-        fixtures / "render-deck", cli_overrides={"pdf": {"layout": "2up-notes"}}
+        fixtures / "render-deck",
+        # keep the master cache out of the shared fixture tree (build_dir is the
+        # deck root by default) — point it at the test's tmp dir instead.
+        cli_overrides={
+            "pdf": {"layout": "2up-notes"},
+            "build_dir": str(tmp_path / "build"),
+        },
     )
     deck = assemble_resolved(resolved)
     result = get_renderer("reveal").render(deck, resolved.config, tmp_path, "pdf")
@@ -313,5 +332,7 @@ def test_end_to_end_pdf_build(fixtures, tmp_path):
     text = pages[0].extract_text()
     assert "Hero Slide" in text
     assert "A speaker note for the builds slide." in text  # notes carried to handout
-    # master was cached for reuse across subsequent layout/color changes
-    assert (tmp_path / ".lectern-cache").is_dir()
+    # master was cached for reuse across subsequent layout/color changes —
+    # under the deck's build_dir (here redirected to tmp), not the out_dir.
+    assert (tmp_path / "build" / ".lectern-cache").is_dir()
+    assert not (tmp_path / ".lectern-cache").exists()

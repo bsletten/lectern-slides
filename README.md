@@ -60,7 +60,18 @@ lectern build ./talks/ai-sec -t ./themes/mine.css -o site
 
 # Live preview: rebuilds on change with SSE reload + build-error overlay
 lectern watch ./talks/ai-sec                         # serves http://127.0.0.1:8080
+
+# Clean: remove generated output (the out_dir). --all also drops the PDF cache
+lectern clean ./talks/ai-sec                         # removes dist/ (keeps build/ cache)
+lectern clean ./talks/ai-sec --all --yes             # also removes build/ (-y skips prompt)
 ```
+
+`out_dir` (`dist/`) is disposable rendered output; `build_dir` (`build/`) holds
+the reusable PDF master cache. `clean` removes `out_dir` and **keeps the cache**
+so the next PDF export is fast; `clean --all` removes both. It only ever deletes
+the deck's own `out_dir`/`build_dir` (deck-root-relative) — never a source,
+partials, theme, or asset directory — and prompts first unless you pass `-y`
+(preview with `--dry-run`).
 
 ### Configuration
 

@@ -16,7 +16,7 @@ dist/
 /dist/
 /build/
 
-# PDF master cache (written into the output dir on -f pdf)
+# PDF master cache (written under the deck's build_dir on -f pdf)
 .lectern-cache/
 
 # Editor backups (Emacs undo-tree, backups, autosaves)

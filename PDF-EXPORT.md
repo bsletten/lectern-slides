@@ -161,10 +161,13 @@ three options above.
 
 ## Caching & determinism
 
-The 1-up master is content-hashed and cached. Re-exporting `2up` then `4up` then
-`--bw` re-runs only imposition / conversion, not the (slow) Chromium render.
-Poster captures are cached per embed + `poster_at`. A given deck + options always
-produces a byte-stable master so diffs are meaningful.
+The 1-up master is content-hashed and cached under the deck's `build_dir`
+(`build/.lectern-cache/`). Re-exporting `2up` then `4up` then `--bw` re-runs only
+imposition / conversion, not the (slow) Chromium render. Poster captures are
+cached per embed + `poster_at`. A given deck + options always produces a
+byte-stable master so diffs are meaningful. Because the cache lives in
+`build_dir`, `lectern clean` (which clears `out_dir`) keeps it; `lectern clean
+--all` drops it.
 
 ## Milestone mapping
 
