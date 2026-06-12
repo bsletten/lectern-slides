@@ -86,6 +86,17 @@ def test_theme_css_and_layer_injected(fixtures, tmp_path):
     assert "--slide-w: 1024px" in html  # aspect override present
 
 
+def test_background_image_slide_is_transparent(fixtures, tmp_path):
+    # A slide with a reveal background must not paint its own opaque fill over it.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert 'data-background-image="assets/grid-' in html  # bg.md sets one
+    assert ".reveal .slides section.slide[data-background-image]" in html
+    assert "background: transparent !important;" in html
+    # reveal copies slide classes onto `.slide-background`; the bridge resets the
+    # leaked padding so a cover image fills the slide with no border.
+    assert ".reveal .slide-background { padding: 0 !important; }" in html
+
+
 def test_print_pdf_layout_bridge_present(fixtures, tmp_path):
     # reveal's print-pdf wraps each slide in `.pdf-page`; the bridge rule keyed
     # on `.print-pdf` re-asserts the slide padding/centering so the PDF master

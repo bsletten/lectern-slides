@@ -31,6 +31,31 @@
 }
 .reveal .slides section.slide > *:first-child { margin-top: 0; }
 
+/* When a slide declares a reveal background (image / video / color / gradient),
+   reveal paints it on a separate `.slide-background` layer *behind* the section.
+   A theme's opaque `.slide` (or `.slide.inverse`) fill would hide it, so make the
+   section transparent: the background shows through and the slide's text sits on
+   top. `!important` + the high-specificity selector win over any theme's fill.
+   Pair a background image with `.inverse` (light text) — or a scrim — for
+   legibility; this rule only stops the slide from blocking the image. */
+.reveal .slides section.slide[data-background-image],
+.reveal .slides section.slide[data-background-video],
+.reveal .slides section.slide[data-background-color],
+.reveal .slides section.slide[data-background-gradient],
+.reveal .slides section.slide[data-background] {
+  background: transparent !important;
+}
+
+/* reveal copies each slide's classes onto its `.slide-background` layer, so a
+   theme's `.slide` padding leaks onto the background and insets the image — a
+   border around it. Zero that padding (and pin the content) so a `cover` image
+   fills the slide edge to edge. Leave the layer's own background alone so reveal
+   can still honour `data-background-color`. NB: match `.slide-background`
+   wherever reveal puts it — under `.backgrounds` on screen, but moved into each
+   `.pdf-page` in print-pdf — so the PDF master fills too. */
+.reveal .slide-background { padding: 0 !important; }
+.reveal .slide-background .slide-background-content { inset: 0 !important; }
+
 /* Embedded live visualizations (iframe.embed: D3, WebGL, …) are capped to a
    fraction of the slide height, so they always leave room for the heading/body
    and never overflow the frame — independent of a theme's type scale. The slide
