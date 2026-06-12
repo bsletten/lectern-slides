@@ -31,6 +31,18 @@
 }
 .reveal .slides section.slide > *:first-child { margin-top: 0; }
 
+/* Embedded live visualizations (iframe.embed: D3, WebGL, …) are capped to a
+   fraction of the slide height, so they always leave room for the heading/body
+   and never overflow the frame — independent of a theme's type scale. The slide
+   section has a definite height, so this percentage resolves even though reveal
+   forces the visible section to display:block inline (which would defeat a
+   flex-shrink approach). The embed's own page resizes its canvas to fit. */
+.reveal .slides section.slide iframe.embed {
+  max-height: 60%;
+  min-height: 0;
+  max-width: 100%;
+}
+
 /* print-pdf wraps each slide in a `.pdf-page`, which breaks the `>` selectors
    above and lets reveal force `display:block; padding:0` — that jams content
    into the page edge and drops the anchor-grid centering. Re-assert the slide

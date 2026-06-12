@@ -37,6 +37,7 @@ them. That's the whole point.
 | `40-incremental.md`   | **Incremental builds** (`::: incremental`) + speaker notes |
 | `45-layout.md`        | **Content placement** — nine-point slide anchors + `::: {.place …}` boxes |
 | `50-animation.md`     | **Embedded D3.js animation** (isolated iframe → `assets/d3-bars.html`) |
+| `55-webgl.md`         | **Embedded WebGL animation** (isolated iframe → `assets/webgl-triangle.html`) |
 | `60-table.md`         | **Tables** (Markdown pipe table, themed) |
 | `70-math.md`          | **LaTeX** inline `$…$` and display `$$…$$` |
 | `80-closing.md`       | Closing slide + the theme-switch hint |
@@ -53,7 +54,9 @@ inject slide HTML via `innerHTML`, and browsers do **not** execute `<script>`
 tags added that way — an inline D3 script would silently do nothing. An isolated
 page (`assets/d3-bars.html`) runs normally, restarts cleanly on each view, and is
 exactly the shape the Phase-3 WASM/WebGPU component pipeline will formalize. This
-is the recommended pattern for any live visualization.
+is the recommended pattern for any live visualization — the WebGL slide
+(`assets/webgl-triangle.html`) uses the very same shape, including the `?static`
+deterministic frame and `window.lecternReady` poster-capture signal.
 
 **Math plugin.** `[reveal].math = "katex"` in `deck.toml` tells the reveal adapter
 to load the math plugin so `$…$` / `$$…$$` typeset. Without it they render as

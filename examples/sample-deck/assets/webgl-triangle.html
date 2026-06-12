@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WebGL — rotating triangle</title>
+<style>
+  /* Full height so the canvas's height:100% resolves against the iframe,
+     not against an auto-height body (which collapses to 0 when embedded). */
+  html, body { margin: 0; height: 100%; background: transparent; }
+  /* The canvas fills its iframe; CSS pixels, backed by a DPR-scaled buffer. */
+  #gl { display: block; width: 100%; height: 100%; }
+  .fallback { font: 14px/1.4 system-ui, sans-serif; color: #889; padding: 1rem; }
+</style>
+</head>
+<body>
+<canvas id="gl" width="720" height="360"
+        role="img" aria-label="Rotating WebGL triangle"></canvas>
+<script>
+  // The canonical "hello triangle", animated: one triangle with per-vertex
+  // colors, spun by a 2D rotation matrix built on the GPU each frame. Pure
+  // WebGL — no libraries. Lives in an isolated page (not inline in the slide)
+  // because reveal injects slide HTML via innerHTML, which never runs <script>.
+  const canvas = document.getElementById("gl");
+  const gl = canvas.getContext("webgl", { antialias: true, alpha: true });
+
+  if (!gl) {
+    canvas.outerHTML =
+      '<p class="fallback">WebGL is unavailable in this browser.</p>';
+  } else {
+    const VERT = `
+      attribute vec2 a_pos;
+      attribute vec3 a_color;
+      uniform float u_angle;
+      varying vec3 v_color;
+      void main() {
+        float c = cos(u_angle), s = sin(u_angle);
+        mat2 rot = mat2(c, -s, s, c);
+        gl_Position = vec4(rot * a_pos, 0.0, 1.0);
+        v_color = a_color;
+      }`;
+    const FRAG = `
+      precision mediump float;
+      varying vec3 v_color;
+      void main() { gl_FragColor = vec4(v_color, 1.0); }`;
+
+    function compile(type, src) {
+      const sh = gl.createShader(type);
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(sh));
+      }
+      return sh;
+    }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    // Interleaved [x, y, r, g, b] per vertex: an equilateral triangle whose
+    // corners carry the deck's accent hues.
+    const data = new Float32Array([
+       0.0,  0.7,  0.22, 0.74, 0.97,   // top    — sky
+      -0.7, -0.5,  0.51, 0.83, 0.46,   // left   — sage
+       0.7, -0.5,  0.96, 0.45, 0.36,   // right  — vermilion
+    ]);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+    const STRIDE = 5 * 4;
+    const a_pos = gl.getAttribLocation(prog, "a_pos");
+    gl.enableVertexAttribArray(a_pos);
+    gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, STRIDE, 0);
+    const a_color = gl.getAttribLocation(prog, "a_color");
+    gl.enableVertexAttribArray(a_color);
+    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, STRIDE, 2 * 4);
+
+    const u_angle = gl.getUniformLocation(prog, "u_angle");
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Fall back to the attribute size if layout hasn't given the canvas a
+      // box yet (e.g. an embedding iframe with no resolved height).
+      const cw = canvas.clientWidth || canvas.getAttribute("width");
+      const ch = canvas.clientHeight || canvas.getAttribute("height");
+      const w = Math.round(cw * dpr);
+      const h = Math.round(ch * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+
+    function draw(angle) {
+      resize();
+      gl.clearColor(0, 0, 0, 0);        // transparent — sit on the slide
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform1f(u_angle, angle);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    const still = new URLSearchParams(location.search).has("static")
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (still) {
+      // PDF / reduced-motion: paint one fixed frame and signal readiness so
+      // Lectern's poster capture knows when to screenshot.
+      draw(0.5);
+      window.lecternReady = true;
+    } else {
+      const start = performance.now();
+      (function frame(now) {
+        draw(((now - start) / 1000) * 0.6);  // ~0.6 rad/s
+        requestAnimationFrame(frame);
+      })(start);
+    }
+  }
+</script>
+</body>
+</html>

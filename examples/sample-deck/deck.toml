@@ -30,6 +30,7 @@ slides = [
   "slides/40-incremental.md",
   "slides/45-layout.md",
   "slides/50-animation.md",
+  "slides/55-webgl.md",
   "slides/60-table.md",
   "slides/70-math.md",
   "slides/80-closing.md",
