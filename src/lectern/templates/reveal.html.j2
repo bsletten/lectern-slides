@@ -41,6 +41,24 @@
   display: flex !important;
 }
 
+/* Standardize the quotation source across themes. Themes variously muted,
+   accent-coloured, or dimmed `.quotation-source` (and the "— " prefix), which
+   washed out — unreadable over photographic backgrounds. Give it the slide's
+   own text colour — the same token the quote uses (`--fg`, or `--inverse-fg` on
+   dark slides) — so it matches the quote regardless of how a theme wraps it.
+   (`inherit` is unreliable: the source can sit in a `<p>` a theme mutes.) It
+   stays distinct by its smaller size and the "— " prefix. Scoped to
+   `.quotation-source` only, so `.footnote`/`.label` keep their muted treatment. */
+.reveal .slides section.slide .quotation-source,
+.reveal .slides section.slide .quotation-source::before {
+  color: var(--fg) !important;
+  opacity: 1 !important;
+}
+.reveal .slides section.slide.inverse .quotation-source,
+.reveal .slides section.slide.inverse .quotation-source::before {
+  color: var(--inverse-fg) !important;
+}
+
 /* When a slide declares a reveal background (image / video / color / gradient),
    reveal paints it on a separate `.slide-background` layer *behind* the section.
    A theme's opaque `.slide` (or `.slide.inverse`) fill would hide it, so make the

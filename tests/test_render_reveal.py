@@ -86,6 +86,17 @@ def test_theme_css_and_layer_injected(fixtures, tmp_path):
     assert "--slide-w: 1024px" in html  # aspect override present
 
 
+def test_quotation_source_standardized_to_slide_color(fixtures, tmp_path):
+    # The cross-theme bridge gives `.quotation-source` the slide text colour
+    # (`--fg`, `--inverse-fg` on dark slides) so it matches the quote in every
+    # theme, instead of a per-theme muted/accent tint.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert ".reveal .slides section.slide .quotation-source" in html
+    assert "color: var(--fg) !important;" in html
+    assert "section.slide.inverse .quotation-source" in html
+    assert "color: var(--inverse-fg) !important;" in html
+
+
 def test_background_image_slide_is_transparent(fixtures, tmp_path):
     # A slide with a reveal background must not paint its own opaque fill over it.
     html, _ = _render(fixtures / "render-deck", tmp_path)
