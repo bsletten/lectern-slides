@@ -31,6 +31,16 @@
 }
 .reveal .slides section.slide > *:first-child { margin-top: 0; }
 
+/* reveal sets `display:block` inline on the visible slide (and `display:none` on
+   the rest), which beats the stylesheet `display:flex` above and defeats the
+   anchor-grid vertical centering (`.middle`/`.bottom`). Re-assert flex on the
+   *present* slide only — scoping to `.present` keeps reveal's `display:none` on
+   hidden slides, so they don't all show at once. */
+.reveal .slides > section.slide.present,
+.reveal .slides > section > section.slide.present {
+  display: flex !important;
+}
+
 /* When a slide declares a reveal background (image / video / color / gradient),
    reveal paints it on a separate `.slide-background` layer *behind* the section.
    A theme's opaque `.slide` (or `.slide.inverse`) fill would hide it, so make the

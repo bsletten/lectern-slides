@@ -97,6 +97,15 @@ def test_background_image_slide_is_transparent(fixtures, tmp_path):
     assert ".reveal .slide-background { padding: 0 !important; }" in html
 
 
+def test_present_slide_forced_flex_for_centering(fixtures, tmp_path):
+    # reveal sets `display:block` inline on the visible slide, defeating the
+    # anchor-grid vertical centering; the bridge re-asserts flex on `.present`
+    # only (so hidden slides keep reveal's display:none).
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "section.slide.present" in html
+    assert "display: flex !important;" in html
+
+
 def test_print_pdf_layout_bridge_present(fixtures, tmp_path):
     # reveal's print-pdf wraps each slide in `.pdf-page`; the bridge rule keyed
     # on `.print-pdf` re-asserts the slide padding/centering so the PDF master
