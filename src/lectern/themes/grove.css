@@ -118,7 +118,8 @@ body { font-family: var(--font-body); font-weight: 300; color: var(--fg);
 .slide.inverse { background: var(--inverse-bg); color: var(--inverse-fg); }
 .slide.inverse h1, .slide.inverse h2 { color: var(--inverse-fg); }
 .slide.inverse h2 { color: var(--inverse-muted); }
-.slide.inverse em, .slide.inverse h1 em, .slide.inverse a { color: var(--accent); }
+.slide.inverse em, .slide.inverse h1 em { color: var(--accent); }
+.slide.inverse a { color: var(--inverse-fg); border-bottom-color: var(--inverse-fg); }
 .slide.inverse ul > li::before, .slide.inverse ol > li::marker { color: var(--accent); }
 .slide.inverse td { border-bottom-color: var(--inverse-rule); }
 .slide.inverse .footnote { color: var(--inverse-muted); }

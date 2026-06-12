@@ -86,6 +86,15 @@ def test_theme_css_and_layer_injected(fixtures, tmp_path):
     assert "--slide-w: 1024px" in html  # aspect override present
 
 
+def test_on_dark_helper_forces_light_text(fixtures, tmp_path):
+    # `.on-dark` forces light text/links over a dark backdrop, independent of a
+    # theme's `.inverse` (which may be a light "moment" with dark text).
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "section.slide.on-dark" in html
+    assert "color: #f5f5f7 !important;" in html
+    assert "text-shadow:" in html  # legibility over busy imagery
+
+
 def test_quotation_source_standardized_to_slide_color(fixtures, tmp_path):
     # The cross-theme bridge gives `.quotation-source` the slide text colour
     # (`--fg`, `--inverse-fg` on dark slides) so it matches the quote in every

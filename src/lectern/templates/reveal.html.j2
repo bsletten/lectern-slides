@@ -59,6 +59,29 @@
   color: var(--inverse-fg) !important;
 }
 
+/* `.on-dark` — force light, legible text on a dark backdrop (a photo or video),
+   independent of a theme's `.inverse` treatment. A theme's `.inverse` may be a
+   *light* "moment" (cream/paper) whose dark text vanishes on a dark image; this
+   is the class to reach for on a dark background-image slide:
+   `<!-- slide: .on-dark data-background-image="…" -->`. Fixed near-white (not a
+   theme token, since the theme's own fg may be dark) plus a soft shadow for
+   legibility over busy imagery. Placed after the quotation rules so it wins. */
+.reveal .slides section.slide.on-dark { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55); }
+.reveal .slides section.slide.on-dark,
+.reveal .slides section.slide.on-dark h1,
+.reveal .slides section.slide.on-dark h2,
+.reveal .slides section.slide.on-dark h3,
+.reveal .slides section.slide.on-dark p,
+.reveal .slides section.slide.on-dark li,
+.reveal .slides section.slide.on-dark a,
+.reveal .slides section.slide.on-dark .quotation,
+.reveal .slides section.slide.on-dark .quotation-source,
+.reveal .slides section.slide.on-dark .quotation-source::before {
+  color: #f5f5f7 !important;
+  opacity: 1 !important;
+}
+.reveal .slides section.slide.on-dark a { text-decoration: underline; }
+
 /* When a slide declares a reveal background (image / video / color / gradient),
    reveal paints it on a separate `.slide-background` layer *behind* the section.
    A theme's opaque `.slide` (or `.slide.inverse`) fill would hide it, so make the

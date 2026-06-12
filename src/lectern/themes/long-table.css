@@ -136,6 +136,7 @@ body { font-family: var(--font-body); font-style: italic; font-weight: 400; colo
     var(--inverse-bg); }
 .slide.inverse a, .slide.inverse ul > li::before, .slide.inverse .pill, .slide.inverse .tag,
 .slide.inverse .card, .slide.inverse .ed-badge { border-color: var(--inverse-fg); }
+.slide.inverse a { color: var(--inverse-fg); }  /* was --fg: rust-on-rust, invisible */
 .slide.inverse th, .slide.inverse td { border-bottom-color: rgba(250,241,226,0.28); }
 .slide.inverse .card > h1, .slide.inverse .card > h2, .slide.inverse .card > h3 { border-bottom-color: rgba(250,241,226,0.3); }
 .slide.inverse :not(pre) > code { background: rgba(250,241,226,0.12); }

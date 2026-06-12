@@ -133,6 +133,7 @@ body { font-family: var(--font-body); font-weight: 400; color: var(--fg);
 .slide.inverse h1, .slide.inverse h2 { color: var(--paper-ink); }
 .slide.inverse p, .slide.inverse li, .slide.inverse td, .slide.inverse .quotation { color: var(--paper-ink); }
 .slide.inverse .footnote, .slide.inverse th, .slide.inverse .quotation-source { color: var(--paper-ink); opacity: 0.6; }
+.slide.inverse a { color: var(--paper-ink); border-bottom-color: var(--paper-ink); }
 .slide.inverse td { border-bottom-color: var(--paper-rule); }
 
 /* content classes */
