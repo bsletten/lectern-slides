@@ -80,8 +80,10 @@ def _format_slide(lowered, warnings: list[str]) -> str:
     bg = lowered.attrs.get("data-background-image")
     if bg:
         attrs["style"] = f"background-image:url({bg});background-size:cover"
+    if "aria-label" in lowered.attrs:  # accessible name -> the wrapper div
+        attrs["aria-label"] = lowered.attrs["aria-label"]
     for key in lowered.attrs:
-        if key != "data-background-image":
+        if key not in ("data-background-image", "aria-label"):
             warnings.append(
                 f"quarto: slide attribute '{key}' is not supported and was dropped"
             )

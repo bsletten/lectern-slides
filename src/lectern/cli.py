@@ -156,11 +156,14 @@ def check(
     max_include_depth: int | None = typer.Option(
         None, "--max-include-depth", help="Max nested-include depth."
     ),
+    a11y: bool = typer.Option(
+        True, "--a11y/--no-a11y", help="Run accessibility checks (default on)."
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
 ) -> None:
-    """Validate includes, ranges, and partials without rendering."""
+    """Validate includes, ranges, and partials (and accessibility) without rendering."""
     overrides = _assembly_overrides(remark_compat, partial, max_include_depth)
     try:
         deck = assemble(source, config_override=config, cli_overrides=overrides)
@@ -168,7 +171,15 @@ def check(
         raise _fail(e) from None
 
     _emit_warnings(deck.warnings)
-    suffix = " with warnings" if deck.warnings else ""
+    a11y_warnings = []
+    if a11y:
+        from .a11y import audit
+
+        a11y_warnings = audit(deck)
+        _emit_warnings(f"a11y: {w}" for w in a11y_warnings)
+
+    issues = len(deck.warnings) + len(a11y_warnings)
+    suffix = f" with {issues} warning(s)" if issues else ""
     typer.secho(
         f"ok: {deck.slide_count} slide(s) assembled cleanly{suffix}",
         fg=typer.colors.GREEN,

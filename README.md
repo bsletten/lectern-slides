@@ -171,6 +171,38 @@ All knobs also live under `[pdf]` in the manifest (CLI flags win). See
 `PDF-EXPORT.md` for the full set and `SPECIFICATION.md` for the source format and
 config reference. Run `lectern --help` (or `lectern build --help`) for everything.
 
+## Accessibility
+
+`lectern check` runs an accessibility audit by default (turn it off with
+`--no-a11y`). Like every Lectern diagnostic, each warning is **source-cited** —
+`file:line` or theme — so you can act on it. It flags the issues that genuinely
+break a screen-reader experience, and nothing noisy:
+
+- **Every slide needs an accessible name** — a heading *or* a `label`. Give an
+  image- or quotation-only slide a name with the slide directive:
+
+  ```markdown
+  <!-- slide: label="Loki and Freyja peering through the deck rails" -->
+  ```
+
+  `label` lowers to `aria-label` on the reveal `<section>` (`aria-label="…"`
+  works too). This is the right tool for a full-bleed `data-background-image`
+  slide, which has no alt slot of its own.
+- **Images carry alt text** via standard Markdown — `![A bar chart of token
+  probabilities](chart.png)`. An empty alt (`![](divider.svg)`) is the correct,
+  intentional way to mark an image *decorative*, so it isn't flagged.
+- **`<iframe>` embeds need a `title=`** (the D3/WebGL demos) for an accessible
+  name.
+- **Themes ship AA contrast.** The audit checks each theme's `--fg`/`--bg` and
+  `--inverse-*` tokens against WCAG AA and warns below 4.5:1.
+- **`.on-dark`** forces light, legible text (and links, plus a soft shadow) over
+  a dark backdrop, independent of a theme's `.inverse` treatment — reach for it
+  on a dark background-image slide:
+  `<!-- slide: .on-dark data-background-image="night.jpg" -->`.
+
+The bundled `examples/sample-deck` passes the audit, and a test keeps it that way
+as slides are added.
+
 ## What's here
 
 ```

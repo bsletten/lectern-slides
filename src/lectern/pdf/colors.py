@@ -66,6 +66,17 @@ def to_gray(value: str) -> str | None:
     return f"#{g:02x}{g:02x}{g:02x}"
 
 
+def contrast(a: str, b: str) -> float | None:
+    """WCAG 2.x contrast ratio between two hex colors (≥1), or ``None`` if either
+    value isn't a plain hex color (e.g. ``color-mix(...)`` — left to the browser)."""
+    ra, rb = _hex_to_rgb(a), _hex_to_rgb(b)
+    if ra is None or rb is None:
+        return None
+    la, lb = luminance(ra), luminance(rb)
+    hi, lo = max(la, lb), min(la, lb)
+    return (hi + 0.05) / (lo + 0.05)
+
+
 def gray_token_overrides(css: str) -> dict[str, str]:
     """For each color-valued token in the theme, its equal-luminance gray hex."""
     grays: dict[str, str] = {}

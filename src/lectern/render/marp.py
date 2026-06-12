@@ -55,7 +55,7 @@ def _format_slide(lowered, warnings: list[str]) -> str:
             f"marp: slide id '{lowered.ident}' is not supported and was dropped"
         )
     for key in lowered.attrs:
-        if key != "data-background-image":
+        if key not in ("data-background-image", "aria-label"):
             warnings.append(
                 f"marp: slide attribute '{key}' is not supported and was dropped"
             )

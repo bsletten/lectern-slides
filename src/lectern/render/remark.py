@@ -51,7 +51,7 @@ def _format_slide(lowered, warnings: list[str]) -> str:
     if bg:
         header.append(f"background-image: url({bg})")
     for key in lowered.attrs:
-        if key != "data-background-image":
+        if key not in ("data-background-image", "aria-label"):
             warnings.append(
                 f"remark: slide attribute '{key}' is not supported and was dropped"
             )

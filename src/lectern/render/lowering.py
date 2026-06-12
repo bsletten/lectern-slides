@@ -183,7 +183,10 @@ class _Scanner:
         if ident:
             self.out.ident = ident
         for key, value in attrs.items():
-            if key.lower() in ASSET_ATTRS:
+            # `label` is a friendly alias for the slide's accessible name.
+            if key == "label":
+                key = "aria-label"
+            elif key.lower() in ASSET_ATTRS:
                 value = self.resolver.resolve(value, self.current_dir, self.label)
             self.out.attrs[key] = value
 
