@@ -117,6 +117,14 @@ def _render_template(config, theme, slides, *, init_extra=None, extra_head="") -
         "height": theme.height,
         "margin": 0.04,
         "center": False,
+        # Use flex (not reveal's default block) as the display value for visible
+        # slides, so the themed `.slide` flex layout — and its `.middle`/`.bottom`
+        # anchor-grid centering — is what reveal applies inline while a slide is
+        # shown. This holds through transitions: a leaving slide stays flex-
+        # centered as it fades instead of snapping to block (top-aligned), which
+        # caused a visible text flash. Far slides still get `display:none`, so
+        # viewDistance/lazy embeds are unaffected.
+        "display": "flex",
         "hash": True,
         "controls": bool(rc.get("controls", True)),
         "progress": bool(rc.get("progress", True)),

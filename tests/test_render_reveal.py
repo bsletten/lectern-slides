@@ -117,13 +117,18 @@ def test_background_image_slide_is_transparent(fixtures, tmp_path):
     assert ".reveal .slide-background { padding: 0 !important; }" in html
 
 
-def test_present_slide_forced_flex_for_centering(fixtures, tmp_path):
-    # reveal sets `display:block` inline on the visible slide, defeating the
-    # anchor-grid vertical centering; the bridge re-asserts flex on `.present`
-    # only (so hidden slides keep reveal's display:none).
+def test_visible_slides_use_flex_display_for_centering(fixtures, tmp_path):
+    # reveal's default `display:block` for visible slides defeats the anchor-grid
+    # vertical centering, and — applied only to the present slide — made a leaving
+    # slide snap from flex-centered to block mid-transition (a text flash). We
+    # pass `display: "flex"` to Reveal.initialize so reveal applies flex inline to
+    # every visible slide; the centering then holds through transitions and hidden
+    # slides still get display:none. (No `!important` bridge rule any more.)
     html, _ = _render(fixtures / "render-deck", tmp_path)
-    assert "section.slide.present" in html
-    assert "display: flex !important;" in html
+    assert '"display": "flex"' in html
+    # the old `.present`-scoped flex bridge (the flash source) is gone; the
+    # print-pdf bridge still legitimately uses `display: flex !important`.
+    assert "section.slide.present" not in html
 
 
 def test_print_pdf_layout_bridge_present(fixtures, tmp_path):

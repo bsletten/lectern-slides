@@ -31,15 +31,14 @@
 }
 .reveal .slides section.slide > *:first-child { margin-top: 0; }
 
-/* reveal sets `display:block` inline on the visible slide (and `display:none` on
-   the rest), which beats the stylesheet `display:flex` above and defeats the
-   anchor-grid vertical centering (`.middle`/`.bottom`). Re-assert flex on the
-   *present* slide only — scoping to `.present` keeps reveal's `display:none` on
-   hidden slides, so they don't all show at once. */
-.reveal .slides > section.slide.present,
-.reveal .slides > section > section.slide.present {
-  display: flex !important;
-}
+/* The flex layout above is what vertically centers `.middle`/`.bottom` slides.
+   reveal would normally override it by setting `display:block` inline on a
+   visible slide — and only on the *present* one, so a leaving slide snapped
+   from flex-centered to block (top-aligned) mid-fade and flashed. We pass
+   `display: "flex"` to Reveal.initialize (see render/reveal.py) so reveal
+   applies *flex* inline to every visible slide instead; the layout then holds
+   through transitions and hidden slides still get `display:none`. No
+   stylesheet `!important` is needed to fight it. */
 
 /* Standardize the quotation source across themes. Themes variously muted,
    accent-coloured, or dimmed `.quotation-source` (and the "— " prefix), which
