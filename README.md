@@ -260,7 +260,8 @@ break a screen-reader experience, and nothing noisy:
 - **Region landmarks + focus** — each slide `<section>` is named (an ARIA
   `region`) from its heading (or its explicit `label`), so screen-reader users
   can navigate slide-to-slide; interactive content shows a visible
-  `:focus-visible` outline for keyboard users.
+  `:focus-visible` outline for keyboard users. On navigation the current slide
+  ("Slide 3 of 18: …") is announced via a polite `aria-live` region.
 - **Document language** — set `lang` (a BCP 47 tag like `en`, `fr`, `de`) in the
   config so assistive tech pronounces the content correctly; it becomes
   `<html lang>` (and the marp/quarto front-matter `lang`). Defaults to `en`.

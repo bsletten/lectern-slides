@@ -161,6 +161,15 @@ def test_focus_visible_styles_present(fixtures, tmp_path):
     assert "outline: 3px solid var(--accent)" in html
 
 
+def test_aria_live_announcer_present(fixtures, tmp_path):
+    # A polite live region announces the current slide on navigation.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert 'id="lectern-live"' in html
+    assert 'aria-live="polite"' in html
+    assert ".lectern-sr-only" in html  # visually hidden
+    assert "Reveal.on('slidechanged'" in html
+
+
 def test_region_labelling_script_present(fixtures, tmp_path):
     # Each slide section is named (region landmark) from its heading at runtime;
     # explicit label/aria-label is preserved. Guard the script against removal.

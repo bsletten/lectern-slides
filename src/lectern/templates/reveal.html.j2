@@ -196,6 +196,13 @@
   width: 100% !important;
 }
 
+/* Visually-hidden but screen-reader-available: the aria-live slide announcer. */
+.lectern-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+  white-space: nowrap; border: 0;
+}
+
 /* Visible keyboard focus, theme-independent: browser/theme defaults are easy to
    lose on links over a themed background. `:focus-visible` shows it for keyboard
    users only, in the theme accent (which the audit holds to >=3:1 vs --bg). */
@@ -228,6 +235,7 @@
 {% endif %}
 </head>
 <body>
+<div id="lectern-live" class="lectern-sr-only" aria-live="polite" aria-atomic="true"></div>
 <div class="reveal">
 <div class="slides">
 {% for slide in slides %}
@@ -271,6 +279,24 @@
       if (name) s.setAttribute('aria-label', name);
     });
   });
+
+  // Live announcer: speak the current slide on navigation, so screen-reader
+  // users hear the change (reveal doesn't announce it). Skipped in print-pdf
+  // (no navigation; every slide is laid out at once).
+  if (!location.search.includes('print-pdf')) {
+    const live = document.getElementById('lectern-live');
+    const announce = () => {
+      const cur = Reveal.getCurrentSlide();
+      if (!live || !cur) return;
+      const slides = Reveal.getSlides();
+      const pos = slides.indexOf(cur) + 1;
+      const h = cur.querySelector('h1, h2, h3, h4, h5, h6');
+      const name = cur.getAttribute('aria-label') || (h && h.textContent.trim()) || '';
+      live.textContent = `Slide ${pos} of ${slides.length}${name ? ': ' + name : ''}`;
+    };
+    Reveal.on('ready', announce);
+    Reveal.on('slidechanged', announce);
+  }
 </script>
 {% if mermaid %}
 <script type="module">
