@@ -235,6 +235,18 @@ break a screen-reader experience, and nothing noisy:
   intentional way to mark an image *decorative*, so it isn't flagged.
 - **`<iframe>` embeds need a `title=`** (the D3/WebGL demos) for an accessible
   name.
+- **Mermaid diagrams need an `accTitle`/`accDescr`** in the diagram source —
+  Mermaid renders them to the SVG's `<title>`/`<desc>` (+ `aria-labelledby`), a
+  text alternative for the graphic:
+
+  ````markdown
+  ```mermaid
+  flowchart LR
+    accTitle: Request flow
+    accDescr: The client calls the gateway, which routes to the services.
+    Client --> Gateway --> Services
+  ```
+  ````
 - **Themes ship AA contrast.** The audit checks each theme's `--fg`/`--bg` and
   `--inverse-*` tokens against WCAG AA and warns below 4.5:1.
 - **`.on-dark`** forces light, legible text (and links, plus a soft shadow) over

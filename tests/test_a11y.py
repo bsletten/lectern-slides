@@ -64,6 +64,31 @@ def test_heading_inside_code_fence_does_not_count(tmp_path):
     assert any("no heading or label" in w for w in warns)
 
 
+def test_mermaid_without_acc_warns(tmp_path):
+    write(tmp_path, "s.md", "# Flow\n\n```mermaid\nflowchart LR\n  A --> B\n```\n")
+    warns = _audit(tmp_path / "s.md")
+    assert any("mermaid" in w and "accTitle/accDescr" in w for w in warns)
+
+
+def test_mermaid_with_accdescr_ok(tmp_path):
+    src = (
+        "# Flow\n\n```mermaid\nflowchart LR\n  accDescr: A leads to B\n  A --> B\n```\n"
+    )
+    write(tmp_path, "s.md", src)
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_mermaid_with_acctitle_ok(tmp_path):
+    src = "# Flow\n\n```mermaid\nflowchart LR\n  accTitle: The flow\n  A --> B\n```\n"
+    write(tmp_path, "s.md", src)
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_non_mermaid_fence_not_flagged_as_diagram(tmp_path):
+    write(tmp_path, "s.md", "# Code\n\n```python\nA = 1\n```\n")
+    assert all("mermaid" not in w for w in _audit(tmp_path / "s.md"))
+
+
 def test_low_contrast_theme_warns(tmp_path):
     write(tmp_path, "theme.css", ":root { --fg: #777777; --bg: #888888; }\n")
     write(tmp_path, "s.md", "# Title\n\nbody\n")

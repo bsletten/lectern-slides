@@ -6,6 +6,8 @@ renderer loads Mermaid only when a diagram is present.
 
 ```mermaid
 flowchart LR
+  accTitle: Lectern's assemble-and-render pipeline
+  accDescr: Markdown is assembled into one deck, then rendered to either reveal HTML or a vector PDF.
   MD[Markdown] --> A[assemble]
   A --> R{render}
   R --> H[reveal HTML]

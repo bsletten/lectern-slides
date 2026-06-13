@@ -7,6 +7,8 @@ small and high-signal, the ones that genuinely break a screen-reader experience:
 * a slide with no accessible **name** — neither a heading nor a ``label`` /
   ``aria-label`` (so image- and quotation-only slides just add a ``label``);
 * an ``<iframe>`` embed with no ``title=``;
+* a ```` ```mermaid ```` diagram with no ``accTitle`` / ``accDescr`` (Mermaid
+  renders those to the SVG's ``<title>``/``<desc>`` + ``aria-labelledby``);
 * a theme whose primary text/background tokens fall below WCAG AA contrast.
 
 Markdown image *alt* is deliberately not linted: ``![](src)`` is the author's
@@ -19,7 +21,7 @@ import re
 from typing import TYPE_CHECKING
 
 from .render.lowering import is_blank_group, parse_tokens
-from .slides import closes_fence, fence_marker
+from .slides import closes_fence, fence_info, fence_marker
 
 if TYPE_CHECKING:
     from .preprocess import AssembledDeck
@@ -28,6 +30,8 @@ _PROVENANCE = "<!-- @from "
 _HEADING = re.compile(r"^\s*#{1,6}\s+\S")
 _RAW_HEADING = re.compile(r"<h[1-6][\s/>]", re.IGNORECASE)
 _SLIDE_DIRECTIVE = re.compile(r"^\s*<!--\s*slide:\s*(.+?)\s*-->\s*$")
+# Mermaid's accessibility directives (case-sensitive), single-line or block form.
+_ACC = re.compile(r"^\s*acc(?:Title|Descr)\b")
 
 
 def audit(deck: AssembledDeck) -> list[str]:
@@ -101,6 +105,40 @@ def _slide_warnings(number: int, group) -> list[str]:
                 )
             i = j
         i += 1
+
+    out.extend(_mermaid_warnings(group))
+    return out
+
+
+def _mermaid_warnings(group) -> list[str]:
+    """A ```mermaid diagram with no accTitle/accDescr has no text alternative."""
+    out: list[str] = []
+    fence = None
+    open_loc = None
+    is_mermaid = False
+    described = False
+    for outline in group:
+        text = outline.text
+        if fence is not None:
+            if closes_fence(text, fence):
+                if is_mermaid and not described:
+                    out.append(
+                        f"{open_loc}: a mermaid diagram has no accTitle/accDescr — "
+                        "add one (e.g. `accDescr: …` inside the diagram) so screen "
+                        "readers get a text alternative"
+                    )
+                fence = None
+                is_mermaid = False
+                described = False
+            elif _ACC.match(text):
+                described = True
+            continue
+        marker = fence_marker(text)
+        if marker is not None:
+            fence = marker
+            open_loc = outline.loc
+            is_mermaid = fence_info(text).split(" ")[0].lower() == "mermaid"
+            described = False
     return out
 
 
