@@ -28,6 +28,26 @@ Add the `remark` adapter so existing decks come along unchanged.
 when you want them, behind `available()` guards. A distinctive named theme or two
 beyond `base`. Still static content; still one author.
 
+## Diagrams (Mermaid)
+
+A neutral fenced ` ```mermaid ` block (valid CommonMark; degrades to a code
+block anywhere), lowered per renderer — the "neutral directive → flavor lowering"
+seam the marp/quarto adapters already use.
+
+- **Phase 1 — reveal + remark (done).** Shared `lowering.py` turns a `mermaid`
+  fence into a raw `<pre class="mermaid">`; the native HTML adapters load Mermaid
+  from a CDN only when a diagram is present (auto-detect, or force with
+  `[reveal].mermaid`), render it in-place as themed SVG (from the deck's design
+  tokens), and the PDF master waits for the async render so diagrams land in the
+  **vector** PDF. Known quirk: under `lectern watch` in Safari a label can sit a
+  little low (Safari mis-measures during the live-reload's transient layout);
+  built HTML and PDF are unaffected — preview with `--browser chrome` / `[serve].browser`.
+- **Phase 2 — quarto + marp.** quarto: lower to ` ```{mermaid} ` (native).
+  marp: pre-render to SVG via `@mermaid-js/mermaid-cli` behind an `available()`
+  guard, else degrade to a code block with a capability warning.
+- **Fallback (any renderer).** The isolated-iframe `embed` pattern remains the
+  escape hatch for full control or a renderer without native Mermaid.
+
 ## Phase 3 — Components (the WASM/WebGPU seam, finally used)
 
 Only now build the embed pipeline the dev server was prepared for:
