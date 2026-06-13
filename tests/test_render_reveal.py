@@ -69,6 +69,19 @@ def test_inline_span_lowered(fixtures, tmp_path):
     assert '<span class="accent">highlighted span</span>' in html
 
 
+def test_center_block_centers_but_keeps_pre_left_aligned(tmp_path):
+    # `::: {.center}` centers a block (e.g. an ASCII-art code fence) on an
+    # otherwise left-aligned slide; a <pre> inside keeps left-aligned text so its
+    # monospace columns stay put.
+    src = "<!-- slide: .left -->\n\n# Title\n\n::: {.center}\n```text\nart\n```\n:::\n"
+    write(tmp_path, "s.md", src)
+    html, _ = _render(tmp_path / "s.md", tmp_path / "out")
+    assert "section.slide > .center:not(.place)" in html
+    assert "align-self: center;" in html
+    center_rule = html[html.index("> .center:not(.place) > pre") :]
+    assert "text-align: left;" in center_rule[: center_rule.index("}")]
+
+
 def test_background_image_asset_resolved_on_section(fixtures, tmp_path):
     html, result = _render(fixtures / "render-deck", tmp_path)
     assert 'data-background-image="assets/grid-' in html

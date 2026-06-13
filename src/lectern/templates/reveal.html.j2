@@ -178,6 +178,21 @@
   height: 100%;
 }
 
+/* `::: {.center}` centers one block within the slide's column without disturbing
+   the title/body alignment — handy for an ASCII-art code fence on an otherwise
+   left-aligned slide. `align-self` centers the block itself (it shrink-wraps its
+   content under the slide's flex layout); a contained `<pre>` keeps left-aligned
+   text so its monospace columns stay put. `.place` is positioned absolutely, so
+   it's excluded. */
+.reveal .slides section.slide > .center:not(.place) {
+  align-self: center;
+  max-width: 100%;
+  text-align: center;
+}
+.reveal .slides section.slide > .center:not(.place) > pre {
+  text-align: left;
+}
+
 /* Mermaid diagrams: the source `<pre class="mermaid">` is swapped for a
    `<div class="mermaid">` once rendered (see the script), so `.mermaid` matches
    both. Center the diagram and cap the SVG to a fraction of the slide so a big
