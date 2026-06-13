@@ -155,6 +155,13 @@ def _render_template(
         "controls": bool(rc.get("controls", True)),
         "progress": bool(rc.get("progress", True)),
         "transition": rc.get("transition", "none"),
+        # Switch slide backgrounds instantly. Slide backgrounds here are opaque
+        # theme fills on the section; reveal's default `fade` crossfades its
+        # separate background layer, and mid-crossfade both copies are partly
+        # transparent — so the (light) viewport bleeds through as a flash, most
+        # visible going to/from/between dark `.inverse` slides. Content still
+        # honors `[reveal].transition`; only the background stops crossfading.
+        "backgroundTransition": "none",
         "slideNumber": rc.get("slide_number", False),
     }
 

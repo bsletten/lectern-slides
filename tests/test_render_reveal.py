@@ -276,3 +276,11 @@ def test_font_awesome_absent_by_default(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
     assert "fontawesome" not in html.lower()
     assert "font-awesome/css" not in html
+
+
+def test_background_transition_is_none(fixtures, tmp_path):
+    # Slide backgrounds switch instantly: reveal's default `fade` crossfades its
+    # separate (here opaque) background layer, leaking the viewport color as a
+    # flash to/from/between dark `.inverse` slides.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert '"backgroundTransition": "none"' in html
