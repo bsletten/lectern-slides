@@ -6,8 +6,9 @@ the slide's prose body with Lectern directives and ``[text]{.cls}`` /
 ``::: {.cls}`` attribute syntax stripped, and the speaker notes rendered as prose.
 A screen-reader transcript, an SEO/no-JS fallback, or a hand-off document.
 
-Mermaid diagrams (not prose) collapse to their ``accDescr``/``accTitle`` text —
-the accessible description the audit nudges authors to write — or a placeholder.
+Non-prose embeds collapse to their accessible name: a Mermaid diagram to its
+``accTitle``/``accDescr``, an ``<iframe>`` to its ``title``. Author HTML comments
+are dropped (but ``<!-- … -->`` shown inside ``code`` spans is preserved).
 """
 
 from __future__ import annotations
@@ -27,13 +28,45 @@ _NOTES_OPEN = re.compile(r"^\s*<!--\s*notes\s*-->\s*$")
 _NOTES_CLOSE = re.compile(r"^\s*<!--\s*/notes\s*-->\s*$")
 _FENCE_DIV = re.compile(r"^(:::+)\s*(.*?)\s*$")
 _INLINE_SPAN = re.compile(r"\[([^\]]+)\]\{[^}]*\}")
-_HEADING = re.compile(r"^\s*#{1,6}\s+\S")
+_INLINE_CODE = re.compile(r"`+[^`]*`+")
+_HEADING = re.compile(r"^\s*#{1,6}\s+(.*?)\s*#*\s*$")
 _ACC = re.compile(r"^\s*acc(?:Title|Descr)\s*[:{]?\s*(.*?)\s*}?\s*$")
+_IFRAME_TITLE = re.compile(r"""title\s*=\s*["']([^"']*)["']""", re.IGNORECASE)
 
 
 def _clean(line: str) -> str:
     """Unwrap inline ``[text]{.cls}`` spans to their text."""
     return _INLINE_SPAN.sub(r"\1", line)
+
+
+def _strip_inline_comments(line: str) -> tuple[str, bool]:
+    """Strip ``<!-- … -->`` *outside* inline ``code`` spans.
+
+    Returns ``(cleaned, opens_multiline)`` — the latter true if an unterminated
+    ``<!--`` (a multi-line comment) opened. ``code`` spans are stashed first so a
+    literal ``<!-- … -->`` written as an example isn't treated as a comment.
+    """
+    codes: list[str] = []
+
+    def stash(m: re.Match) -> str:
+        codes.append(m.group(0))
+        return f"\x00{len(codes) - 1}\x00"
+
+    masked = _INLINE_CODE.sub(stash, line)
+    masked = re.sub(r"<!--.*?-->", "", masked)
+    opens = False
+    if "<!--" in masked:
+        masked = masked.split("<!--", 1)[0]
+        opens = True
+    masked = re.sub(r"\x00(\d+)\x00", lambda m: codes[int(m.group(1))], masked)
+    return masked, opens
+
+
+def _iframe_line(lines: list[str]) -> str:
+    """Collapse an ``<iframe>`` to a blockquote of its ``title`` (its a11y name)."""
+    m = _IFRAME_TITLE.search(" ".join(lines))
+    name = m.group(1).strip() if m else ""
+    return f"> {name}" if name else "> _(embedded view)_"
 
 
 def _slide_parts(group) -> tuple[list[str], list[str], str | None]:
@@ -44,6 +77,7 @@ def _slide_parts(group) -> tuple[list[str], list[str], str | None]:
     fence = None
     mermaid = False
     macc: list[str] = []
+    iframe: list[str] | None = None
     in_notes_comment = False
     in_comment = False  # generic multi-line <!-- ... --> author annotation
     div_stack: list[str] = []
@@ -51,6 +85,9 @@ def _slide_parts(group) -> tuple[list[str], list[str], str | None]:
 
     def in_notes() -> bool:
         return in_notes_comment or (bool(div_stack) and div_stack[-1] == "notes")
+
+    def sink() -> list[str]:
+        return notes if in_notes() else body
 
     for outline in group:
         line = outline.text
@@ -63,19 +100,30 @@ def _slide_parts(group) -> tuple[list[str], list[str], str | None]:
                 if m and m.group(1).strip():
                     macc.append(m.group(1).strip())
                 if closes_fence(line, fence):
-                    desc = " ".join(macc) if macc else "_(diagram)_"
-                    (notes if in_notes() else body).append(f"> {desc}")
+                    sink().append(f"> {' — '.join(macc) if macc else '_(diagram)_'}")
                     fence, mermaid, macc = None, False, []
                 continue
-            (notes if in_notes() else body).append(line)
+            sink().append(line)
             if closes_fence(line, fence):
                 fence = None
             continue
 
-        if in_comment:  # skip the rest of a multi-line author comment
-            if "-->" in line:
-                in_comment = False
+        if iframe is not None:  # gather a (possibly multi-line) <iframe> tag
+            iframe.append(line)
+            if "</iframe>" in line or line.rstrip().endswith("/>"):
+                sink().append(_iframe_line(iframe))
+                iframe = None
             continue
+
+        if in_comment:  # tail of a multi-line author comment
+            idx = line.find("-->")
+            if idx == -1:
+                continue
+            in_comment = False
+            line = line[idx + 3 :]
+            if not line.strip():
+                continue
+            # else: process the remainder of the line below
 
         if in_notes_comment:
             if _NOTES_CLOSE.match(line):
@@ -109,48 +157,68 @@ def _slide_parts(group) -> tuple[list[str], list[str], str | None]:
             fence = marker
             mermaid = fence_info(line).split(" ")[0].lower() == "mermaid"
             if not mermaid:
-                (notes if in_notes() else body).append(line)
+                sink().append(line)
             continue
 
-        # Generic author comments (the slide/notes/@from forms are handled above):
-        # drop them from the transcript, single- or multi-line.
+        if "<iframe" in line:  # collapse raw embeds to their accessible name
+            iframe = [line]
+            if "</iframe>" in line or line.rstrip().endswith("/>"):
+                sink().append(_iframe_line(iframe))
+                iframe = None
+            continue
+
+        # Generic author comments (slide/notes/@from forms handled above); drop
+        # them, but keep `<!-- … -->` shown inside an inline code span.
         if "<!--" in line:
-            head, rest = line.split("<!--", 1)
-            if "-->" in rest:
-                line = re.sub(r"<!--.*?-->", "", line)
-            else:
-                in_comment = True
-                line = head
+            line, in_comment = _strip_inline_comments(line)
             if not line.strip():
                 continue
 
-        (notes if in_notes() else body).append(_clean(line))
+        sink().append(_clean(line))
 
     return body, notes, label
 
 
-def _leads_with_heading(body: list[str]) -> bool:
+def _leading_heading(body: list[str]) -> str | None:
+    """The text of the slide's leading heading, or ``None`` if it has none."""
     for line in body:
         if line.strip():
-            return bool(_HEADING.match(line))
-    return False
+            m = _HEADING.match(line)
+            return m.group(1).strip() if m else None
+    return None
+
+
+def _without_leading_heading(body: list[str]) -> list[str]:
+    for i, line in enumerate(body):
+        if line.strip():
+            return body[i + 1 :]
+    return body
 
 
 def build_outline(deck: AssembledDeck, config) -> str:
     """Render the assembled deck as a linear, heading-structured Markdown outline."""
-    blocks: list[str] = [f"# {(config.title or '').strip() or 'Deck'}"]
+    title = (config.title or "").strip() or "Deck"
+    blocks: list[str] = [f"# {title}"]
     if (config.author or "").strip():
         blocks.append(f"_{config.author.strip()}_")
 
     number = 0
+    first = True
     for group in deck.slides():
         if is_blank_group(group):
             continue
         number += 1
         body, notes, label = _slide_parts(group)
 
-        if not _leads_with_heading(body):
+        lead = _leading_heading(body)
+        if first and lead is not None and lead == title:
+            # The title slide repeats the deck title — the document `# title`
+            # already names it, so drop the duplicate leading heading.
+            body = _without_leading_heading(body)
+        elif lead is None:
             blocks.append(f"## {(label or f'Slide {number}').strip()}")
+        first = False
+
         body_md = "\n".join(body).strip("\n")
         if body_md.strip():
             blocks.append(body_md)

@@ -72,3 +72,29 @@ def test_slide_directive_not_in_output(tmp_path):
     out = _outline(tmp_path / "s.md")
     assert "slide:" not in out
     assert "# T" in out
+
+
+def test_iframe_collapses_to_title(tmp_path):
+    write(
+        tmp_path,
+        "s.md",
+        '# Demo\n\n<iframe src="d3.html" title="Live chart"></iframe>\n',
+    )
+    out = _outline(tmp_path / "s.md")
+    assert "> Live chart" in out
+    assert "<iframe" not in out  # raw HTML dropped
+
+
+def test_comment_inside_inline_code_preserved(tmp_path):
+    # A `<!-- ... -->` shown as a code example is content, not a comment to strip.
+    write(tmp_path, "s.md", "# T\n\nUse `<!-- slide: .center -->` at the top.\n")
+    out = _outline(tmp_path / "s.md")
+    assert "`<!-- slide: .center -->`" in out
+
+
+def test_title_slide_heading_not_duplicated(tmp_path):
+    write(tmp_path, "deck.toml", 'title = "My Talk"\nslides = ["s.md"]\n')
+    write(tmp_path, "s.md", "# My Talk\n\nSubtitle line.\n")
+    out = _outline(tmp_path)
+    assert out.count("My Talk") == 1  # the doc title, not repeated by the slide
+    assert "Subtitle line." in out
