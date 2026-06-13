@@ -7,13 +7,15 @@ small and high-signal, the ones that genuinely break a screen-reader experience:
 * a slide with no accessible **name** — neither a heading nor a ``label`` /
   ``aria-label`` (so image- and quotation-only slides just add a ``label``);
 * an ``<iframe>`` embed with no ``title=``;
+* a raw HTML ``<img>`` with no ``alt`` attribute at all;
 * a ```` ```mermaid ```` diagram with no ``accTitle`` / ``accDescr`` (Mermaid
   renders those to the SVG's ``<title>``/``<desc>`` + ``aria-labelledby``);
 * a theme whose text tokens fall below WCAG AA contrast (4.5:1), or whose
   ``--accent`` (a graphical element) falls below WCAG non-text contrast (3:1).
 
-Markdown image *alt* is deliberately not linted: ``![](src)`` is the author's
-explicit "decorative" declaration, not a mistake.
+Only *raw* ``<img>`` (HTML passthrough) is linted for alt. Markdown ``![](src)``
+is left alone — an empty alt there is the author's explicit "decorative"
+declaration, not a mistake; ``alt=""`` says the same on a raw ``<img>``.
 """
 
 from __future__ import annotations
@@ -91,23 +93,58 @@ def _slide_warnings(number: int, group) -> list[str]:
             '`<!-- slide: label="…" -->` so screen readers can identify it'
         )
 
-    # `<iframe>` opening tags may wrap across lines; gather to the closing `>`.
-    i, n = 0, len(lines)
-    while i < n:
-        if "<iframe" in lines[i].text.lower():
-            loc, tag, j = lines[i].loc, lines[i].text, i
-            while ">" not in tag and j + 1 < n:
-                j += 1
-                tag += " " + lines[j].text
-            if "title=" not in tag.lower():
-                out.append(
-                    f"{loc}: an <iframe> embed has no title= — add one so the "
-                    "embed has an accessible name"
-                )
-            i = j
-        i += 1
+    for loc in _tags_missing_attr(group, "iframe", "title"):
+        out.append(
+            f"{loc}: an <iframe> embed has no title= — add one so the embed has "
+            "an accessible name"
+        )
+    # Raw HTML `<img>` (passthrough) with no `alt` at all. Markdown `![](src)` is
+    # left alone — empty alt there is the author's intentional "decorative".
+    for loc in _tags_missing_attr(group, "img", "alt"):
+        out.append(
+            f'{loc}: a raw <img> has no alt= — add alt text (use alt="" if it is '
+            "purely decorative)"
+        )
 
     out.extend(_mermaid_warnings(group))
+    return out
+
+
+_OPEN = {tag: re.compile(rf"<{tag}\b", re.IGNORECASE) for tag in ("iframe", "img")}
+
+
+def _tags_missing_attr(group, tag: str, attr: str) -> list[str]:
+    """Locs of raw ``<tag …>`` (outside code fences) with no ``attr=``.
+
+    Fence-aware, so a tag shown *inside* a code sample isn't flagged; opening
+    tags may wrap across lines, so we gather to the closing ``>``.
+    """
+    lines = [o for o in group if not o.is_separator]
+    has_attr = re.compile(rf"\b{attr}\s*=", re.IGNORECASE)
+    out: list[str] = []
+    fence = None
+    i, n = 0, len(lines)
+    while i < n:
+        text = lines[i].text
+        if fence is not None:
+            if closes_fence(text, fence):
+                fence = None
+            i += 1
+            continue
+        marker = fence_marker(text)
+        if marker is not None:
+            fence = marker
+            i += 1
+            continue
+        if _OPEN[tag].search(text):
+            loc, gathered, j = lines[i].loc, text, i
+            while ">" not in gathered and j + 1 < n:
+                j += 1
+                gathered += " " + lines[j].text
+            if not has_attr.search(gathered):
+                out.append(str(loc))
+            i = j
+        i += 1
     return out
 
 

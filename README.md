@@ -232,7 +232,9 @@ break a screen-reader experience, and nothing noisy:
   slide, which has no alt slot of its own.
 - **Images carry alt text** via standard Markdown — `![A bar chart of token
   probabilities](chart.png)`. An empty alt (`![](divider.svg)`) is the correct,
-  intentional way to mark an image *decorative*, so it isn't flagged.
+  intentional way to mark an image *decorative*, so it isn't flagged. A *raw*
+  `<img>` (HTML passthrough) with **no `alt` attribute at all** is flagged — add
+  `alt="…"` (or `alt=""` to mark it decorative).
 - **`<iframe>` embeds need a `title=`** (the D3/WebGL demos) for an accessible
   name.
 - **Mermaid diagrams need an `accTitle`/`accDescr`** in the diagram source —

@@ -57,6 +57,34 @@ def test_iframe_with_title_ok_even_multiline(tmp_path):
     assert _audit(tmp_path / "s.md") == []
 
 
+def test_raw_img_without_alt_warns(tmp_path):
+    write(tmp_path, "s.md", '# Pic\n\n<img src="photo.jpg">\n')
+    warns = _audit(tmp_path / "s.md")
+    assert any("<img>" in w and "alt=" in w for w in warns)
+
+
+def test_raw_img_with_alt_ok(tmp_path):
+    write(tmp_path, "s.md", '# Pic\n\n<img src="photo.jpg" alt="Two dogs">\n')
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_raw_img_with_empty_alt_ok(tmp_path):
+    # alt="" explicitly marks decorative — not flagged.
+    write(tmp_path, "s.md", '# Pic\n\n<img src="divider.svg" alt="">\n')
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_markdown_image_not_treated_as_raw_img(tmp_path):
+    # `![](src)` is Markdown, not a raw <img>; empty alt is intentional.
+    write(tmp_path, "s.md", "# Pic\n\n![](divider.svg)\n")
+    assert all("<img>" not in w for w in _audit(tmp_path / "s.md"))
+
+
+def test_img_inside_code_fence_not_flagged(tmp_path):
+    write(tmp_path, "s.md", '# HTML\n\n```html\n<img src="x.png">\n```\n')
+    assert all("<img>" not in w for w in _audit(tmp_path / "s.md"))
+
+
 def test_heading_inside_code_fence_does_not_count(tmp_path):
     # A `#` inside a code fence is not a heading; the slide is still unnamed.
     write(tmp_path, "s.md", "```python\n# not a heading\nx = 1\n```\n")
