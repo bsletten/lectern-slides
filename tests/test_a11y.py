@@ -96,6 +96,16 @@ def test_low_contrast_theme_warns(tmp_path):
     assert any("WCAG AA" in w and "body text" in w for w in warns)
 
 
+def test_low_accent_contrast_warns(tmp_path):
+    # Readable text, but a faint accent (graphical) -> non-text 3:1 warning only.
+    css = ":root { --fg: #111; --bg: #fff; --accent: #cfcfcf; }\n"
+    write(tmp_path, "theme.css", css)
+    write(tmp_path, "s.md", "# Title\n\nbody\n")
+    warns = _audit(tmp_path / "s.md", theme="theme.css")
+    assert any("accent" in w and "non-text" in w for w in warns)
+    assert not any("body text" in w for w in warns)  # text pair is fine
+
+
 def test_sample_deck_is_accessible():
     # Guard: the shipped sample deck must pass the audit, so slides added later
     # keep it accessible (heading/label, iframe titles, theme contrast).

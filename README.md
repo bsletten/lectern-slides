@@ -248,7 +248,9 @@ break a screen-reader experience, and nothing noisy:
   ```
   ````
 - **Themes ship AA contrast.** The audit checks each theme's `--fg`/`--bg` and
-  `--inverse-*` tokens against WCAG AA and warns below 4.5:1.
+  `--inverse-*` text tokens against WCAG AA (4.5:1), and `--accent` — a graphical
+  element (rules, list markers, mermaid diagram lines) — against WCAG non-text
+  (3:1).
 - **`.on-dark`** forces light, legible text (and links, plus a soft shadow) over
   a dark backdrop, independent of a theme's `.inverse` treatment — reach for it
   on a dark background-image slide:

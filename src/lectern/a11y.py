@@ -9,7 +9,8 @@ small and high-signal, the ones that genuinely break a screen-reader experience:
 * an ``<iframe>`` embed with no ``title=``;
 * a ```` ```mermaid ```` diagram with no ``accTitle`` / ``accDescr`` (Mermaid
   renders those to the SVG's ``<title>``/``<desc>`` + ``aria-labelledby``);
-* a theme whose primary text/background tokens fall below WCAG AA contrast.
+* a theme whose text tokens fall below WCAG AA contrast (4.5:1), or whose
+  ``--accent`` (a graphical element) falls below WCAG non-text contrast (3:1).
 
 Markdown image *alt* is deliberately not linted: ``![](src)`` is the author's
 explicit "decorative" declaration, not a mistake.
@@ -153,15 +154,21 @@ def _theme_warnings(deck: AssembledDeck) -> list[str]:
     tokens = parse_root_tokens(css)
 
     out: list[str] = []
-    for fg, bg, what in (
-        ("--fg", "--bg", "body text"),
-        ("--inverse-fg", "--inverse-bg", "inverse text"),
-    ):
+    # (fg token, bg token, min ratio, what). Text pairs use AA 4.5:1; the accent
+    # is a graphical element (rules, list markers, mermaid diagram lines/borders)
+    # held to WCAG non-text 3:1.
+    checks = (
+        ("--fg", "--bg", 4.5, "body text"),
+        ("--inverse-fg", "--inverse-bg", 4.5, "inverse text"),
+        ("--accent", "--bg", 3.0, "accent (rules, markers, diagram lines)"),
+    )
+    for fg, bg, minimum, what in checks:
         if fg in tokens and bg in tokens:
             ratio = contrast(tokens[fg], tokens[bg])
-            if ratio is not None and ratio < 4.5:
+            if ratio is not None and ratio < minimum:
+                standard = "WCAG AA" if minimum >= 4.5 else "WCAG non-text"
                 out.append(
                     f"theme '{name}': {what} ({tokens[fg]} on {tokens[bg]}) is "
-                    f"{ratio:.1f}:1, below WCAG AA (4.5:1)"
+                    f"{ratio:.1f}:1, below {standard} ({minimum:g}:1)"
                 )
     return out
