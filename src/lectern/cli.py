@@ -101,9 +101,10 @@ def _titleize(name: str) -> str:
     return cleaned.title() if cleaned else "My Deck"
 
 
-def _user_config_author() -> str | None:
-    """The ``author`` from the user config (``~/.config/lectern/config.toml``),
-    if set — so ``new`` can inherit it instead of writing a name into the deck."""
+def _user_config_str(key: str) -> str | None:
+    """A string value from the user config (``~/.config/lectern/config.toml``), if
+    set — so ``new`` can inherit it (author, theme) rather than baking a default
+    into the deck, which would shadow the user config (deck.toml beats it)."""
     from .config import load_toml, user_config_path
 
     path = user_config_path()
@@ -113,8 +114,8 @@ def _user_config_author() -> str | None:
         data = load_toml(path)
     except LecternError:
         return None  # a malformed user config is reported by other commands
-    author = data.get("author")
-    return author.strip() if isinstance(author, str) and author.strip() else None
+    value = data.get(key)
+    return value.strip() if isinstance(value, str) and value.strip() else None
 
 
 _TITLE_SLIDE = """\
@@ -150,8 +151,11 @@ def new_cmd(
         "--author",
         help="Author name. Default: your user config's author, else 'Deck Author'.",
     ),
-    theme: str = typer.Option(
-        "base", "-t", "--theme", help="Bundled theme name (default: base)."
+    theme: str | None = typer.Option(
+        None,
+        "-t",
+        "--theme",
+        help="Theme. Default: your user config's theme, else 'base'.",
     ),
     force: bool = typer.Option(
         False, "--force", help="Overwrite deck.toml / starter slides if they exist."
@@ -177,10 +181,11 @@ def new_cmd(
 
     deck_title = title or _titleize(target.resolve().name)
 
-    # Author: an explicit flag wins; otherwise inherit from the user config so a
-    # personal name is never written into (and committed with) the deck. Only
-    # fall back to a placeholder when there's nothing to inherit.
-    inherited = None if author else _user_config_author()
+    # Author / theme: an explicit flag wins; otherwise inherit from the user
+    # config rather than baking a value in — a value in deck.toml would shadow the
+    # user config (deck.toml beats it). Only fall back to a placeholder/default
+    # when there's nothing to inherit.
+    inherited = None if author else _user_config_str("author")
     if author:
         author_line = f'author   = "{author}"'
     elif inherited:
@@ -194,11 +199,22 @@ def new_cmd(
             "# your name, or set it once in ~/.config/lectern/config.toml"
         )
 
+    inherited_theme = None if theme else _user_config_str("theme")
+    if theme:
+        theme_line = f'theme    = "{theme}"'
+    elif inherited_theme:
+        theme_line = (
+            "# theme is inherited from your user config "
+            "(~/.config/lectern/config.toml)"
+        )
+    else:
+        theme_line = 'theme    = "base"'
+
     deck = (
         f'title    = "{deck_title}"\n'
         f"{author_line}\n"
         'renderer = "reveal"\n'
-        f'theme    = "{theme}"\n'
+        f"{theme_line}\n"
         'aspect   = "16:9"\n'
         "\n"
         "slides = [\n"
@@ -223,6 +239,8 @@ def new_cmd(
             '  author: "Deck Author" — set `author = "…"` in '
             "~/.config/lectern/config.toml to reuse it across decks"
         )
+    if inherited_theme:
+        typer.echo(f"  theme inherited from your user config: {inherited_theme}")
     typer.secho("\nnext:", bold=True)
     typer.echo(f"  lectern watch {where}")
 

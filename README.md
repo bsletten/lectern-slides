@@ -109,7 +109,11 @@ Putting `author` here is the recommended way to set your name: `lectern new`
 reads it and **leaves it out of the generated `deck.toml`** (a comment notes it's
 inherited), so your name is never committed into a deck repo — it's filled in at
 build time from this file. With no user-config author, `lectern new` writes an
-`author = "Deck Author"` placeholder instead (override with `--author`).
+`author = "Deck Author"` placeholder instead (override with `--author`). **`theme`
+works the same way** — `lectern new` inherits a user-config theme rather than
+baking one into the deck (a baked-in value would shadow the user config, since
+`deck.toml` outranks it); with none set it falls back to `base` (override with
+`--theme`).
 
 Inspect the effective, merged config and **where each value came from** with:
 

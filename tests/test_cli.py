@@ -141,13 +141,18 @@ def test_version():
     assert "lectern" in result.stdout
 
 
-def _xdg(tmp_path, author=None):
-    """An isolated XDG_CONFIG_HOME env, optionally with a user-config author."""
+def _xdg(tmp_path, author=None, theme=None):
+    """An isolated XDG_CONFIG_HOME env, optionally with user-config keys."""
     cfg = tmp_path / "xdg"
+    lines = []
     if author is not None:
+        lines.append(f'author = "{author}"')
+    if theme is not None:
+        lines.append(f'theme = "{theme}"')
+    if lines:
         d = cfg / "lectern"
         d.mkdir(parents=True, exist_ok=True)
-        (d / "config.toml").write_text(f'author = "{author}"\n', encoding="utf-8")
+        (d / "config.toml").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return {"XDG_CONFIG_HOME": str(cfg)}
 
 
@@ -265,3 +270,27 @@ def test_clean_refuses_source_dir_as_out_dir(tmp_path):
     assert result.exit_code == 0
     assert "source/input directory" in result.stderr
     assert (tmp_path / "slides" / "a.md").exists()
+
+
+def test_new_theme_inherited_from_user_config_not_written(tmp_path):
+    # A user-config theme must be inherited, not shadowed by a baked-in default.
+    deck = tmp_path / "talk"
+    result = runner.invoke(app, ["new", str(deck)], env=_xdg(tmp_path, theme="grove"))
+    assert result.exit_code == 0
+    toml = (deck / "deck.toml").read_text("utf-8")
+    assert 'theme    = "base"' not in toml  # no hardcoded default shadowing it
+    assert "theme is inherited from your user config" in toml
+
+
+def test_new_theme_flag_wins(tmp_path):
+    deck = tmp_path / "talk"
+    runner.invoke(
+        app, ["new", str(deck), "--theme", "signal"], env=_xdg(tmp_path, theme="grove")
+    )
+    assert 'theme    = "signal"' in (deck / "deck.toml").read_text("utf-8")
+
+
+def test_new_theme_defaults_to_base_without_user_config(tmp_path):
+    deck = tmp_path / "talk"
+    runner.invoke(app, ["new", str(deck)], env=_xdg(tmp_path))  # no user-config theme
+    assert 'theme    = "base"' in (deck / "deck.toml").read_text("utf-8")
