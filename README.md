@@ -276,6 +276,9 @@ break a screen-reader experience, and nothing noisy:
   becomes the PDF's `/Lang`, so screen readers can read the export. (Tagging is
   on by default; the structure survives the `1up` master — N-up imposition
   flattens it. `[pdf].tagged = false` to disable.)
+- **Forced colors** — under Windows High Contrast / `forced-colors: active`, links
+  are underlined (not distinguished by color alone) and the keyboard-focus ring
+  uses the system `Highlight` color, so cues survive the OS palette override.
 - **Reduced motion** — the live deck honors `prefers-reduced-motion: reduce`:
   reveal's slide/fragment/background transitions are zeroed, so slides change
   instantly (fragments still step, they just don't animate). The PDF master

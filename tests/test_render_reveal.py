@@ -185,6 +185,14 @@ def test_lang_is_configurable(fixtures, tmp_path):
     assert '<html lang="fr">' in html_fr
 
 
+def test_forced_colors_handling_present(fixtures, tmp_path):
+    # Windows High Contrast / forced-colors: links underlined (not colour-only),
+    # focus ring pinned to a system colour.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "@media (forced-colors: active)" in html
+    assert "outline-color: Highlight;" in html
+
+
 def test_mermaid_tooltip_hidden_in_print(fixtures, tmp_path):
     # Mermaid's body-appended tooltip helper would add a trailing blank PDF page;
     # hide it in print. Guard the rule against removal.

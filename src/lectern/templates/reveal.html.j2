@@ -235,6 +235,20 @@
     animation-delay: 0s !important;
   }
 }
+
+/* Forced colors (Windows High Contrast): the OS replaces the theme palette with a
+   limited system palette, so a cue the theme carried with colour alone needs a
+   non-colour fallback. Underline links (don't rely on the accent colour), and pin
+   the keyboard-focus ring to the system Highlight so it stays visible. */
+@media (forced-colors: active) {
+  .reveal .slides section a { text-decoration: underline; }
+  .reveal .slides section a:focus-visible,
+  .reveal .slides section button:focus-visible,
+  .reveal .slides section iframe:focus-visible,
+  .reveal .slides section [tabindex]:focus-visible {
+    outline-color: Highlight;
+  }
+}
 </style>
 {% if extra_head %}
 {{ extra_head }}
