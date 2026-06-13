@@ -139,3 +139,36 @@ def test_sample_deck_is_accessible():
     # keep it accessible (heading/label, iframe titles, theme contrast).
     deck = assemble(REPO / "examples" / "sample-deck")
     assert audit(deck) == []
+
+
+def test_font_awesome_bare_icon_warns(tmp_path):
+    write(tmp_path, "s.md", '# Icons\n\n<i class="fa-solid fa-house"></i>\n')
+    warns = _audit(tmp_path / "s.md")
+    assert any("Font Awesome" in w and "aria-hidden" in w for w in warns)
+
+
+def test_font_awesome_aria_hidden_ok(tmp_path):
+    icon = '<i class="fa-solid fa-bolt" aria-hidden="true"></i>'
+    write(tmp_path, "s.md", f"# Icons\n\n{icon}\n")
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_font_awesome_aria_label_ok(tmp_path):
+    write(
+        tmp_path,
+        "s.md",
+        '# Icons\n\n<i class="fa-brands fa-github" aria-label="GitHub"></i>\n',
+    )
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_font_awesome_in_code_fence_not_flagged(tmp_path):
+    body = '# Icons\n\n```html\n<i class="fa-solid fa-house"></i>\n```\n'
+    write(tmp_path, "s.md", body)
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_non_fa_italic_not_flagged(tmp_path):
+    # a plain <i> (or one without an fa- class) is not a Font Awesome icon
+    write(tmp_path, "s.md", '# Text\n\n<i>emphasis</i> and <span class="x">y</span>\n')
+    assert _audit(tmp_path / "s.md") == []

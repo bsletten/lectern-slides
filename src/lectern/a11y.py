@@ -10,6 +10,9 @@ small and high-signal, the ones that genuinely break a screen-reader experience:
 * a raw HTML ``<img>`` with no ``alt`` attribute at all;
 * a ```` ```mermaid ```` diagram with no ``accTitle`` / ``accDescr`` (Mermaid
   renders those to the SVG's ``<title>``/``<desc>`` + ``aria-labelledby``);
+* a Font Awesome icon (``<i>``/``<span class="fa-…">``) with neither
+  ``aria-hidden="true"`` (decorative) nor an accessible name (``aria-label`` /
+  ``title``) — otherwise a screen reader announces nothing or garbage;
 * a theme whose text tokens fall below WCAG AA contrast (4.5:1), or whose
   ``--accent`` (a graphical element) falls below WCAG non-text contrast (3:1).
 
@@ -106,11 +109,53 @@ def _slide_warnings(number: int, group) -> list[str]:
             "purely decorative)"
         )
 
+    for loc in _font_awesome_warnings(group):
+        out.append(
+            f"{loc}: a Font Awesome icon has no aria-hidden or accessible name — "
+            'add aria-hidden="true" if decorative, or aria-label="…"'
+        )
+
     out.extend(_mermaid_warnings(group))
     return out
 
 
 _OPEN = {tag: re.compile(rf"<{tag}\b", re.IGNORECASE) for tag in ("iframe", "img")}
+
+# A Font Awesome icon element, its class value, an `fa-…` token, and the markers
+# that make it accessible (decorative or named).
+_FA_TAG = re.compile(r"<(?:i|span)\b[^>]*>", re.IGNORECASE)
+_FA_CLASS = re.compile(r"""class\s*=\s*("|')(.*?)\1""", re.IGNORECASE)
+_FA_TOKEN = re.compile(r"(?<![\w-])fa-[\w-]+")
+_FA_OK = re.compile(
+    r"""aria-hidden\s*=\s*["']?\s*true"""  # decorative
+    r"|aria-label\s*="  # named
+    r"|\btitle\s*=",
+    re.IGNORECASE,
+)
+
+
+def _font_awesome_warnings(group) -> list[str]:
+    """Locs of Font Awesome icons (outside code fences) that are neither marked
+    decorative (``aria-hidden="true"``) nor named (``aria-label``/``title``)."""
+    out: list[str] = []
+    fence = None
+    for outline in group:
+        text = outline.text
+        if fence is not None:
+            if closes_fence(text, fence):
+                fence = None
+            continue
+        marker = fence_marker(text)
+        if marker is not None:
+            fence = marker
+            continue
+        for m in _FA_TAG.finditer(text):
+            tag = m.group(0)
+            cls = _FA_CLASS.search(tag)
+            if cls and _FA_TOKEN.search(cls.group(2)) and not _FA_OK.search(tag):
+                out.append(str(outline.loc))
+                break  # one warning per line is enough
+    return out
 
 
 def _tags_missing_attr(group, tag: str, attr: str) -> list[str]:

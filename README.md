@@ -263,6 +263,9 @@ break a screen-reader experience, and nothing noisy:
   `alt="…"` (or `alt=""` to mark it decorative).
 - **`<iframe>` embeds need a `title=`** (the D3/WebGL demos) for an accessible
   name.
+- **Font Awesome icons need `aria-hidden="true"`** (decorative) **or an
+  accessible name** (`aria-label`/`title`); a bare `<i class="fa-…">` is read as
+  nothing or garbage by a screen reader, so it's flagged.
 - **Mermaid diagrams need an `accTitle`/`accDescr`** in the diagram source —
   Mermaid renders them to the SVG's `<title>`/`<desc>` (+ `aria-labelledby`), a
   text alternative for the graphic:
