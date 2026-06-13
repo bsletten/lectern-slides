@@ -72,3 +72,14 @@ def test_script_close_escaped_in_source(tmp_path):
     write(tmp_path, "raw.md", "# Raw\n\n<script>x</script>\n")
     html, _ = _render(tmp_path / "raw.md", tmp_path / "out")
     assert "<\\/script>" in html  # ``</`` escaped so the bootstrap script is safe
+
+
+def test_remark_mermaid_lowered_and_loaded(tmp_path):
+    from conftest import write
+
+    write(tmp_path, "deck.toml", 'slides = ["s.md"]\n')
+    write(tmp_path, "s.md", "# Diagram\n\n```mermaid\nflowchart LR\n  A --> B\n```\n")
+    html, _ = _render(tmp_path, tmp_path / "out")
+    assert '<pre class="mermaid">' in html
+    assert "A --> B" in html
+    assert "mermaid.esm.min.mjs" in html

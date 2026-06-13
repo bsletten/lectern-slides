@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 
 # remark.js distributes a single bundle from its own site.
 REMARK_CDN = "https://remarkjs.com/downloads/remark-latest.min.js"
+MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
 
 # Every content slide inherits `slide` from this template, so the theme applies.
 _LAYOUT_SLIDE = "layout: true\nclass: slide\n"
@@ -89,15 +90,19 @@ class RemarkRenderer:
             warnings.append("remark: math typesetting is not supported by this adapter")
 
         slide_mds = []
+        mermaid_seen = False
         for group in deck.slides():
             if is_blank_group(group):
                 continue
             lowered = scan_slide(group, resolver, deck.root, incremental="degrade")
             warnings.extend(lowered.warnings)
+            mermaid_seen = mermaid_seen or lowered.has_mermaid
             slide_mds.append(_format_slide(lowered, warnings))
 
+        forced = config.reveal.model_dump().get("mermaid")
+        mermaid = mermaid_seen if forced is None else bool(forced)
         source = _LAYOUT_SLIDE + "\n---\n\n" + "\n\n---\n\n".join(slide_mds) + "\n"
-        html_text = _render_template(config, theme, source)
+        html_text = _render_template(config, theme, source, mermaid=mermaid)
         output = out_dir / "index.html"
         output.write_text(html_text, encoding="utf-8")
 
@@ -109,7 +114,7 @@ def _reduced_ratio(width: int, height: int) -> str:
     return f"{width // g}:{height // g}"
 
 
-def _render_template(config, theme, source: str) -> str:
+def _render_template(config, theme, source: str, *, mermaid: bool = False) -> str:
     # Escape ``</`` so a slide containing ``</script>`` can't close the inline
     # bootstrap script early; ``<\/`` is still a valid JSON/JS string.
     source_json = json.dumps(source).replace("</", "<\\/")
@@ -126,6 +131,8 @@ def _render_template(config, theme, source: str) -> str:
         author=html.escape(config.author or ""),
         theme_css=theme.css,
         remark_cdn=REMARK_CDN,
+        mermaid_cdn=MERMAID_CDN,
+        mermaid=mermaid,
         ratio=_reduced_ratio(theme.width, theme.height),
         source_json=source_json,
     )

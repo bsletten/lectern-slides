@@ -44,6 +44,12 @@ def fence_marker(line: str) -> Fence | None:
     return Fence(char=run[0], length=len(run))
 
 
+def fence_info(line: str) -> str:
+    """The info string after a fence open — e.g. ``mermaid`` for a mermaid block."""
+    m = _FENCE_RE.match(line)
+    return m.group(2).strip() if m else ""
+
+
 def closes_fence(line: str, open_fence: Fence) -> bool:
     """Whether *line* closes ``open_fence`` (same char, >= length, no info)."""
     marker = fence_marker(line)

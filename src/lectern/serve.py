@@ -85,6 +85,42 @@ def format_sse(event: str, data: str) -> str:
     return f"event: {event}\n{lines}\n\n"
 
 
+# macOS application names for common browsers, so `[serve].browser = "chrome"`
+# opens Google Chrome via `open -a` even when it isn't a registered webbrowser.
+_MAC_BROWSER_APPS = {
+    "chrome": "Google Chrome",
+    "google-chrome": "Google Chrome",
+    "chromium": "Chromium",
+    "firefox": "Firefox",
+    "safari": "Safari",
+    "edge": "Microsoft Edge",
+    "brave": "Brave Browser",
+}
+
+
+def open_in_browser(url: str, browser: str | None = None) -> None:
+    """Open *url* in a named *browser* if given, else the system default.
+
+    Tries the cross-platform ``webbrowser`` registry first; on macOS falls back to
+    ``open -a <App>`` (mapping short names like ``chrome`` to their app names), and
+    finally to the default browser.
+    """
+    if not browser:
+        webbrowser.open(url)
+        return
+    with contextlib.suppress(Exception):
+        webbrowser.get(browser).open(url)
+        return
+    if sys.platform == "darwin":
+        import subprocess
+
+        app = _MAC_BROWSER_APPS.get(browser.lower(), browser)
+        with contextlib.suppress(Exception):
+            subprocess.run(["open", "-a", app, url], check=True)
+            return
+    webbrowser.open(url)  # last resort: the default browser
+
+
 def _fallback_shell(error: str | None) -> str:
     """A minimal page to serve before the first successful build."""
     state = (
@@ -147,6 +183,7 @@ class LiveReloadServer:
         port: int = 8080,
         coi: bool = False,
         open_browser: bool = True,
+        browser: str | None = None,
         config_override: str | Path | None = None,
         cli_overrides: dict | None = None,
         watch: list[Path] | None = None,
@@ -156,6 +193,7 @@ class LiveReloadServer:
         self.host = host
         self.port = port
         self.open_browser = open_browser
+        self.browser = browser
         self.config_override = config_override
         self.cli_overrides = cli_overrides
         self.watch = watch or []
@@ -300,7 +338,7 @@ class LiveReloadServer:
     async def _open_later(self) -> None:
         await asyncio.sleep(0.6)
         with contextlib.suppress(Exception):
-            webbrowser.open(f"http://{self.host}:{self.port}/")
+            open_in_browser(f"http://{self.host}:{self.port}/", self.browser)
 
     async def _watch_loop(self, stop: asyncio.Event) -> None:
         from watchfiles import awatch

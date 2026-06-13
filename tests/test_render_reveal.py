@@ -166,3 +166,44 @@ def test_renderer_override_via_cli(fixtures, tmp_path):
 
     with pytest.raises(ConfigError):
         get_renderer("nope")
+
+
+def _mermaid_deck(tmp_path, body="```mermaid\nflowchart LR\n  A --> B\n```\n"):
+    write(tmp_path, "deck.toml", 'slides = ["s.md"]\n')
+    write(tmp_path, "s.md", "# Diagram\n\n" + body)
+    return tmp_path
+
+
+def test_mermaid_block_lowered_and_script_auto_loaded(tmp_path):
+    html, _ = _render(_mermaid_deck(tmp_path / "deck"), tmp_path / "out")
+    # lowered to a raw <pre class="mermaid"> — arrows intact, NOT a highlit code fence
+    assert '<pre class="mermaid">' in html
+    assert "A --> B" in html
+    assert "language-mermaid" not in html
+    # auto-detected: the mermaid module + the PDF-ready signal are present
+    assert "mermaid.esm.min.mjs" in html
+    assert "lecternMermaidReady" in html
+
+
+def test_no_mermaid_means_no_mermaid_script(fixtures, tmp_path):
+    # The .mermaid layout CSS is always present (harmless); the loader is not.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "mermaid.esm" not in html
+    assert "lecternMermaidReady" not in html
+
+
+def test_reveal_mermaid_can_be_forced_on(tmp_path):
+    # `[reveal].mermaid = true` loads it even with no diagram in the deck.
+    write(tmp_path, "deck.toml", "slides = [\"s.md\"]\n[reveal]\nmermaid = true\n")
+    write(tmp_path, "s.md", "# No diagram here\n")
+    html, _ = _render(tmp_path, tmp_path / "out")
+    assert "mermaid.esm.min.mjs" in html
+
+
+def test_reveal_mermaid_can_be_forced_off(tmp_path):
+    # `[reveal].mermaid = false` suppresses the script even with a diagram.
+    src = _mermaid_deck(tmp_path / "deck")
+    write(src, "deck.toml", "slides = [\"s.md\"]\n[reveal]\nmermaid = false\n")
+    html, _ = _render(src, tmp_path / "out")
+    assert '<pre class="mermaid">' in html  # still lowered
+    assert "mermaid.esm.min.mjs" not in html  # but not rendered client-side

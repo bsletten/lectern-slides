@@ -442,6 +442,11 @@ def watch(
     open_browser: bool | None = typer.Option(
         None, "--open/--no-open", help="Open a browser on start."
     ),
+    browser: str | None = typer.Option(
+        None,
+        "--browser",
+        help="Which browser to open (e.g. chrome, firefox, safari). Default: system.",
+    ),
     coi: bool | None = typer.Option(
         None, "--coi/--no-coi", help="Send COOP/COEP isolation headers."
     ),
@@ -502,6 +507,7 @@ def watch(
         port=port or serve_cfg.port,
         coi=serve_cfg.coi if coi is None else coi,
         open_browser=serve_cfg.open if open_browser is None else open_browser,
+        browser=browser or serve_cfg.browser,
         config_override=config,
         cli_overrides=overrides,
         watch=watch_paths(resolved),

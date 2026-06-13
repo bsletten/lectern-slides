@@ -61,6 +61,16 @@ def print_to_pdf(
             page.emulate_media(media="print", reduced_motion="reduce")
             if settle_ms:
                 page.wait_for_timeout(settle_ms)
+            # If the deck renders Mermaid (async), wait for it before printing so
+            # the diagrams land in the vector master. The flag is only `false`
+            # while rendering; `undefined` (no Mermaid) or `true` pass straight
+            # through. Best-effort: a hung diagram shouldn't fail the export.
+            try:
+                page.wait_for_function(
+                    "window.lecternMermaidReady !== false", timeout=15000
+                )
+            except Exception:  # pragma: no cover - defensive
+                pass
             if prepare is not None:
                 prepare(page)
             data = page.pdf(

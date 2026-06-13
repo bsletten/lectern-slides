@@ -28,6 +28,7 @@ slides = [
   "slides/22-ranges.md",
   "_partials/principles.md#2-3,6",   # ranged include: slides 2-3 and 6 of a 7-slide source
   "slides/25-code.md",
+  "slides/26-diagram.md",
   "slides/30-background.md",
   "slides/32-image.md",
   "slides/40-incremental.md",

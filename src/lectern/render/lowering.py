@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..slides import closes_fence, fence_marker
+from ..slides import closes_fence, fence_info, fence_marker
 
 if TYPE_CHECKING:
     from ..assets import AssetResolver
@@ -100,6 +100,7 @@ class LoweredSlide:
     body: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    has_mermaid: bool = False
 
 
 class _Scanner:
@@ -112,6 +113,7 @@ class _Scanner:
         self.label = "slide"
         self._label_set = False
         self._fence = None
+        self._mermaid = None  # open ```mermaid fence, lowered to <pre class="mermaid">
         self._div_stack: list[str] = []  # "div" | "incremental" | "notes"
         self._directive_seen = False
         self._notes_comment = False
@@ -135,6 +137,18 @@ class _Scanner:
             self.out.body.append(line)
             if closes_fence(line, self._fence):
                 self._fence = None
+            return
+
+        # A ```mermaid block is lowered to a raw <pre class="mermaid"> (a
+        # CommonMark type-1 HTML block): the Markdown renderers pass its body
+        # through verbatim — so Mermaid's `-->` arrows survive and the highlight
+        # plugin skips it — and the client-side Mermaid script renders it.
+        if self._mermaid is not None:
+            if closes_fence(line, self._mermaid):
+                self.out.body.append("</pre>")
+                self._mermaid = None
+            else:
+                self.out.body.append(line)
             return
 
         if self._notes_comment:
@@ -171,6 +185,11 @@ class _Scanner:
 
         marker = fence_marker(line)
         if marker is not None:
+            if fence_info(line).split(" ")[0].lower() == "mermaid":
+                self._mermaid = marker
+                self.out.has_mermaid = True
+                self.out.body.append('<pre class="mermaid">')
+                return
             self._fence = marker
             self.out.body.append(line)
             return
@@ -218,6 +237,9 @@ class _Scanner:
         return self.resolver.rewrite(out, self.current_dir, self.label)
 
     def finish(self) -> LoweredSlide:
+        if self._mermaid is not None:
+            self.out.body.append("</pre>")
+            self._mermaid = None
         while self._div_stack:
             if self._div_stack.pop() == "div":
                 self.out.body.extend(["", "</div>"])

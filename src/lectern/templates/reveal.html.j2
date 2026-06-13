@@ -148,6 +148,34 @@
   min-height: 0;
 }
 
+/* Mermaid diagrams: the source `<pre class="mermaid">` is swapped for a
+   `<div class="mermaid">` once rendered (see the script), so `.mermaid` matches
+   both. Center the diagram and cap the SVG to a fraction of the slide so a big
+   one doesn't bump the frame — the same height-cap story as embeds/images. */
+.reveal .slides section.slide pre.mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  background: none;       /* drop the theme's code-block panel behind the diagram */
+  min-height: 0;
+}
+.reveal .slides section.slide pre.mermaid svg {
+  max-width: 100%;
+  max-height: 62vh;
+  height: auto;
+}
+/* foreignObject clips by default; Mermaid sizes label boxes a hair tight, so the
+   last glyph of the longest label can get shaved. Let it spill instead of clip. */
+.reveal .slides section.slide pre.mermaid svg foreignObject {
+  overflow: visible;
+}
+/* Mermaid wraps each label in a <p>; the theme's `.slide p` margin would leak in
+   and push the text off-center (most visibly in Safari/WebKit). Zero it. */
+.reveal .slides section.slide pre.mermaid p {
+  margin: 0;
+}
+
 /* print-pdf wraps each slide in a `.pdf-page`, which breaks the `>` selectors
    above and lets reveal force `display:block; padding:0` — that jams content
    into the page edge and drops the anchor-grid centering. Re-assert the slide
@@ -204,5 +232,59 @@
     }{% endif %}
   }{% if init_extra %}, {{ init_extra }}{% endif %}));
 </script>
+{% if mermaid %}
+<script type="module">
+  // Render ```mermaid blocks (lowered to <pre class="mermaid">) client-side,
+  // themed from the deck's design tokens. The PDF master waits on
+  // window.lecternMermaidReady so diagrams are in the printed vector master.
+  window.lecternMermaidReady = false;
+  import mermaid from '{{ mermaid_cdn }}';
+  const cs = getComputedStyle(document.documentElement);
+  const tok = (n, d) => cs.getPropertyValue(n).trim() || d;
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    // SVG <text> labels, not foreignObject HTML: reveal scales each slide with a
+    // CSS transform to fit the window, and Safari/WebKit mis-positions
+    // foreignObject content under an ancestor transform (the offset grows with
+    // the scale). Native SVG text transforms correctly, so labels stay centered
+    // at any window size.
+    htmlLabels: false,
+    flowchart: { htmlLabels: false },
+    themeVariables: {
+      background: tok('--bg', '#ffffff'),
+      primaryColor: tok('--bg', '#ffffff'),
+      primaryTextColor: tok('--fg', '#111111'),
+      primaryBorderColor: tok('--accent', '#888888'),
+      lineColor: tok('--accent', '#888888'),
+    },
+  });
+  // Render in-place on the *visible* slide, not in a detached sandbox: Mermaid
+  // mis-measures node boxes (labels overflow/clip) unless it measures in the
+  // same DOM context the diagram is shown in. Off-screen reveal slides are
+  // display:none, so render each as it becomes current; in print-pdf every slide
+  // is laid out at once, so render them all.
+  const isPrint = location.search.includes('print-pdf');
+  async function render(scope) {
+    const nodes = scope.querySelectorAll('pre.mermaid:not([data-processed])');
+    if (nodes.length) {
+      try { await mermaid.run({ nodes }); } catch (e) { /* leave the source */ }
+    }
+  }
+  async function start() {
+    await document.fonts.ready;  // measure with the deck's real fonts
+    if (isPrint) {
+      await render(document);
+    } else {
+      Reveal.on('slidechanged', (e) => render(e.currentSlide));
+      const cur = document.querySelector('.reveal .slides section.present');
+      if (cur) await render(cur);
+    }
+    window.lecternMermaidReady = true;
+  }
+  if (window.Reveal && Reveal.isReady && Reveal.isReady()) start();
+  else Reveal.on('ready', start);
+</script>
+{% endif %}
 </body>
 </html>

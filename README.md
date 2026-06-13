@@ -60,6 +60,7 @@ lectern build ./talks/ai-sec -t ./themes/mine.css -o site
 
 # Live preview: rebuilds on change with SSE reload + build-error overlay
 lectern watch ./talks/ai-sec                         # serves http://127.0.0.1:8080
+lectern watch ./talks/ai-sec --browser chrome        # open a specific browser (or [serve].browser)
 
 # Clean: remove generated output (the out_dir). --all also drops the PDF cache
 lectern clean ./talks/ai-sec                         # removes dist/ (keeps build/ cache)
@@ -168,6 +169,25 @@ moves content.
 
 The format is gated by the adapter's capabilities; asking for one it can't make
 prints a hint toward an adapter that can (e.g. `-f pptx` → *try renderer: marp*).
+
+### Diagrams (Mermaid)
+
+A fenced ` ```mermaid ` block renders to a diagram — it stays valid CommonMark
+(degrades to a code block anywhere) and is lowered to a `<pre class="mermaid">`
+that the `reveal` and `remark` adapters render client-side:
+
+````markdown
+```mermaid
+flowchart LR
+  A[Source] --> B[Assemble] --> C{Render}
+```
+````
+
+Mermaid loads (from a CDN) **only when a diagram is present** — auto-detected,
+or forced with `[reveal].mermaid = true|false`. Diagrams are themed from the
+deck's design tokens, and the PDF master waits for the async render, so they
+appear in the vector PDF too. (For `marp`/`quarto`, or for full control, the
+isolated-iframe embed pattern still works in every renderer.)
 
 ### PDF export (`-f pdf`)
 

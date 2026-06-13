@@ -26,6 +26,15 @@ html, body { height: 100%; }
   font-size: var(--fs-body, 27px);
 }
 .remark-slide-content.slide > *:first-child { margin-top: 0; }
+/* Mermaid: drop the theme's code-block panel behind the diagram and center it. */
+.remark-slide-content.slide pre.mermaid {
+  display: flex; justify-content: center;
+  margin: 0; padding: 0; background: none;
+}
+.remark-slide-content.slide pre.mermaid svg { max-width: 100%; height: auto; }
+.remark-slide-content.slide pre.mermaid svg foreignObject { overflow: visible; }
+/* zero the theme's <p> margin that Mermaid's labels would otherwise inherit */
+.remark-slide-content.slide pre.mermaid p { margin: 0; }
 </style>
 </head>
 <body>
@@ -40,5 +49,43 @@ html, body { height: 100%; }
     navigation: { scroll: false, touch: true }
   });
 </script>
+{% if mermaid %}
+<script type="module">
+  // Render ```mermaid blocks (lowered to <pre class="mermaid">), themed from the
+  // deck's design tokens. remark.create() has already put every slide in the DOM.
+  import mermaid from '{{ mermaid_cdn }}';
+  const cs = getComputedStyle(document.documentElement);
+  const tok = (n, d) => cs.getPropertyValue(n).trim() || d;
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    // SVG <text> labels (not foreignObject HTML): Safari/WebKit mis-positions
+    // foreignObject content under an ancestor CSS transform. See the reveal
+    // template for the full rationale.
+    htmlLabels: false,
+    flowchart: { htmlLabels: false },
+    themeVariables: {
+      background: tok('--bg', '#ffffff'),
+      primaryColor: tok('--bg', '#ffffff'),
+      primaryTextColor: tok('--fg', '#111111'),
+      primaryBorderColor: tok('--accent', '#888888'),
+      lineColor: tok('--accent', '#888888'),
+    },
+  });
+  // Render in-place on the *visible* slide so Mermaid measures node boxes in the
+  // same context they're shown in (else labels mis-size/clip). Off-screen remark
+  // slides are display:none, so render each one as it's shown.
+  await document.fonts.ready;
+  async function render() {
+    const scope = document.querySelector('.remark-visible') || document;
+    const nodes = scope.querySelectorAll('pre.mermaid:not([data-processed])');
+    if (nodes.length) {
+      try { await mermaid.run({ nodes }); } catch (e) { /* leave the source */ }
+    }
+  }
+  window.slideshow.on('afterShowSlide', render);
+  await render();  // the initially-visible slide
+</script>
+{% endif %}
 </body>
 </html>

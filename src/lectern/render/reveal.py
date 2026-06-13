@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 REVEAL_VERSION = "5.1.0"
 REVEAL_CDN = f"https://cdn.jsdelivr.net/npm/reveal.js@{REVEAL_VERSION}"
 KATEX_CDN = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
 
 
 def _format_slide(lowered) -> dict[str, str]:
@@ -94,20 +95,33 @@ def build_html(
     theme = build_theme(config.theme, config.aspect, deck.root, config.theme_paths)
 
     slides = []
+    mermaid_seen = False
     for group in deck.slides():
         if is_blank_group(group):
             continue
         lowered = scan_slide(group, resolver, deck.root, incremental="fragment")
         warnings.extend(lowered.warnings)
+        mermaid_seen = mermaid_seen or lowered.has_mermaid
         slides.append(_format_slide(lowered))
 
+    # `[reveal].mermaid`: None = auto (load iff a diagram is present), else force.
+    forced = config.reveal.model_dump().get("mermaid")
+    mermaid = mermaid_seen if forced is None else bool(forced)
+
     html_text = _render_template(
-        config, theme, slides, init_extra=init_extra, extra_head=extra_head
+        config,
+        theme,
+        slides,
+        mermaid=mermaid,
+        init_extra=init_extra,
+        extra_head=extra_head,
     )
     return html_text, resolver, theme
 
 
-def _render_template(config, theme, slides, *, init_extra=None, extra_head="") -> str:
+def _render_template(
+    config, theme, slides, *, mermaid=False, init_extra=None, extra_head=""
+) -> str:
     rc = config.reveal.model_dump()
     math = rc.get("math") or False
     highlight = bool(rc.get("highlight", True))
@@ -151,6 +165,8 @@ def _render_template(config, theme, slides, *, init_extra=None, extra_head="") -
         theme_css=theme.css,
         reveal_cdn=REVEAL_CDN,
         katex_cdn=KATEX_CDN,
+        mermaid_cdn=MERMAID_CDN,
+        mermaid=mermaid,
         init_json=json.dumps(init),
         init_extra=json.dumps(init_extra) if init_extra else "",
         extra_head=extra_head,

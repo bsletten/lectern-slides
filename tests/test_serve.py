@@ -165,3 +165,48 @@ def test_sse_stream_greets_with_error_then_streams(fixtures, tmp_path):
         await gen.aclose()
 
     asyncio.run(go())
+
+
+# --- browser selection for watch ----------------------------------------
+def test_open_in_browser_default_uses_webbrowser(monkeypatch):
+    from lectern import serve
+
+    calls = []
+    monkeypatch.setattr(serve.webbrowser, "open", lambda u: calls.append(u))
+    serve.open_in_browser("http://x/", None)
+    assert calls == ["http://x/"]
+
+
+def test_open_in_browser_named_uses_registry(monkeypatch):
+    from lectern import serve
+
+    opened = []
+
+    class FakeController:
+        def open(self, u):
+            opened.append(u)
+
+    monkeypatch.setattr(serve.webbrowser, "get", lambda name: FakeController())
+    monkeypatch.setattr(serve.webbrowser, "open", lambda u: opened.append(("def", u)))
+    serve.open_in_browser("http://x/", "firefox")
+    assert opened == ["http://x/"]  # the named browser, not the default
+
+
+def test_open_in_browser_falls_back_to_default_when_unknown(monkeypatch):
+    from lectern import serve
+
+    def boom(name):
+        raise serve.webbrowser.Error("unknown browser")
+
+    monkeypatch.setattr(serve.webbrowser, "get", boom)
+    monkeypatch.setattr(serve.sys, "platform", "linux")  # skip the macOS branch
+    calls = []
+    monkeypatch.setattr(serve.webbrowser, "open", lambda u: calls.append(u))
+    serve.open_in_browser("http://x/", "nope")
+    assert calls == ["http://x/"]  # default browser used as last resort
+
+
+def test_server_stores_browser_choice(tmp_path):
+    write(tmp_path, "a.md", "# A")
+    server = _server(tmp_path / "a.md", tmp_path / "out", browser="chrome")
+    assert server.browser == "chrome"

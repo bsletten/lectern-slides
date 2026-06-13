@@ -49,6 +49,7 @@ class ServeConfig(_Section):
     port: int = 8080
     open: bool = True
     coi: bool = False
+    browser: str | None = None  # browser `watch` opens (e.g. "chrome"); None = default
 
 
 class RevealConfig(_Section):
@@ -57,6 +58,7 @@ class RevealConfig(_Section):
     transition: str = "none"
     highlight: bool = True
     math: str | bool = False
+    mermaid: bool | None = None  # None = auto (load only if a ```mermaid block exists)
 
 
 class PdfConfig(_Section):

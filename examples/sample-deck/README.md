@@ -33,6 +33,7 @@ them. That's the whole point.
 | `10-agenda.md`        | Agenda (ordered list) |
 | `20-qualifications.md`| Speaker qualifications via **transclusion** of `_partials/qualifications.md` |
 | `25-code.md`          | **Syntax highlighting** (fenced `python`, reveal highlight plugin + theme palette) |
+| `26-diagram.md`       | **Mermaid diagram** (fenced ` ```mermaid `, themed from tokens, in HTML + PDF) |
 | `30-background.md`    | **Full background image** (`data-background-image`) |
 | `40-incremental.md`   | **Incremental builds** (`::: incremental`) + speaker notes |
 | `45-layout.md`        | **Content placement** — nine-point slide anchors + `::: {.place …}` boxes |
@@ -77,6 +78,20 @@ than your art's natural size. Concretely:
 The two sample embeds are working templates — copy one. Everything outside the
 iframe (centering, the height cap, light text on dark backdrops) is handled for
 you in the renderer's layout layer and needs nothing per-slide or per-theme.
+
+**Mermaid diagrams.** A fenced ` ```mermaid ` block is lowered to a
+`<pre class="mermaid">` and rendered client-side; the reveal/remark adapters load
+Mermaid from a CDN **only when a diagram is present** (auto-detect; force with
+`[reveal].mermaid = true|false`). Diagrams are themed from the deck's design
+tokens (`--bg`/`--fg`/`--accent`/`--font-body`), and the PDF master waits for the
+async render so they land in the vector PDF too. For a renderer without native
+Mermaid (or for full control), the isolated-iframe embed pattern still works.
+
+*Known quirk:* in **`lectern watch` under Safari**, a Mermaid label can sit a
+little low — Safari mis-measures SVG content during the live-reload's transient
+layout. The built HTML (`lectern build`) and the PDF are unaffected, and other
+browsers are fine. Watch in another browser if it bothers you:
+`lectern watch … --browser chrome` (or set `[serve].browser`).
 
 **Math plugin.** `[reveal].math = "katex"` in `deck.toml` tells the reveal adapter
 to load the math plugin so `$…$` / `$$…$$` typeset. Without it they render as
