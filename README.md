@@ -257,6 +257,10 @@ break a screen-reader experience, and nothing noisy:
   a dark backdrop, independent of a theme's `.inverse` treatment — reach for it
   on a dark background-image slide:
   `<!-- slide: .on-dark data-background-image="night.jpg" -->`.
+- **Reduced motion** — the live deck honors `prefers-reduced-motion: reduce`:
+  reveal's slide/fragment/background transitions are zeroed, so slides change
+  instantly (fragments still step, they just don't animate). The PDF master
+  already renders with reduced motion.
 
 The bundled `examples/sample-deck` passes the audit, and a test keeps it that way
 as slides are added.

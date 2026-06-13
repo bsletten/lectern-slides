@@ -195,6 +195,21 @@
   height: 100% !important;
   width: 100% !important;
 }
+
+/* Respect prefers-reduced-motion: zero out reveal's slide / fragment / background
+   transitions and any keyframe animation, so the live deck doesn't animate for
+   users who ask for less motion. Slides still position and fragments still step —
+   they just don't tween. (The PDF master already emulates reduced motion.) */
+@media (prefers-reduced-motion: reduce) {
+  .reveal .slides section,
+  .reveal .slides section *,
+  .reveal .backgrounds .slide-background {
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
 </style>
 {% if extra_head %}
 {{ extra_head }}

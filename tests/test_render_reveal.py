@@ -154,6 +154,13 @@ def test_print_pdf_layout_bridge_present(fixtures, tmp_path):
     assert ".print-pdf .slides .pdf-page > section.slide" in html
 
 
+def test_reduced_motion_media_query_present(fixtures, tmp_path):
+    # The live deck honors prefers-reduced-motion by zeroing transition/animation.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "@media (prefers-reduced-motion: reduce)" in html
+    assert "transition-duration: 0s !important;" in html
+
+
 def test_renderer_override_via_cli(fixtures, tmp_path):
     # An unknown renderer override surfaces as a clean error at lookup time.
     from lectern.errors import ConfigError
