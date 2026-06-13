@@ -44,6 +44,21 @@ def test_incremental_items_get_fragment(fixtures, tmp_path):
     assert html.count('<!-- .element: class="fragment" data-li-frag="1" -->') == 2
 
 
+def test_only_top_level_incremental_items_get_fragment(tmp_path):
+    # Nested/indented items ride in with their parent, not as their own build
+    # step — otherwise reveal orders them before their (hidden) parent and the
+    # first presses reveal nothing visible.
+    src = (
+        "# Steps\n\n::: incremental\n"
+        "1. *First*\n    - detail of first\n"
+        "2. *Second*\n    - detail of second\n:::\n"
+    )
+    write(tmp_path, "s.md", src)
+    html, _ = _render(tmp_path / "s.md", tmp_path / "out")
+    # two top-level items get fragments; the two nested details do not
+    assert html.count('class="fragment" data-li-frag="1"') == 2
+
+
 def test_place_box_lowered_to_div(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
     assert '<div class="place bottom right">' in html

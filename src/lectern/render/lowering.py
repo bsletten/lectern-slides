@@ -31,7 +31,12 @@ _NOTES_OPEN = re.compile(r"^\s*<!--\s*notes\s*-->\s*$")
 _NOTES_CLOSE = re.compile(r"^\s*<!--\s*/notes\s*-->\s*$")
 _FENCE_DIV = re.compile(r"^(:::+)\s*(.*?)\s*$")
 _INLINE_SPAN = re.compile(r"\[([^\]]+)\]\{([^}]*)\}")
-_LIST_ITEM = re.compile(r"^\s*([-*+]|\d+[.)])\s+\S")
+# Only *top-level* list items become incremental fragments. A nested/indented
+# item is a detail of its parent and rides in with it — making it its own build
+# step puts it before its (still-hidden) parent in reveal's order, so the first
+# presses reveal nothing visible. Matching column-0 markers keeps each numbered
+# item and its sub-bullets a single step.
+_LIST_ITEM = re.compile(r"^([-*+]|\d+[.)])\s+\S")
 _TOKEN = re.compile(
     r"\.([\w-]+)"  # .class
     r"|#([\w-]+)"  # #id
