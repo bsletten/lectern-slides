@@ -175,6 +175,12 @@
 .reveal .slides section.slide pre.mermaid p {
   margin: 0;
 }
+/* Mermaid appends a `.mermaidTooltip` helper to <body>; in print it extends a
+   few px past the last slide, which Chromium paginates into a trailing BLANK
+   page. It's inert on paper — remove it from the printed flow. */
+@media print {
+  .mermaidTooltip { display: none !important; }
+}
 
 /* print-pdf wraps each slide in a `.pdf-page`, which breaks the `>` selectors
    above and lets reveal force `display:block; padding:0` — that jams content

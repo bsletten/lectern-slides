@@ -185,6 +185,13 @@ def test_lang_is_configurable(fixtures, tmp_path):
     assert '<html lang="fr">' in html_fr
 
 
+def test_mermaid_tooltip_hidden_in_print(fixtures, tmp_path):
+    # Mermaid's body-appended tooltip helper would add a trailing blank PDF page;
+    # hide it in print. Guard the rule against removal.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert ".mermaidTooltip { display: none !important; }" in html
+
+
 def test_reduced_motion_media_query_present(fixtures, tmp_path):
     # The live deck honors prefers-reduced-motion by zeroing transition/animation.
     html, _ = _render(fixtures / "render-deck", tmp_path)
