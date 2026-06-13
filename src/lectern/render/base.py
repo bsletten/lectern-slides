@@ -34,6 +34,7 @@ class RenderResult:
     output: Path
     assets: list[Path] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    pruned: int = 0  # stale asset files removed from out_dir/assets this build
 
 
 @runtime_checkable

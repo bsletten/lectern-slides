@@ -457,9 +457,10 @@ def build(
         raise _fail(e) from None
 
     _emit_warnings(result.warnings)
+    pruned = f", pruned {result.pruned} stale" if result.pruned else ""
     typer.secho(
-        f"built {deck.slide_count} slide(s), {len(result.assets)} asset(s) "
-        f"-> {result.output}",
+        f"built {deck.slide_count} slide(s), {len(result.assets)} asset(s)"
+        f"{pruned} -> {result.output}",
         fg=typer.colors.GREEN,
     )
 

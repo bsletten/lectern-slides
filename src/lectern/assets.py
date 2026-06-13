@@ -134,6 +134,28 @@ class AssetResolver:
         self.copied.append(dest)
         return rel
 
+    def prune_stale(self) -> list[Path]:
+        """Delete files in ``assets/`` that this build did not (re)write.
+
+        Assets are content-hash named and never overwritten in place, so an edited
+        or removed asset leaves its old hash behind; across rebuilds ``assets/``
+        accumulates orphans. Remove any flat file there not produced this run, so
+        a plain ``build`` yields the same ``assets/`` a clean rebuild would.
+
+        Only ever touches the deck's own ``out_dir/assets``; subdirectories (a
+        copied ``font-awesome`` kit lives in ``out_dir/font-awesome``, elsewhere)
+        are left untouched. Returns the files removed.
+        """
+        if not self.assets_dir.is_dir():
+            return []
+        kept = {p.resolve() for p in self.copied}
+        removed: list[Path] = []
+        for child in sorted(self.assets_dir.iterdir()):
+            if child.is_file() and child.resolve() not in kept:
+                child.unlink()
+                removed.append(child)
+        return removed
+
 
 def _join_url(base: str, ref: str) -> str:
     return f"{base.rstrip('/')}/{ref.lstrip('/')}"

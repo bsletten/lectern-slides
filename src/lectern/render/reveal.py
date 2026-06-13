@@ -71,8 +71,16 @@ class RevealRenderer:
         html_text, resolver, _theme = build_html(deck, config, out_dir, warnings)
         output = out_dir / "index.html"
         output.write_text(html_text, encoding="utf-8")
+        # Garbage-collect orphaned content-hashed assets from prior builds, so a
+        # plain `build` leaves the same assets/ a clean rebuild would.
+        pruned = resolver.prune_stale()
 
-        return RenderResult(output=output, assets=resolver.copied, warnings=warnings)
+        return RenderResult(
+            output=output,
+            assets=resolver.copied,
+            warnings=warnings,
+            pruned=len(pruned),
+        )
 
 
 def build_html(

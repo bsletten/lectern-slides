@@ -111,8 +111,14 @@ class RemarkRenderer:
         )
         output = out_dir / "index.html"
         output.write_text(html_text, encoding="utf-8")
+        pruned = resolver.prune_stale()
 
-        return RenderResult(output=output, assets=resolver.copied, warnings=warnings)
+        return RenderResult(
+            output=output,
+            assets=resolver.copied,
+            warnings=warnings,
+            pruned=len(pruned),
+        )
 
 
 def _reduced_ratio(width: int, height: int) -> str:

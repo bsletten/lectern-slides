@@ -23,6 +23,31 @@ def test_relative_ref_copied_and_rewritten(tmp_path):
     assert r.copied[0].read_text() == "imagedata"
 
 
+def test_prune_stale_removes_orphans_keeps_current(tmp_path):
+    # A stale hash from a prior build (and any other stray file) is removed; the
+    # asset written this run survives. Subdirs (e.g. font-awesome) are untouched.
+    write(tmp_path, "slides/pic.png", "imagedata")
+    r = _resolver(tmp_path)
+    r.rewrite("![x](pic.png)", tmp_path / "slides", "slides/s.md")
+    current = r.copied[0]
+    stale = current.parent / "pic-deadbeef.png"
+    stale.write_text("old build")
+    fa = current.parent.parent / "font-awesome"
+    fa.mkdir()
+    (fa / "kit.css").write_text("/* kit */")
+
+    removed = r.prune_stale()
+
+    assert stale in removed and not stale.exists()
+    assert current.exists()  # this build's asset kept
+    assert (fa / "kit.css").exists()  # sibling subdir left alone
+
+
+def test_prune_stale_no_assets_dir_is_noop(tmp_path):
+    r = _resolver(tmp_path)  # nothing copied, no assets/ dir
+    assert r.prune_stale() == []
+
+
 def test_relative_falls_back_to_asset_base_dir(tmp_path):
     # Asset lives in asset_base, referenced bare from a slide in another dir.
     write(tmp_path, "assets/bg.svg", "<svg/>")
