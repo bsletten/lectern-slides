@@ -215,6 +215,32 @@ or give meaningful ones an `aria-label`. Pro-only styles (`fa-thin`,
 `fa-duotone`, …) won't render under the free kit, so keep shareable decks to
 `fa-solid`/`fa-regular`/`fa-brands`.
 
+### Images
+
+A standalone Markdown image (`![alt](src)` on its own line) **fills the space the
+slide's heading/body leave** — generous on an image-only slide, smaller when
+there's also text — scaled to fit (up or down) with no distortion or overflow,
+under any theme. So a diagram slide is usually just:
+
+```markdown
+<!-- slide: .center .middle -->
+
+![Instruction and data lanes](images/instructions-vs-data-lanes.svg)
+```
+
+To size **one** image differently, either add a reveal element comment right
+after it, or use a raw `<img>` (which bypasses the fill rule):
+
+```markdown
+![alt](logo.svg)
+<!-- .element: style="max-width: 40%;" -->
+```
+```html
+<img src="diagram.svg" alt="…" style="width: 1040px;">   <!-- ~px in the 1280×720 grid -->
+```
+
+(Inline images — not alone on a line — are left at their natural size.)
+
 ### PDF export (`-f pdf`)
 
 ```bash

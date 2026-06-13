@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"
+     role="img" aria-label="A request flows from browser to edge cache to service to graph store">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#b04a2f"/>
+    </marker>
+  </defs>
+  <text x="320" y="44" text-anchor="middle" font-family="Inter, system-ui, sans-serif"
+        font-size="23" font-weight="700" fill="#22222b">A request, end to end</text>
+  <g font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600" fill="#22222b">
+    <rect x="23" y="145" width="120" height="78" rx="12" fill="#ffffff" stroke="#4a4a55" stroke-width="2"/>
+    <text x="83" y="184" text-anchor="middle" dominant-baseline="middle">Browser</text>
+    <rect x="181" y="145" width="120" height="78" rx="12" fill="#ffffff" stroke="#4a4a55" stroke-width="2"/>
+    <text x="241" y="184" text-anchor="middle" dominant-baseline="middle">Edge cache</text>
+    <rect x="339" y="145" width="120" height="78" rx="12" fill="#ffffff" stroke="#4a4a55" stroke-width="2"/>
+    <text x="399" y="184" text-anchor="middle" dominant-baseline="middle">Service</text>
+    <rect x="497" y="145" width="120" height="78" rx="12" fill="#ffffff" stroke="#4a4a55" stroke-width="2"/>
+    <text x="557" y="184" text-anchor="middle" dominant-baseline="middle">Graph store</text>
+  </g>
+  <g stroke="#b04a2f" stroke-width="2.5" marker-end="url(#ah)">
+    <line x1="147" y1="184" x2="174" y2="184"/>
+    <line x1="305" y1="184" x2="332" y2="184"/>
+    <line x1="463" y1="184" x2="490" y2="184"/>
+  </g>
+  <text x="320" y="300" text-anchor="middle" font-family="Inter, system-ui, sans-serif"
+        font-size="15" fill="#6b6b76">Each hop is addressable, cacheable, and replaceable.</text>
+</svg>

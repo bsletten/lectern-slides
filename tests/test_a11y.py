@@ -172,3 +172,22 @@ def test_non_fa_italic_not_flagged(tmp_path):
     # a plain <i> (or one without an fa- class) is not a Font Awesome icon
     write(tmp_path, "s.md", '# Text\n\n<i>emphasis</i> and <span class="x">y</span>\n')
     assert _audit(tmp_path / "s.md") == []
+
+
+def test_img_shown_as_inline_code_not_flagged(tmp_path):
+    # documenting `<img src=x>` as inline code isn't a real image
+    write(tmp_path, "s.md", "# Doc\n\nUse `<img src=x>` to embed an image.\n")
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_fa_icon_shown_as_inline_code_not_flagged(tmp_path):
+    body = '# Doc\n\nWrite `<i class="fa-solid fa-house">` for an icon.\n'
+    write(tmp_path, "s.md", body)
+    assert _audit(tmp_path / "s.md") == []
+
+
+def test_real_img_still_flagged_alongside_inline_code(tmp_path):
+    body = '# Doc\n\nUse `<img src=x>` like so.\n\n<img src="real.png">\n'
+    write(tmp_path, "s.md", body)
+    warns = _audit(tmp_path / "s.md")
+    assert sum("<img>" in w and "alt=" in w for w in warns) == 1  # only the real one

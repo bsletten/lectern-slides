@@ -33,6 +33,9 @@ if TYPE_CHECKING:
     from .preprocess import AssembledDeck
 
 _PROVENANCE = "<!-- @from "
+# Inline code spans (`…`, ``…``) — stripped before tag scanning so an `<img>` or
+# `<i class="fa-…">` *shown as code* in a slide isn't mistaken for a real one.
+_INLINE_CODE = re.compile(r"(`+)(?:.*?)\1")
 _HEADING = re.compile(r"^\s*#{1,6}\s+\S")
 _RAW_HEADING = re.compile(r"<h[1-6][\s/>]", re.IGNORECASE)
 _SLIDE_DIRECTIVE = re.compile(r"^\s*<!--\s*slide:\s*(.+?)\s*-->\s*$")
@@ -51,6 +54,11 @@ def audit(deck: AssembledDeck) -> list[str]:
         warnings.extend(_slide_warnings(number, group))
     warnings.extend(_theme_warnings(deck))
     return warnings
+
+
+def _strip_inline_code(text: str) -> str:
+    """Blank out inline-code spans so a tag shown as code isn't scanned as real."""
+    return _INLINE_CODE.sub(" ", text)
 
 
 def _has_heading(group) -> bool:
@@ -149,7 +157,7 @@ def _font_awesome_warnings(group) -> list[str]:
         if marker is not None:
             fence = marker
             continue
-        for m in _FA_TAG.finditer(text):
+        for m in _FA_TAG.finditer(_strip_inline_code(text)):
             tag = m.group(0)
             cls = _FA_CLASS.search(tag)
             if cls and _FA_TOKEN.search(cls.group(2)) and not _FA_OK.search(tag):
@@ -170,22 +178,23 @@ def _tags_missing_attr(group, tag: str, attr: str) -> list[str]:
     fence = None
     i, n = 0, len(lines)
     while i < n:
-        text = lines[i].text
+        raw = lines[i].text
         if fence is not None:
-            if closes_fence(text, fence):
+            if closes_fence(raw, fence):
                 fence = None
             i += 1
             continue
-        marker = fence_marker(text)
+        marker = fence_marker(raw)
         if marker is not None:
             fence = marker
             i += 1
             continue
+        text = _strip_inline_code(raw)  # don't scan tags shown as inline code
         if _OPEN[tag].search(text):
             loc, gathered, j = lines[i].loc, text, i
             while ">" not in gathered and j + 1 < n:
                 j += 1
-                gathered += " " + lines[j].text
+                gathered += " " + _strip_inline_code(lines[j].text)
             if not has_attr.search(gathered):
                 out.append(str(loc))
             i = j

@@ -35,6 +35,7 @@ them. That's the whole point.
 | `25-code.md`          | **Syntax highlighting** (fenced `python`, reveal highlight plugin + theme palette) |
 | `26-diagram.md`       | **Mermaid diagram** (fenced ` ```mermaid `, themed from tokens, in HTML + PDF) |
 | `27-icons.md`         | **Font Awesome icons** (`font_awesome = true`, free CDN; `<i class="fa-…">`) |
+| `28-image-sizing.md`  | **Image sizing** — an SVG filling the slide, then the `.element` and raw-`<img>` overrides |
 | `30-background.md`    | **Full background image** (`data-background-image`) |
 | `40-incremental.md`   | **Incremental builds** (`::: incremental`) + speaker notes |
 | `45-layout.md`        | **Content placement** — nine-point slide anchors + `::: {.place …}` boxes |

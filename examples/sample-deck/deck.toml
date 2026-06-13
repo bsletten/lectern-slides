@@ -33,6 +33,7 @@ slides = [
   "slides/25-code.md",
   "slides/26-diagram.md",
   "slides/27-icons.md",
+  "slides/28-image-sizing.md",
   "slides/30-background.md",
   "slides/32-image.md",
   "slides/40-incremental.md",

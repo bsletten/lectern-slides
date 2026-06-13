@@ -136,19 +136,23 @@
 }
 
 /* A standalone image (Markdown `![alt](src)` on its own line → a single-child
-   <p>) is centered and capped to a fraction of the slide height, so a tall
-   image never bumps the bottom edge — under any theme. Collapsing the <p> with
-   display:contents makes the image a direct flex child of the slide, so it
-   centers on the anchor grid and the % cap resolves against the slide's definite
-   height (the same mechanism as iframe.embed, which leaves room for the
-   heading/body regardless of a theme's type scale). */
-.reveal .slides section.slide p:has(> img:only-child) { display: contents; }
-.reveal .slides section.slide p:has(> img:only-child) > img {
-  display: block;
-  margin: 0 auto;
-  max-height: 66%;
-  width: auto;
+   <p>) fills the space the slide's heading/body leave — generous on an
+   image-only slide, politely smaller when there's also text — scaled to fit (up
+   or down) without distortion or overflow, under any theme. The <p> becomes a
+   flex box that takes the leftover vertical space (flex: 1), and the image is
+   `object-fit: contain`ed within it. Override one image with a raw
+   `<img style="…">`, or a reveal `<!-- .element: style="…" -->` comment after it. */
+.reveal .slides section.slide p:has(> img:only-child) {
+  display: flex;
+  flex: 1 1 auto;          /* take the space heading/caption don't */
   min-height: 0;
+  justify-content: center; /* center horizontally */
+  margin: 0;
+}
+.reveal .slides section.slide p:has(> img:only-child) > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;     /* fill the box, scaling up or down, never distorting */
 }
 
 /* Mermaid diagrams: the source `<pre class="mermaid">` is swapped for a
