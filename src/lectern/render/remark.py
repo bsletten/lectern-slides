@@ -129,6 +129,7 @@ def _render_template(config, theme, source: str, *, mermaid: bool = False) -> st
     return template.render(
         title=html.escape(config.title or theme.name),
         author=html.escape(config.author or ""),
+        lang=html.escape(config.lang or "en"),
         theme_css=theme.css,
         remark_cdn=REMARK_CDN,
         mermaid_cdn=MERMAID_CDN,

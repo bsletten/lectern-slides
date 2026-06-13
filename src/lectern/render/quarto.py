@@ -127,7 +127,7 @@ def _yaml_scalar(value) -> str:
 def build_source(config: Config, theme, slides: list[str]) -> str:
     """Assemble the full `.qmd` document (front-matter + horizontal-rule slides)."""
     yaml = _yaml_block(theme.width, theme.height, config.reveal.math, config.quarto)
-    front = ["---", *yaml, "---"]
+    front = ["---", f"lang: {config.lang or 'en'}", *yaml, "---"]
     body = "\n\n---\n\n".join(slides)
     return "\n".join(front) + "\n\n" + body + "\n"
 

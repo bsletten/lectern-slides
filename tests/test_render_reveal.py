@@ -154,6 +154,13 @@ def test_print_pdf_layout_bridge_present(fixtures, tmp_path):
     assert ".print-pdf .slides .pdf-page > section.slide" in html
 
 
+def test_lang_is_configurable(fixtures, tmp_path):
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert '<html lang="en">' in html  # default
+    html_fr, _ = _render(fixtures / "render-deck", tmp_path / "fr", lang="fr")
+    assert '<html lang="fr">' in html_fr
+
+
 def test_reduced_motion_media_query_present(fixtures, tmp_path):
     # The live deck honors prefers-reduced-motion by zeroing transition/animation.
     html, _ = _render(fixtures / "render-deck", tmp_path)

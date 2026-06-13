@@ -73,7 +73,7 @@ def _format_slide(lowered, warnings: list[str]) -> str:
 
 def build_source(config: Config, theme, slides: list[str]) -> str:
     """Assemble the full Marp Markdown document (front-matter + global style)."""
-    front = ["marp: true", "paginate: true"]
+    front = ["marp: true", "paginate: true", f"lang: {config.lang or 'en'}"]
     math = config.reveal.math
     if math:
         front.append(f"math: {'mathjax' if math == 'mathjax' else 'katex'}")

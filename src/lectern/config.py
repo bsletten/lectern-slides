@@ -96,6 +96,7 @@ class Config(BaseModel):
 
     title: str = ""
     author: str = ""
+    lang: str = "en"  # document language (BCP 47) → <html lang>, for screen readers
     renderer: str = "reveal"
     theme: str = "base"
     aspect: str = "16:9"

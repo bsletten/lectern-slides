@@ -257,6 +257,9 @@ break a screen-reader experience, and nothing noisy:
   a dark backdrop, independent of a theme's `.inverse` treatment — reach for it
   on a dark background-image slide:
   `<!-- slide: .on-dark data-background-image="night.jpg" -->`.
+- **Document language** — set `lang` (a BCP 47 tag like `en`, `fr`, `de`) in the
+  config so assistive tech pronounces the content correctly; it becomes
+  `<html lang>` (and the marp/quarto front-matter `lang`). Defaults to `en`.
 - **Reduced motion** — the live deck honors `prefers-reduced-motion: reduce`:
   reveal's slide/fragment/background transitions are zeroed, so slides change
   instantly (fragments still step, they just don't animate). The PDF master

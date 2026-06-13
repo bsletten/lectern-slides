@@ -122,6 +122,7 @@ single `.md` file.
 ```toml
 title       = "The Security of AI Systems"
 author      = "Brian Sletten"
+lang        = "en"              # BCP 47 document language → <html lang> (a11y)
 renderer    = "reveal"          # reveal | remark | marp | quarto
 theme       = "base"            # bundled name, or a path: "./themes/mine.css"
 aspect      = "16:9"            # "16:9" | "4:3" | "1280x720"

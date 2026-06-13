@@ -162,6 +162,7 @@ def _render_template(
     return template.render(
         title=html.escape(config.title or theme.name),
         author=html.escape(config.author or ""),
+        lang=html.escape(config.lang or "en"),
         theme_css=theme.css,
         reveal_cdn=REVEAL_CDN,
         katex_cdn=KATEX_CDN,
