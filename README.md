@@ -57,6 +57,7 @@ lectern config ./talks/ai-sec
 # Build: render to the deck's out_dir (default: reveal HTML)
 lectern build ./talks/ai-sec                         # -> dist/index.html
 lectern build ./talks/ai-sec -t ./themes/mine.css -o site
+lectern build ./talks/ai-sec -f outline             # -> dist/outline.md (text transcript)
 
 # Live preview: rebuilds on change with SSE reload + build-error overlay
 lectern watch ./talks/ai-sec                         # serves http://127.0.0.1:8080
@@ -262,6 +263,11 @@ break a screen-reader experience, and nothing noisy:
   can navigate slide-to-slide; interactive content shows a visible
   `:focus-visible` outline for keyboard users. On navigation the current slide
   ("Slide 3 of 18: …") is announced via a polite `aria-live` region.
+- **Outline export** — `-f outline` writes a linear, heading-structured Markdown
+  transcript (`outline.md`): each slide's heading (or its `label`), prose body
+  with directives stripped, and the speaker notes as prose; Mermaid diagrams
+  collapse to their `accDescr`. A screen-reader transcript / no-JS, crawlable
+  fallback, independent of any render framework.
 - **Document language** — set `lang` (a BCP 47 tag like `en`, `fr`, `de`) in the
   config so assistive tech pronounces the content correctly; it becomes
   `<html lang>` (and the marp/quarto front-matter `lang`). Defaults to `en`.

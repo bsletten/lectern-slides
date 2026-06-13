@@ -48,6 +48,16 @@ def test_build_writes_index_and_reports(fixtures, tmp_path):
     assert "built 3 slide(s)" in result.stdout
 
 
+def test_build_outline_writes_markdown(fixtures, tmp_path):
+    result = runner.invoke(
+        app,
+        ["build", str(fixtures / "render-deck"), "-f", "outline", "-o", str(tmp_path)],
+    )
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "outline.md").is_file()
+    assert "wrote outline" in result.stdout
+
+
 def test_build_rejects_unsupported_format(fixtures, tmp_path):
     # reveal can't make pptx; the error should name the format and suggest marp.
     result = runner.invoke(

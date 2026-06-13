@@ -51,8 +51,9 @@ class Renderer(Protocol):
     ) -> RenderResult: ...
 
 
-# Output formats a build can request, mapped to the ``Caps`` flag that gates them.
-FORMATS = ("html", "pdf", "pptx")
+# Output formats a build can request. html/pdf/pptx go through a render adapter
+# (gated by its ``Caps``); ``outline`` is a renderer-independent Markdown export.
+FORMATS = ("html", "pdf", "pptx", "outline")
 
 renderers: dict[str, Renderer] = {}
 

@@ -353,7 +353,7 @@ def build(
         help="Override the output directory (default: deck out_dir).",
     ),
     fmt: str = typer.Option(
-        "html", "-f", "--format", help="Output format: html | pdf | pptx."
+        "html", "-f", "--format", help="Output format: html | pdf | pptx | outline."
     ),
     layout: str | None = typer.Option(
         None,
@@ -408,6 +408,21 @@ def build(
         resolved = resolve_source(
             source, config_override=config, cli_overrides=overrides
         )
+
+        if fmt == "outline":
+            from .outline import build_outline
+
+            deck = assemble_resolved(resolved)
+            resolved.out_dir.mkdir(parents=True, exist_ok=True)
+            output = resolved.out_dir / "outline.md"
+            output.write_text(build_outline(deck, resolved.config), encoding="utf-8")
+            _emit_warnings(deck.warnings)
+            typer.secho(
+                f"wrote outline of {deck.slide_count} slide(s) -> {output}",
+                fg=typer.colors.GREEN,
+            )
+            return
+
         adapter = get_renderer(resolved.config.renderer)
         if not supports_format(adapter.capabilities(), fmt):
             alt = renderers_supporting(fmt)

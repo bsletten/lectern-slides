@@ -1,4 +1,4 @@
-<!-- Reusable across decks. Included via: <!-- include: qualifications.md -->
+<!-- Reusable across decks; pulled in with an `include` directive.
      Edit once; every deck that includes it updates. -->
 
 - Author, *Resource-Oriented Computing* and a stack of O'Reilly titles
