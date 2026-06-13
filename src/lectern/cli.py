@@ -204,8 +204,7 @@ def new_cmd(
         theme_line = f'theme    = "{theme}"'
     elif inherited_theme:
         theme_line = (
-            "# theme is inherited from your user config "
-            "(~/.config/lectern/config.toml)"
+            "# theme is inherited from your user config (~/.config/lectern/config.toml)"
         )
     else:
         theme_line = 'theme    = "base"'
