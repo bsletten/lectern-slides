@@ -135,21 +135,27 @@
   max-width: 100%;
 }
 
-/* A standalone image (Markdown `![alt](src)` on its own line → a single-child
-   <p>) fills the space the slide's heading/body leave — generous on an
-   image-only slide, politely smaller when there's also text — scaled to fit (up
+/* A standalone graphic on its own line — a Markdown `![alt](src)` image or an
+   inlined `<svg>` (via `<!-- include: art.svg -->`), each landing as a single-
+   child <p> — fills the space the slide's heading/body leave: generous on a
+   graphic-only slide, politely smaller when there's also text, scaled to fit (up
    or down) without distortion or overflow, under any theme. The <p> becomes a
-   flex box that takes the leftover vertical space (flex: 1), and the image is
-   `object-fit: contain`ed within it. Override one image with a raw
-   `<img style="…">`, or a reveal `<!-- .element: style="…" -->` comment after it. */
-.reveal .slides section.slide p:has(> img:only-child) {
+   flex box that takes the leftover vertical space (flex: 1); the image is
+   `object-fit: contain`ed and the SVG's own `viewBox`/`preserveAspectRatio`
+   contains it the same way. An inline SVG also reads the theme tokens
+   (`var(--accent)`, `currentColor`, …) a flat `<img>` can't — see the themed-SVG
+   contract. Override one graphic with a raw `<img style="…">`/`<svg style="…">`,
+   or a reveal `<!-- .element: style="…" -->` comment after it. */
+.reveal .slides section.slide p:has(> img:only-child),
+.reveal .slides section.slide p:has(> svg:only-child) {
   display: flex;
   flex: 1 1 auto;          /* take the space heading/caption don't */
   min-height: 0;
   justify-content: center; /* center horizontally */
   margin: 0;
 }
-.reveal .slides section.slide p:has(> img:only-child) > img {
+.reveal .slides section.slide p:has(> img:only-child) > img,
+.reveal .slides section.slide p:has(> svg:only-child) > svg {
   width: 100%;
   height: 100%;
   object-fit: contain;     /* fill the box, scaling up or down, never distorting */

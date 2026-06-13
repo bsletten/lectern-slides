@@ -50,6 +50,7 @@ class _Ctx:
     partial_dirs: list[Path]
     max_depth: int
     origin_display: str
+    asset_dirs: list[Path] = field(default_factory=list)
     remark_compat: bool = False
     warnings: list[str] = field(default_factory=list)
 
@@ -122,10 +123,19 @@ def assemble_resolved(
 ) -> AssembledDeck:
     """Assemble from an already-resolved source (the testable seam)."""
     src = src or FilesystemSource()
+    # A local `asset_base` is also an include search dir, so a themed SVG kept
+    # where assets live (`_assets/…`) can be inlined with the same path used to
+    # reference it as an image. A URL `asset_base` has no local dir to read from.
+    asset_dirs: list[Path] = []
+    asset_base = resolved.config.asset_base
+    if asset_base and not asset_base.lower().startswith(("http://", "https://", "//")):
+        base = Path(asset_base).expanduser()
+        asset_dirs = [base if base.is_absolute() else (resolved.root / base)]
     ctx = _Ctx(
         source=src,
         root=resolved.root,
         partial_dirs=resolved.partial_dirs,
+        asset_dirs=asset_dirs,
         max_depth=resolved.config.max_include_depth,
         origin_display=resolved.origin_display,
         remark_compat=getattr(resolved.config, "remark_compat", False),
@@ -173,6 +183,16 @@ def _resolve_include(
     raw = ctx.source.read(resolved)
     metadata, body, body_line = _split_frontmatter(raw)
     display = _display(resolved, ctx.root)
+
+    # Inlining an SVG (`<!-- include: art.svg -->`) lets it read the slide's theme
+    # tokens, which a flat `<img>` can't. But the deck is rendered by reveal's
+    # client-side Markdown (marked), where a CommonMark HTML block ends at the
+    # first blank line — a blank line between SVG elements would close `<svg>`
+    # early and orphan everything after it. Collapse the file's blank lines so the
+    # markup stays one uninterrupted block. (Insignificant whitespace for SVG/XML;
+    # not done for Markdown partials, where blank lines separate paragraphs.)
+    if resolved.suffix.lower() in (".svg", ".xml"):
+        body = "\n".join(ln for ln in body.split("\n") if ln.strip())
     if metadata:
         keys = ", ".join(map(str, metadata))
         ctx.warnings.append(
@@ -265,13 +285,14 @@ def _split_target(target: str) -> tuple[str, str | None]:
 def _resolve_path(
     path_text: str, including_dir: Path, ctx: _Ctx, loc: SourceLocation
 ) -> Path:
-    """Resolve a PATH against the including dir, then the partial search dirs."""
+    """Resolve a PATH against the including dir, the partials, then asset_base."""
     candidate = Path(path_text).expanduser()
     if candidate.is_absolute():
         search = [candidate]
     else:
         search = [including_dir / candidate]
         search += [d / candidate for d in ctx.partial_dirs]
+        search += [d / candidate for d in ctx.asset_dirs]
 
     for c in search:
         if ctx.source.exists(c):

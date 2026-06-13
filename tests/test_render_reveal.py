@@ -126,6 +126,9 @@ def test_standalone_image_fills_and_is_contained(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
     assert "p:has(> img:only-child)" in html
     assert "object-fit: contain;" in html
+    # An inlined SVG (via `<!-- include: art.svg -->`) lands as a single-child <p>
+    # too, and must scale to fill the same way — `<img>` CSS wouldn't match it.
+    assert "p:has(> svg:only-child)" in html
 
 
 def test_quotation_source_standardized_to_slide_color(fixtures, tmp_path):

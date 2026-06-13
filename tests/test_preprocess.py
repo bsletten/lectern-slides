@@ -21,6 +21,43 @@ def test_inline_include_resolved_relatively(tmp_path):
     assert deck.slide_count == 1  # single-slide partial stays inline
 
 
+def test_svg_include_collapses_blank_lines_to_stay_inline(tmp_path):
+    # An inlined SVG must be one uninterrupted block: reveal's client-side
+    # Markdown ends an HTML block at the first blank line, which would close
+    # `<svg>` early. The include strips blank lines for .svg/.xml (but not .md).
+    svg = (
+        '<svg viewBox="0 0 10 10">\n'
+        "  <title>t</title>\n"
+        "\n"  # a blank line that would otherwise break the HTML block
+        "  <rect width='10' height='10'/>\n"
+        "\n"
+        "</svg>\n"
+    )
+    write(tmp_path, "art.svg", svg)
+    write(tmp_path, "main.md", "# Art\n\n<!-- include: art.svg -->\n")
+    out = _md(assemble(tmp_path / "main.md"))
+    block = out[out.index("<svg") : out.index("</svg>")]
+    assert "<rect" in block
+    assert "\n\n" not in block  # no blank line within the SVG to break the HTML block
+
+
+def test_include_resolves_via_asset_base(tmp_path):
+    # A themed SVG kept under asset_base (where assets live) can be inlined with
+    # the same path used to reference it as an image.
+    write(tmp_path, "assets/img/chart.svg", "<svg><rect/></svg>\n")
+    write(tmp_path, "main.md", "<!-- include: img/chart.svg -->\n")
+    deck = assemble(tmp_path / "main.md", cli_overrides={"asset_base": "assets"})
+    assert "<svg><rect/></svg>" in _md(deck)
+
+
+def test_md_include_keeps_blank_lines(tmp_path):
+    # Markdown partials still keep blank lines — they separate paragraphs.
+    write(tmp_path, "note.md", "Para one.\n\nPara two.\n")
+    write(tmp_path, "main.md", "<!-- include: note.md -->\n")
+    out = _md(assemble(tmp_path / "main.md"))
+    assert "Para one.\n\nPara two." in out
+
+
 def test_include_via_partials_search_path(tmp_path):
     write(tmp_path, "_lib/shared.md", "shared content")
     write(tmp_path, "slides/main.md", "<!-- include: shared.md -->\n")
