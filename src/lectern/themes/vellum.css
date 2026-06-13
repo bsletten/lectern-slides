@@ -21,7 +21,7 @@
   --muted: rgba(232, 216, 92, 0.62);
   --faint: rgba(232, 216, 92, 0.32);
   --emphasis: #f5e168;  /* brighter yellow — the upright <em> moment */
-  --accent: #3a7878;    /* dusty teal — quote marks, counters, kickers, pin-note, rule */
+  --accent: #6fa8a2;    /* sage teal — quote marks, counters, kickers, pin-note, rule (4.1:1 on bg) */
   --rule: rgba(232, 216, 92, 0.20);   /* 1px hairline at 20% yellow */
   --inverse-bg: #343f80; --inverse-fg: #e8d85c;  /* there is no real inversion */
   --code-bg: #1f2858; --code-fg: #e8d85c;
