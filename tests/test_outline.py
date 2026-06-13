@@ -74,6 +74,14 @@ def test_slide_directive_not_in_output(tmp_path):
     assert "# T" in out
 
 
+def test_no_repeated_blank_lines(tmp_path):
+    # A dropped `::: incremental` wrapper leaves a double blank; it's squeezed.
+    write(tmp_path, "s.md", "# T\n\nLead:\n\n::: incremental\n\n- one\n- two\n:::\n")
+    out = _outline(tmp_path / "s.md")
+    assert "\n\n\n" not in out
+    assert "- one" in out  # content intact
+
+
 def test_iframe_collapses_to_title(tmp_path):
     write(
         tmp_path,

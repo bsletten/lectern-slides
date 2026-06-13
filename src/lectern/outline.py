@@ -230,4 +230,7 @@ def build_outline(deck: AssembledDeck, config) -> str:
             )
             blocks.append(f"**Notes**\n\n{quoted}")
 
-    return "\n\n".join(b for b in blocks if b.strip()) + "\n"
+    document = "\n\n".join(b for b in blocks if b.strip())
+    # Collapse runs of blank lines (a dropped `:::` wrapper or an include can
+    # leave two) to a single blank line.
+    return re.sub(r"\n{3,}", "\n\n", document) + "\n"
