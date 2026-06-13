@@ -109,6 +109,9 @@ class Config(BaseModel):
     max_include_depth: int = 16
     remark_compat: bool = False
     slides: list[str] | None = None
+    # Font Awesome: false (off) · true (free, pinned CDN) · a path to a local kit
+    # to self-host (copied verbatim — e.g. a Pro kit set once in the user config).
+    font_awesome: bool | str = False
 
     serve: ServeConfig = Field(default_factory=ServeConfig)
     reveal: RevealConfig = Field(default_factory=RevealConfig)

@@ -18,6 +18,9 @@ asset_base = "./assets"
 # Reusable snippets searched here when an include path isn't found relatively.
 partials   = ["./_partials"]
 
+# Font Awesome: the free kit from a pinned CDN (or a path to a local/Pro kit).
+font_awesome = true
+
 out_dir    = "dist"
 build_dir  = "build"
 
@@ -29,6 +32,7 @@ slides = [
   "_partials/principles.md#2-3,6",   # ranged include: slides 2-3 and 6 of a 7-slide source
   "slides/25-code.md",
   "slides/26-diagram.md",
+  "slides/27-icons.md",
   "slides/30-background.md",
   "slides/32-image.md",
   "slides/40-incremental.md",

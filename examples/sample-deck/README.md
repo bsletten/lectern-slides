@@ -34,6 +34,7 @@ them. That's the whole point.
 | `20-qualifications.md`| Speaker qualifications via **transclusion** of `_partials/qualifications.md` |
 | `25-code.md`          | **Syntax highlighting** (fenced `python`, reveal highlight plugin + theme palette) |
 | `26-diagram.md`       | **Mermaid diagram** (fenced ` ```mermaid `, themed from tokens, in HTML + PDF) |
+| `27-icons.md`         | **Font Awesome icons** (`font_awesome = true`, free CDN; `<i class="fa-…">`) |
 | `30-background.md`    | **Full background image** (`data-background-image`) |
 | `40-incremental.md`   | **Incremental builds** (`::: incremental`) + speaker notes |
 | `45-layout.md`        | **Content placement** — nine-point slide anchors + `::: {.place …}` boxes |

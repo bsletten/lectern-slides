@@ -108,11 +108,16 @@ def build_html(
     forced = config.reveal.model_dump().get("mermaid")
     mermaid = mermaid_seen if forced is None else bool(forced)
 
+    from .. import fontawesome
+
+    fa_css = fontawesome.resolve(config.font_awesome, deck.root, out_dir, warnings)
+
     html_text = _render_template(
         config,
         theme,
         slides,
         mermaid=mermaid,
+        font_awesome_css=fa_css,
         init_extra=init_extra,
         extra_head=extra_head,
     )
@@ -120,7 +125,14 @@ def build_html(
 
 
 def _render_template(
-    config, theme, slides, *, mermaid=False, init_extra=None, extra_head=""
+    config,
+    theme,
+    slides,
+    *,
+    mermaid=False,
+    font_awesome_css=None,
+    init_extra=None,
+    extra_head="",
 ) -> str:
     rc = config.reveal.model_dump()
     math = rc.get("math") or False
@@ -168,6 +180,7 @@ def _render_template(
         katex_cdn=KATEX_CDN,
         mermaid_cdn=MERMAID_CDN,
         mermaid=mermaid,
+        font_awesome_css=font_awesome_css,
         init_json=json.dumps(init),
         init_extra=json.dumps(init_extra) if init_extra else "",
         extra_head=extra_head,

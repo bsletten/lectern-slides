@@ -194,6 +194,27 @@ deck's design tokens, and the PDF master waits for the async render, so they
 appear in the vector PDF too. (For `marp`/`quarto`, or for full control, the
 isolated-iframe embed pattern still works in every renderer.)
 
+### Icons (Font Awesome)
+
+Set `font_awesome` in the manifest (or user config) and drop glyphs in with raw
+HTML — `<i class="fa-solid fa-rocket"></i>` — anywhere in a slide; they inherit
+the theme's text color and embed as vector in the PDF.
+
+```toml
+font_awesome = true                                  # free kit, pinned CDN
+# font_awesome = "~/decks/_assets/font-awesome"      # a local kit (e.g. Pro), self-hosted
+```
+
+`true` links the **free** kit from a pinned CDN (a `<i class="fa-brands fa-…">`
+gets brand icons too). A **path** self-hosts a local kit: the directory is copied
+**verbatim** into `dist/font-awesome/` (preserving `css/` + `webfonts/`, which the
+content-hashing asset pipeline would otherwise break) and linked locally — so a
+paid/Pro kit set once in your user config is inherited by every deck, served
+same-origin (no CDN, COI-friendly). Mark decorative icons `aria-hidden="true"`,
+or give meaningful ones an `aria-label`. Pro-only styles (`fa-thin`,
+`fa-duotone`, …) won't render under the free kit, so keep shareable decks to
+`fa-solid`/`fa-regular`/`fa-brands`.
+
 ### PDF export (`-f pdf`)
 
 ```bash

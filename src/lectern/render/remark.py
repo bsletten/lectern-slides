@@ -101,8 +101,14 @@ class RemarkRenderer:
 
         forced = config.reveal.model_dump().get("mermaid")
         mermaid = mermaid_seen if forced is None else bool(forced)
+
+        from .. import fontawesome
+
+        fa_css = fontawesome.resolve(config.font_awesome, deck.root, out_dir, warnings)
         source = _LAYOUT_SLIDE + "\n---\n\n" + "\n\n---\n\n".join(slide_mds) + "\n"
-        html_text = _render_template(config, theme, source, mermaid=mermaid)
+        html_text = _render_template(
+            config, theme, source, mermaid=mermaid, font_awesome_css=fa_css
+        )
         output = out_dir / "index.html"
         output.write_text(html_text, encoding="utf-8")
 
@@ -114,7 +120,9 @@ def _reduced_ratio(width: int, height: int) -> str:
     return f"{width // g}:{height // g}"
 
 
-def _render_template(config, theme, source: str, *, mermaid: bool = False) -> str:
+def _render_template(
+    config, theme, source: str, *, mermaid: bool = False, font_awesome_css=None
+) -> str:
     # Escape ``</`` so a slide containing ``</script>`` can't close the inline
     # bootstrap script early; ``<\/`` is still a valid JSON/JS string.
     source_json = json.dumps(source).replace("</", "<\\/")
@@ -133,6 +141,7 @@ def _render_template(config, theme, source: str, *, mermaid: bool = False) -> st
         theme_css=theme.css,
         remark_cdn=REMARK_CDN,
         mermaid_cdn=MERMAID_CDN,
+        font_awesome_css=font_awesome_css,
         mermaid=mermaid,
         ratio=_reduced_ratio(theme.width, theme.height),
         source_json=source_json,

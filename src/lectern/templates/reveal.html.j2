@@ -12,6 +12,9 @@
 {% if math == 'katex' %}
 <link rel="stylesheet" href="{{ katex_cdn }}">
 {% endif %}
+{% if font_awesome_css %}
+<link rel="stylesheet" href="{{ font_awesome_css }}">
+{% endif %}
 <style id="lectern-theme">
 {{ theme_css }}
 </style>

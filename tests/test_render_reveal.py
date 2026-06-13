@@ -260,3 +260,19 @@ def test_reveal_mermaid_can_be_forced_off(tmp_path):
     html, _ = _render(src, tmp_path / "out")
     assert '<pre class="mermaid">' in html  # still lowered
     assert "mermaid.esm.min.mjs" not in html  # but not rendered client-side
+
+
+def test_font_awesome_free_cdn_linked_when_true(tmp_path):
+    from conftest import write
+
+    write(tmp_path, "deck.toml", "font_awesome = true\nslides = [\"s.md\"]\n")
+    write(tmp_path, "s.md", '# Icons\n\n<i class="fa-solid fa-house"></i>\n')
+    html, _ = _render(tmp_path, tmp_path / "out")
+    assert 'fontawesome-free@' in html  # the pinned free CDN stylesheet
+    assert 'class="fa-solid fa-house"' in html  # icon HTML passes through
+
+
+def test_font_awesome_absent_by_default(fixtures, tmp_path):
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "fontawesome" not in html.lower()
+    assert "font-awesome/css" not in html
