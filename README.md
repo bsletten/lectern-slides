@@ -265,6 +265,11 @@ break a screen-reader experience, and nothing noisy:
 - **Document language** — set `lang` (a BCP 47 tag like `en`, `fr`, `de`) in the
   config so assistive tech pronounces the content correctly; it becomes
   `<html lang>` (and the marp/quarto front-matter `lang`). Defaults to `en`.
+- **Tagged PDF** — `-f pdf --layout 1up` emits a *tagged* (structured) PDF:
+  headings, paragraphs, lists, and tables carry structure tags, and `<html lang>`
+  becomes the PDF's `/Lang`, so screen readers can read the export. (Tagging is
+  on by default; the structure survives the `1up` master — N-up imposition
+  flattens it. `[pdf].tagged = false` to disable.)
 - **Reduced motion** — the live deck honors `prefers-reduced-motion: reduce`:
   reveal's slide/fragment/background transitions are zeroed, so slides change
   instantly (fragments still step, they just don't animate). The PDF master

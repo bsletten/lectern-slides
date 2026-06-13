@@ -83,9 +83,10 @@ def _render_master(
     )
     (work_dir / "index.html").write_text(html_text, encoding="utf-8")
 
-    # Cache the master on everything that changes printed pixels (not the layout).
+    # Cache the master on everything that changes the master file (not the layout;
+    # `tagged` adds a structure tree, so it keys a distinct master).
     key = hashlib.sha256(
-        f"{html_text}|bg={opts.backgrounds}|steps={steps}".encode()
+        f"{html_text}|bg={opts.backgrounds}|steps={steps}|tagged={opts.tagged}".encode()
     ).hexdigest()[:16]
     cache_dir = _cache_dir(deck.root, config)
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -102,6 +103,7 @@ def _render_master(
         work_dir / "index.html",
         print_background=opts.backgrounds,
         prepare=prepare if opts.posters != "off" else None,
+        tagged=opts.tagged,
     )
     cached.write_bytes(data)
     return data

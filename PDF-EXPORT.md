@@ -147,6 +147,8 @@ fragments     = "flatten"    # flatten | steps
 paper         = "deck"       # deck | letter | a4 | 1280x720
 posters       = "auto"       # auto | explicit | off
 poster_at     = 1200         # ms, default capture moment for auto posters
+tagged        = true         # emit a tagged (structured) PDF for screen readers;
+                             # preserved by the 1up master, flattened by N-up imposition
 
 # handout chrome (used by 2up/4up/6up/3up-notes)
 frame         = true

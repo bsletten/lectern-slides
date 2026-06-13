@@ -42,6 +42,7 @@ def test_cache_dir_under_build_dir(tmp_path):
 def test_defaults_resolve():
     o = options.resolve(PdfConfig())
     assert o.layout == "2up-notes" and o.color == "color" and o.backgrounds is True
+    assert o.tagged is True  # tagged PDF on by default
 
 
 def test_ink_saver_expands():
@@ -336,3 +337,28 @@ def test_end_to_end_pdf_build(fixtures, tmp_path):
     # under the deck's build_dir (here redirected to tmp), not the out_dir.
     assert (tmp_path / "build" / ".lectern-cache").is_dir()
     assert not (tmp_path / ".lectern-cache").exists()
+
+
+@needs_pdf_libs
+@pytest.mark.skipif(not HAVE_CHROMIUM, reason="Chromium/Playwright not installed")
+def test_tagged_1up_pdf(fixtures, tmp_path):
+    from pypdf import PdfReader
+
+    from lectern.config import resolve_source
+    from lectern.preprocess import assemble_resolved
+    from lectern.render import get_renderer
+
+    resolved = resolve_source(
+        fixtures / "render-deck",
+        cli_overrides={
+            "pdf": {"layout": "1up"},  # 1up passthrough preserves the tagged master
+            "build_dir": str(tmp_path / "build"),
+        },
+    )
+    deck = assemble_resolved(resolved)
+    out = get_renderer("reveal").render(deck, resolved.config, tmp_path, "pdf").output
+
+    root = PdfReader(out).trailer["/Root"]
+    assert bool(root.get("/MarkInfo", {}).get("/Marked"))  # tagged
+    assert "/StructTreeRoot" in root  # has a structure tree
+    assert str(root.get("/Lang")).startswith("en")  # <html lang> -> /Lang

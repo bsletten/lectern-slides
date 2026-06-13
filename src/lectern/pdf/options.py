@@ -35,6 +35,7 @@ class PdfOptions:
     paper: str
     posters: str
     poster_at: int
+    tagged: bool
     # color
     color: str
     bw_engine: str
@@ -90,6 +91,7 @@ def resolve(pdf: PdfConfig) -> PdfOptions:
         paper=paper,
         posters=_check(pdf.posters, POSTERS, "posters"),
         poster_at=pdf.poster_at,
+        tagged=pdf.tagged,
         color=color,
         bw_engine=_check(pdf.bw_engine, BW_ENGINES, "bw_engine"),
         layout=layout,

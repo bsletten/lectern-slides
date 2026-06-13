@@ -41,6 +41,7 @@ def print_to_pdf(
     settle_ms: int = 300,
     swiftshader: bool = False,
     prepare=None,
+    tagged: bool = False,
 ) -> bytes:
     """Render ``html_path`` (with ``?print-pdf``) to vector PDF bytes.
 
@@ -48,6 +49,12 @@ def print_to_pdf(
     short settle so fonts/highlighting paint, then prints at reveal's own page
     size via ``prefer_css_page_size``. ``prepare(page)`` runs after print media is
     emulated and before printing — the seam where poster capture swaps embeds.
+
+    With ``tagged``, emit a tagged (structured) PDF. reveal marks every non-current
+    slide ``aria-hidden``, which would tag only one slide, so we strip
+    ``aria-hidden`` first (semantic only — every slide is already laid out in
+    print, so this doesn't change a pixel). ``<html lang>`` becomes the PDF's
+    ``/Lang``.
     """
     from playwright.sync_api import sync_playwright
 
@@ -73,8 +80,15 @@ def print_to_pdf(
                 pass
             if prepare is not None:
                 prepare(page)
+            if tagged:
+                page.eval_on_selector_all(
+                    "[aria-hidden]",
+                    "els => els.forEach(e => e.removeAttribute('aria-hidden'))",
+                )
             data = page.pdf(
-                print_background=print_background, prefer_css_page_size=True
+                print_background=print_background,
+                prefer_css_page_size=True,
+                tagged=tagged,
             )
             browser.close()
             return data

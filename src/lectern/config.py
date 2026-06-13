@@ -72,6 +72,7 @@ class PdfConfig(_Section):
     paper: str = "deck"  # deck | letter | a4 | WxH
     posters: str = "auto"  # auto | explicit | off
     poster_at: int = 1200  # ms
+    tagged: bool = True  # emit a tagged (structured) PDF; preserved by 1up only
 
     # color / B&W
     color: str = "color"  # color | bw

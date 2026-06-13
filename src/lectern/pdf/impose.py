@@ -131,12 +131,11 @@ def impose(
     )
 
     # 1up on deck paper is the master verbatim — the cheap, clean projection case.
+    # Return the master bytes unchanged: a PdfWriter round-trip would rebuild the
+    # catalog and drop the tagged structure tree (/MarkInfo, /StructTreeRoot,
+    # /Lang). Verbatim passthrough preserves them — the whole point of `tagged`.
     if options.layout == "1up" and options.paper.strip().lower() == "deck":
-        writer = PdfWriter()
-        writer.append(reader)
-        out = io.BytesIO()
-        writer.write(out)
-        return out.getvalue()
+        return master_pdf
 
     orientation = options.orientation
     if orientation == "auto":
