@@ -196,6 +196,18 @@
   width: 100% !important;
 }
 
+/* Visible keyboard focus, theme-independent: browser/theme defaults are easy to
+   lose on links over a themed background. `:focus-visible` shows it for keyboard
+   users only, in the theme accent (which the audit holds to >=3:1 vs --bg). */
+.reveal .slides section a:focus-visible,
+.reveal .slides section button:focus-visible,
+.reveal .slides section iframe:focus-visible,
+.reveal .slides section [tabindex]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
 /* Respect prefers-reduced-motion: zero out reveal's slide / fragment / background
    transitions and any keyframe animation, so the live deck doesn't animate for
    users who ask for less motion. Slides still position and fragments still step —
@@ -246,6 +258,19 @@
       ]
     }{% endif %}
   }{% if init_extra %}, {{ init_extra }}{% endif %}));
+
+  // Region landmarks: name each slide so screen-reader users can navigate it.
+  // A <section> with an accessible name is implicitly an ARIA `region`. Slides
+  // with an explicit `label`/`aria-label` keep it; the rest take their heading
+  // text (rendered by the markdown plugin, so we wait for `ready`).
+  Reveal.on('ready', () => {
+    document.querySelectorAll('.reveal .slides section').forEach((s) => {
+      if (s.getAttribute('aria-label') || s.getAttribute('aria-labelledby')) return;
+      const h = s.querySelector('h1, h2, h3, h4, h5, h6');
+      const name = h && h.textContent.trim();
+      if (name) s.setAttribute('aria-label', name);
+    });
+  });
 </script>
 {% if mermaid %}
 <script type="module">

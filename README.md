@@ -257,6 +257,10 @@ break a screen-reader experience, and nothing noisy:
   a dark backdrop, independent of a theme's `.inverse` treatment — reach for it
   on a dark background-image slide:
   `<!-- slide: .on-dark data-background-image="night.jpg" -->`.
+- **Region landmarks + focus** — each slide `<section>` is named (an ARIA
+  `region`) from its heading (or its explicit `label`), so screen-reader users
+  can navigate slide-to-slide; interactive content shows a visible
+  `:focus-visible` outline for keyboard users.
 - **Document language** — set `lang` (a BCP 47 tag like `en`, `fr`, `de`) in the
   config so assistive tech pronounces the content correctly; it becomes
   `<html lang>` (and the marp/quarto front-matter `lang`). Defaults to `en`.

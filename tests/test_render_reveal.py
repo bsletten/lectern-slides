@@ -154,6 +154,21 @@ def test_print_pdf_layout_bridge_present(fixtures, tmp_path):
     assert ".print-pdf .slides .pdf-page > section.slide" in html
 
 
+def test_focus_visible_styles_present(fixtures, tmp_path):
+    # Visible keyboard focus for interactive content, theme-independent.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "a:focus-visible" in html
+    assert "outline: 3px solid var(--accent)" in html
+
+
+def test_region_labelling_script_present(fixtures, tmp_path):
+    # Each slide section is named (region landmark) from its heading at runtime;
+    # explicit label/aria-label is preserved. Guard the script against removal.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "Reveal.on('ready'" in html
+    assert "setAttribute('aria-label'" in html
+
+
 def test_lang_is_configurable(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
     assert '<html lang="en">' in html  # default
