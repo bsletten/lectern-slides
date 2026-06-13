@@ -154,11 +154,28 @@
   justify-content: center; /* center horizontally */
   margin: 0;
 }
-.reveal .slides section.slide p:has(> img:only-child) > img,
-.reveal .slides section.slide p:has(> svg:only-child) > svg {
+.reveal .slides section.slide p:has(> img:only-child) > img {
   width: 100%;
   height: 100%;
   object-fit: contain;     /* fill the box, scaling up or down, never distorting */
+}
+/* An inline <svg> is not a replaced element: it has no `object-fit`, and its
+   intrinsic size inflates the flex column. reveal measures a slide's *natural*
+   height to paginate the print-pdf master, and that inflated height pushed the
+   slide past one page — the chart fell off the bottom / spilled to an extra
+   page. Take the SVG out of flow (absolute) so it never contributes to that
+   measurement; it fills the box and its viewBox/preserveAspectRatio contains it
+   like object-fit does for an image. The <p> is the positioned box: give it a
+   full width so it doesn't shrink-wrap its (now out-of-flow) child to zero. */
+.reveal .slides section.slide p:has(> svg:only-child) {
+  position: relative;
+  width: 100%;
+}
+.reveal .slides section.slide p:has(> svg:only-child) > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 /* Mermaid diagrams: the source `<pre class="mermaid">` is swapped for a
