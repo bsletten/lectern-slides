@@ -38,7 +38,10 @@ def test_notes_lowered(fixtures, tmp_path):
 
 def test_incremental_items_get_fragment(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
-    assert html.count('<!-- .element: class="fragment" -->') == 2
+    # Each incremental item gets a fragment comment carrying `data-li-frag`, the
+    # marker a client script uses to promote the fragment from a formatted child
+    # back up to the <li> (so the list marker/number builds in, not just the text).
+    assert html.count('<!-- .element: class="fragment" data-li-frag="1" -->') == 2
 
 
 def test_place_box_lowered_to_div(fixtures, tmp_path):
@@ -265,10 +268,10 @@ def test_reveal_mermaid_can_be_forced_off(tmp_path):
 def test_font_awesome_free_cdn_linked_when_true(tmp_path):
     from conftest import write
 
-    write(tmp_path, "deck.toml", "font_awesome = true\nslides = [\"s.md\"]\n")
+    write(tmp_path, "deck.toml", 'font_awesome = true\nslides = ["s.md"]\n')
     write(tmp_path, "s.md", '# Icons\n\n<i class="fa-solid fa-house"></i>\n')
     html, _ = _render(tmp_path, tmp_path / "out")
-    assert 'fontawesome-free@' in html  # the pinned free CDN stylesheet
+    assert "fontawesome-free@" in html  # the pinned free CDN stylesheet
     assert 'class="fa-solid fa-house"' in html  # icon HTML passes through
 
 

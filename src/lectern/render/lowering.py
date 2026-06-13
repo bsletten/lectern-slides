@@ -232,7 +232,13 @@ class _Scanner:
             and "incremental" in self._div_stack
             and _LIST_ITEM.match(out)
         ):
-            out = out.rstrip() + ' <!-- .element: class="fragment" -->'
+            # `data-li-frag` marks an incremental list item. reveal's `.element`
+            # comment attaches the class to the *preceding inline element* (a
+            # <strong>/<em>) when the item is formatted, not the <li> — so only
+            # the formatted text would build, not the item or its number. A small
+            # client script (see the reveal template) promotes the fragment to the
+            # <li> wherever this marker landed on a child instead.
+            out = out.rstrip() + ' <!-- .element: class="fragment" data-li-frag="1" -->'
         out = _INLINE_SPAN.sub(_span_repl, out)
         return self.resolver.rewrite(out, self.current_dir, self.label)
 
