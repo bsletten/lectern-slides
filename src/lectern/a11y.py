@@ -23,6 +23,7 @@ declaration, not a mistake; ``alt=""`` says the same on a raw ``<img>``.
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from typing import TYPE_CHECKING
 
@@ -36,6 +37,9 @@ _PROVENANCE = "<!-- @from "
 # Inline code spans (`…`, ``…``) — stripped before tag scanning so an `<img>` or
 # `<i class="fa-…">` *shown as code* in a slide isn't mistaken for a real one.
 _INLINE_CODE = re.compile(r"(`+)(?:.*?)\1")
+# HTML/XML comments (possibly multi-line) — blanked before tag scanning so a tag
+# named inside a comment (e.g. an inlined SVG's notes) isn't mistaken for markup.
+_HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _HEADING = re.compile(r"^\s*#{1,6}\s+\S")
 _RAW_HEADING = re.compile(r"<h[1-6][\s/>]", re.IGNORECASE)
 _SLIDE_DIRECTIVE = re.compile(r"^\s*<!--\s*slide:\s*(.+?)\s*-->\s*$")
@@ -59,6 +63,24 @@ def audit(deck: AssembledDeck) -> list[str]:
 def _strip_inline_code(text: str) -> str:
     """Blank out inline-code spans so a tag shown as code isn't scanned as real."""
     return _INLINE_CODE.sub(" ", text)
+
+
+def _blank_html_comments(group):
+    """Return the slide's lines with HTML-comment regions blanked.
+
+    A comment can span lines (an inlined SVG's documentation block, say), and its
+    prose may mention a tag — ``a plain <img src> …`` — which is not real markup.
+    Blank every ``<!-- … -->`` region, preserving newlines so each line keeps its
+    1:1 mapping back to its :class:`OutLine` (location/separator unchanged), then
+    the tag scanners run over the cleaned copy.
+    """
+    joined = "\n".join(o.text for o in group)
+
+    def _keep_newlines(m: re.Match) -> str:
+        return "".join("\n" if c == "\n" else " " for c in m.group(0))
+
+    blanked = _HTML_COMMENT.sub(_keep_newlines, joined).split("\n")
+    return [dataclasses.replace(o, text=t) for o, t in zip(group, blanked, strict=True)]
 
 
 def _has_heading(group) -> bool:
@@ -104,20 +126,23 @@ def _slide_warnings(number: int, group) -> list[str]:
             '`<!-- slide: label="…" -->` so screen readers can identify it'
         )
 
-    for loc in _tags_missing_attr(group, "iframe", "title"):
+    # Scan tags over a comment-blanked copy: a tag named inside a comment (e.g. an
+    # inlined SVG's documentation) is prose, not markup.
+    scan = _blank_html_comments(group)
+    for loc in _tags_missing_attr(scan, "iframe", "title"):
         out.append(
             f"{loc}: an <iframe> embed has no title= — add one so the embed has "
             "an accessible name"
         )
     # Raw HTML `<img>` (passthrough) with no `alt` at all. Markdown `![](src)` is
     # left alone — empty alt there is the author's intentional "decorative".
-    for loc in _tags_missing_attr(group, "img", "alt"):
+    for loc in _tags_missing_attr(scan, "img", "alt"):
         out.append(
             f'{loc}: a raw <img> has no alt= — add alt text (use alt="" if it is '
             "purely decorative)"
         )
 
-    for loc in _font_awesome_warnings(group):
+    for loc in _font_awesome_warnings(scan):
         out.append(
             f"{loc}: a Font Awesome icon has no aria-hidden or accessible name — "
             'add aria-hidden="true" if decorative, or aria-label="…"'

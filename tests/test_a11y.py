@@ -186,6 +186,26 @@ def test_fa_icon_shown_as_inline_code_not_flagged(tmp_path):
     assert _audit(tmp_path / "s.md") == []
 
 
+def test_tag_inside_multiline_html_comment_not_flagged(tmp_path):
+    # An inlined SVG's documentation block may mention a tag in prose; a comment
+    # (even multi-line) is not markup, so it must not trip the raw-<img> check.
+    svg = (
+        '# Chart\n\n<svg viewBox="0 0 10 10">\n'
+        "  <!-- This SVG is themed; a plain\n"
+        "       <img src> cannot read the tokens. -->\n"
+        "  <rect width='10' height='10'/>\n</svg>\n"
+    )
+    write(tmp_path, "s.md", svg)
+    assert all("<img>" not in w for w in _audit(tmp_path / "s.md"))
+
+
+def test_real_img_after_comment_still_flagged(tmp_path):
+    # Blanking comments must not hide a real <img> elsewhere on the slide.
+    body = '# Pic\n\n<!-- note: uses <img> below -->\n\n<img src="real.png">\n'
+    write(tmp_path, "s.md", body)
+    assert sum("<img>" in w and "alt=" in w for w in _audit(tmp_path / "s.md")) == 1
+
+
 def test_real_img_still_flagged_alongside_inline_code(tmp_path):
     body = '# Doc\n\nUse `<img src=x>` like so.\n\n<img src="real.png">\n'
     write(tmp_path, "s.md", body)
