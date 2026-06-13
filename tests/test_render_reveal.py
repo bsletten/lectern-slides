@@ -194,7 +194,7 @@ def test_no_mermaid_means_no_mermaid_script(fixtures, tmp_path):
 
 def test_reveal_mermaid_can_be_forced_on(tmp_path):
     # `[reveal].mermaid = true` loads it even with no diagram in the deck.
-    write(tmp_path, "deck.toml", "slides = [\"s.md\"]\n[reveal]\nmermaid = true\n")
+    write(tmp_path, "deck.toml", 'slides = ["s.md"]\n[reveal]\nmermaid = true\n')
     write(tmp_path, "s.md", "# No diagram here\n")
     html, _ = _render(tmp_path, tmp_path / "out")
     assert "mermaid.esm.min.mjs" in html
@@ -203,7 +203,7 @@ def test_reveal_mermaid_can_be_forced_on(tmp_path):
 def test_reveal_mermaid_can_be_forced_off(tmp_path):
     # `[reveal].mermaid = false` suppresses the script even with a diagram.
     src = _mermaid_deck(tmp_path / "deck")
-    write(src, "deck.toml", "slides = [\"s.md\"]\n[reveal]\nmermaid = false\n")
+    write(src, "deck.toml", 'slides = ["s.md"]\n[reveal]\nmermaid = false\n')
     html, _ = _render(src, tmp_path / "out")
     assert '<pre class="mermaid">' in html  # still lowered
     assert "mermaid.esm.min.mjs" not in html  # but not rendered client-side
