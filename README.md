@@ -353,9 +353,8 @@ CLAUDE.md          ← the operating manual: build order, conventions, milestone
 ROADMAP.md         ← phases: assemble → render/watch → adapters → components → CMS
 deck.toml          ← a minimal starter manifest (root example)
 examples/sample-deck/   ← a complete reference deck that exercises every feature
-    deck.toml · slides/ · _partials/ · assets/ · themes/ (japandi · midnight · paper)
+    deck.toml · slides/ · _partials/ · assets/ · themes/ (paper · midnight)
     README.md           ← how the sample maps to features
-    japandi-preview.html ← static preview of the Japandi theme (open in a browser)
 ```
 
 ## Development

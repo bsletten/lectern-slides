@@ -78,13 +78,13 @@ def test_build_rejects_unknown_format(fixtures, tmp_path):
 
 def test_config_shows_provenance(fixtures):
     result = runner.invoke(
-        app, ["config", str(fixtures / "render-deck"), "--theme", "japandi"]
+        app, ["config", str(fixtures / "render-deck"), "--theme", "grove"]
     )
     assert result.exit_code == 0
     assert "deck root:" in result.stdout
     assert "renderer" in result.stdout
     # The CLI override is attributed to the cli layer.
-    assert "japandi" in result.stdout
+    assert "grove" in result.stdout
     assert "(cli)" in result.stdout
     # An unset key falls back to the built-in default.
     assert "(default)" in result.stdout

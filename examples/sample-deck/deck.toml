@@ -5,7 +5,7 @@
 #
 # THEME SWITCH: change the one line below (or override on the CLI with
 #   lectern build examples/sample-deck --theme ./themes/paper.css
-theme      = "./themes/japandi.css"      # japandi · midnight · paper
+theme      = "./themes/paper.css"        # paper · midnight
 
 title      = "Lectern: A Feature Tour"
 author     = "Brian Sletten"

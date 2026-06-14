@@ -15,9 +15,8 @@ lectern build examples/sample-deck -f pdf    # vector PDF
 In `deck.toml`:
 
 ```toml
-theme = "./themes/japandi.css"    # Japandi: shoji-paper greige, indigo, sumi ink, a vermilion seal
+theme = "./themes/paper.css"      # light, editorial serif
 # theme = "./themes/midnight.css" # dark, geometric sans
-# theme = "./themes/paper.css"    # light, editorial serif
 ```
 
 …or override without editing: `lectern build examples/sample-deck --theme ./themes/paper.css`.
