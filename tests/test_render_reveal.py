@@ -59,6 +59,20 @@ def test_only_top_level_incremental_items_get_fragment(tmp_path):
     assert html.count('class="fragment" data-li-frag="1"') == 2
 
 
+def test_deck_vocabulary_baseline_precedes_theme(fixtures, tmp_path):
+    # Portable baselines for deck classes (.tag/.seal/.kicker/.vert/.handle) and a
+    # warm second-accent fallback (--seal) are injected BEFORE the theme, so a
+    # theme that styles them wins (its rule comes later) while they still cover
+    # themes that don't. A cascade @layer can't do this: reveal's element reset
+    # (`span { border:0 }`) is un-layered and would beat any layered baseline.
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    base_i = html.index('id="lectern-deck-baseline"')
+    theme_i = html.index('id="lectern-theme"')
+    assert base_i < theme_i
+    assert "--seal:" in html  # second-accent fallback keeps two-tone art legible
+    assert ".tag.warm" in html and ".seal" in html
+
+
 def test_place_box_lowered_to_div(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
     assert '<div class="place bottom right">' in html

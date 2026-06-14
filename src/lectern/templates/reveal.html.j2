@@ -15,6 +15,57 @@
 {% if font_awesome_css %}
 <link rel="stylesheet" href="{{ font_awesome_css }}">
 {% endif %}
+<style id="lectern-deck-baseline">
+/* ---- Portable deck vocabulary -------------------------------------------
+   A deck authored against a richly-styled theme leans on a handful of classes
+   (.kicker/.tag/.seal/.handle/.vert) and a warm second accent (--seal) that not
+   every theme defines, so the same deck looked broken under other themes (plain
+   text where pills/badges were expected, a two-tone chart collapsing to one
+   colour). These low-specificity baselines, injected BEFORE the theme, make a
+   deck degrade gracefully under ANY theme: a theme that styles these (its rule
+   comes later at equal-or-higher specificity) wins, while bare class selectors
+   here still beat reveal's element-level reset (`span { border:0 }`), which a
+   cascade @layer could not. `--seal` defaults to a deepened accent — distinct
+   from --accent so two-tone art stays legible — unless the theme defines it. */
+:root { --seal: color-mix(in srgb, var(--accent) 55%, var(--fg) 45%); }
+.kicker {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  font-size: var(--fs-small, 0.7em); color: var(--muted, currentColor);
+}
+.tag, .pill {
+  display: inline-block; margin: 0.15em 0.25em 0.15em 0;
+  /* longhands, not the `border` shorthand: a shorthand whose colour is a var()
+     is pending-substitution, and reveal's element reset then wins the box. */
+  border-width: 1px; border-style: solid;
+  border-color: var(--rule, var(--muted, currentColor));
+  padding: 0.34em 0.95em; font-size: var(--fs-small, 0.75em);
+  line-height: 1; letter-spacing: 0.04em; color: var(--fg);
+}
+.pill { border-radius: 999px; }
+.tag.warm, .pill.warm { border-color: var(--seal); color: var(--seal); }
+.tag.cool, .pill.cool { border-color: var(--accent); color: var(--accent); }
+.tag.ink,  .pill.ink  { border-color: var(--fg); color: var(--fg); }
+.tag.solid, .pill.solid { color: var(--bg); border-color: transparent; }
+.tag.warm.solid, .pill.warm.solid { background: var(--seal); }
+.tag.cool.solid, .pill.cool.solid { background: var(--accent); }
+.tag.ink.solid,  .pill.ink.solid  { background: var(--fg); }
+.seal {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2.6em; min-height: 2.6em; padding: 0.3em 0.5em;
+  background: var(--seal); color: var(--bg); font-family: var(--font-display, inherit);
+}
+.seal.hollow {
+  background: transparent; color: var(--seal);
+  border-width: 2px; border-style: solid; border-color: var(--seal);
+}
+.seal.round { border-radius: 50%; }
+.seal.stack, .vert { writing-mode: vertical-rl; }
+.vert { color: var(--muted, currentColor); }
+.handle { font-size: var(--fs-small, 0.8em); color: var(--muted, currentColor); }
+.handle i { color: var(--seal); margin-right: 0.22em; }
+.handle a { color: inherit; }
+</style>
 <style id="lectern-theme">
 {{ theme_css }}
 </style>
@@ -280,6 +331,18 @@
     animation-delay: 0s !important;
   }
 }
+
+/* Density helpers are layout, not aesthetics, so they belong here and work under
+   any theme. `.code-sm` shrinks code so a long ASCII/code block stays on one
+   slide; `.dense` tightens vertical rhythm so a list-heavy slide doesn't spill
+   off the bottom. High specificity intentionally owns these across all themes. */
+.reveal .slides section.slide.code-sm pre { font-size: 13px; line-height: 1.45; }
+.reveal .slides section.slide.dense {
+  padding-top: calc(var(--pad-y, 64px) * 0.5);
+  padding-bottom: calc(var(--pad-y, 64px) * 0.5);
+}
+.reveal .slides section.slide.dense :is(ul, ol) { line-height: 1.28; }
+.reveal .slides section.slide.dense li { margin-top: 0.18em; margin-bottom: 0.18em; }
 
 /* Forced colors (Windows High Contrast): the OS replaces the theme palette with a
    limited system palette, so a cue the theme carried with colour alone needs a
