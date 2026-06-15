@@ -32,6 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .errors import ConfigError
 from .source import FilesystemSource, Source
+from .theming import is_theme_path
 
 _MANIFEST_NAMES = ("deck.toml", "lectern.toml")
 _MARKDOWN_SUFFIXES = (".md", ".markdown")
@@ -183,6 +184,26 @@ def _under_root(value: str, root: Path) -> Path:
     return p if p.is_absolute() else (root / p)
 
 
+def _theme_search_dirs(config, layers: dict, root: Path) -> list[Path]:
+    """Directories searched for themes by name: the configured ``theme_paths``,
+    plus the folder of any path-style ``theme`` value across the layers.
+
+    Pointing a deck's ``theme`` at ``./themes/x.css`` thus makes the rest of that
+    folder discoverable by name (and listable via ``config --list-themes``)
+    without a separate ``theme_paths`` entry. Deriving from the layers — not just
+    the merged value — keeps the deck's theme folder searchable even when a
+    ``--theme`` override replaces the effective theme with a bare name.
+    """
+    dirs = [_under_root(p, root) for p in config.theme_paths]
+    for layer in ("cli", "deck", "user"):
+        value = (layers.get(layer) or {}).get("theme")
+        if isinstance(value, str) and is_theme_path(value):
+            parent = _under_root(value, root).parent
+            if parent.is_dir() and parent not in dirs:
+                dirs.append(parent)
+    return dirs
+
+
 def _layer(
     deck_data: dict,
     cli_overrides: dict | None,
@@ -280,7 +301,7 @@ def resolve_source(
         entries=entries,
         origin_display=origin,
         partial_dirs=[_under_root(p, root) for p in config.partials],
-        theme_dirs=[_under_root(p, root) for p in config.theme_paths],
+        theme_dirs=_theme_search_dirs(config, layers, root),
         out_dir=_under_root(config.out_dir, root),
         build_dir=_under_root(config.build_dir, root),
         mode=mode,

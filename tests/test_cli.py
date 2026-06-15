@@ -122,6 +122,23 @@ def test_build_all_themes_rejects_outline(tmp_path):
     )
 
 
+def test_path_theme_makes_its_dir_discoverable(tmp_path):
+    # Pointing `theme` at ./themes/a.css makes a sibling ./themes/b.css usable by
+    # name — discoverable via --list-themes and resolvable as a bare --theme —
+    # without a separate theme_paths entry.
+    write(tmp_path, "themes/a.css", ":root { --accent: #aa0000; }\n")
+    write(tmp_path, "themes/b.css", ":root { --accent: #00bb00; }\n")
+    write(tmp_path, "slides/s.md", "# T\n")
+    write(tmp_path, "deck.toml", 'theme = "./themes/a.css"\nslides = ["slides/s.md"]\n')
+    listed = runner.invoke(app, ["config", str(tmp_path), "--list-themes"])
+    assert listed.exit_code == 0
+    assert "themes/b.css" in listed.stdout  # sibling listed by name, source shown
+    built = runner.invoke(
+        app, ["build", str(tmp_path), "--theme", "b", "-o", str(tmp_path / "out")]
+    )
+    assert built.exit_code == 0, built.stdout  # bare-name override resolves it
+
+
 def test_config_override_flags_flow_through(fixtures):
     result = runner.invoke(
         app,

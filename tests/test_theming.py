@@ -108,9 +108,9 @@ def test_resolve_theme_dirs_against_root(tmp_path):
     assert dirs == [tmp_path / "local", Path("/abs/themes")]
 
 
-def test_build_theme_uses_theme_paths(tmp_path):
+def test_build_theme_uses_theme_dirs(tmp_path):
     write(tmp_path, "lib/house.css", ":root { --slide-w: 1px; }")
-    theme = build_theme("house", "16:9", tmp_path, ["./lib"])
+    theme = build_theme("house", "16:9", tmp_path, [tmp_path / "lib"])
     assert theme.name == "house"
     assert "--slide-w" in theme.css
 

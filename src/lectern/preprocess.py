@@ -63,6 +63,7 @@ class AssembledDeck:
     warnings: list[str]
     config: object  # lectern.config.Config (avoid import cycle in annotations)
     root: Path
+    theme_dirs: list[Path] = field(default_factory=list)  # resolved theme search dirs
 
     def markdown(self, *, provenance: bool = True) -> str:
         """Render the assembled Markdown.
@@ -153,6 +154,7 @@ def assemble_resolved(
         warnings=ctx.warnings,
         config=resolved.config,
         root=resolved.root,
+        theme_dirs=resolved.theme_dirs,
     )
 
 

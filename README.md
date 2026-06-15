@@ -122,7 +122,7 @@ Inspect the effective, merged config and **where each value came from** with:
 ```bash
 lectern config ./talks/ai-sec                 # value · (cli | deck.toml | user | default)
 lectern config ./talks/ai-sec --theme grove   # preview an override before building
-lectern config ./talks/ai-sec --list-themes   # themes usable by name (bundled + theme_paths)
+lectern config ./talks/ai-sec --list-themes   # themes usable by name (bundled + theme_paths + your theme's folder)
 ```
 
 The full key reference (top-level + `[serve]`/`[reveal]`/`[marp]`/`[quarto]`/`[pdf]`)

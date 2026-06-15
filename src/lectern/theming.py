@@ -148,11 +148,18 @@ def available_themes(
 
 
 def build_theme(
-    theme: str, aspect: str, root: Path, theme_paths: list[str] | None = None
+    theme: str,
+    aspect: str,
+    root: Path,
+    theme_dirs: list[Path] | tuple[Path, ...] | None = None,
 ) -> Theme:
-    """Resolve the theme and inject the aspect-driven geometry tokens."""
-    theme_dirs = resolve_theme_dirs(theme_paths or [], root)
-    name, css = resolve_theme_css(theme, root, theme_dirs)
+    """Resolve the theme and inject the aspect-driven geometry tokens.
+
+    ``theme_dirs`` are the already-resolved search directories (the deck's
+    effective ``theme_dirs`` — ``theme_paths`` plus the folder of any path-style
+    theme), so a bare-name override resolves against the same places listing does.
+    """
+    name, css = resolve_theme_css(theme, root, theme_dirs or ())
     width, height = slide_dimensions(aspect)
     override = (
         "\n/* lectern: aspect override */\n"
