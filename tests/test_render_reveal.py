@@ -162,8 +162,9 @@ def test_standalone_image_fills_and_is_contained(fixtures, tmp_path):
     # measures that — pushing the graphic onto an oversized/extra page (it fell off
     # the bottom). They share one `position: absolute` rule.
     abs_rule = html[html.index("p:has(> img:only-child) > img,") :]
-    assert "position: absolute;" in abs_rule[: abs_rule.index("}")]
-    assert "margin: auto;" in abs_rule[: abs_rule.index("}")]  # constrained stays centred
+    block = abs_rule[: abs_rule.index("}")]
+    assert "position: absolute;" in block
+    assert "margin: auto;" in block  # a constrained override stays centred
 
 
 def test_quotation_source_standardized_to_slide_color(fixtures, tmp_path):
