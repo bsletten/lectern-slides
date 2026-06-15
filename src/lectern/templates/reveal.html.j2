@@ -190,43 +190,38 @@
    inlined `<svg>` (via `<!-- include: art.svg -->`), each landing as a single-
    child <p> — fills the space the slide's heading/body leave: generous on a
    graphic-only slide, politely smaller when there's also text, scaled to fit (up
-   or down) without distortion or overflow, under any theme. The <p> becomes a
-   flex box that takes the leftover vertical space (flex: 1); the image is
-   `object-fit: contain`ed and the SVG's own `viewBox`/`preserveAspectRatio`
-   contains it the same way. An inline SVG also reads the theme tokens
-   (`var(--accent)`, `currentColor`, …) a flat `<img>` can't — see the themed-SVG
-   contract. Override one graphic with a raw `<img style="…">`/`<svg style="…">`,
-   or a reveal `<!-- .element: style="…" -->` comment after it. */
+   or down) without distortion or overflow, under any theme.
+
+   The <p> takes the leftover vertical space (flex: 1) and is the positioning
+   box; the graphic is taken OUT OF FLOW (absolute, inset: 0). That is load-
+   bearing for the PDF: a replaced <img> or an inline <svg> at its intrinsic size
+   inflates reveal's *natural-height* measurement of the slide, and reveal then
+   paginates the print-pdf master onto a too-tall page — the graphic falls off
+   the bottom / spills to an extra page. Out of flow, it never contributes to
+   that height; `object-fit: contain` (img) or the SVG's viewBox/preserveAspect-
+   Ratio (svg) keeps it contained, and `margin: auto` keeps a *constrained*
+   override (a `<!-- .element: style="max-width:…" -->`) centred, not left-pinned.
+   A raw `<img style="…">`/`<svg style="…">` is a direct child of the section (not
+   a single-child <p>), so it sidesteps this rule and is sized verbatim. */
 .reveal .slides section.slide p:has(> img:only-child),
 .reveal .slides section.slide p:has(> svg:only-child) {
   display: flex;
   flex: 1 1 auto;          /* take the space heading/caption don't */
   min-height: 0;
-  justify-content: center; /* center horizontally */
+  position: relative;      /* positioning box for the out-of-flow graphic */
+  width: 100%;             /* don't shrink-wrap the (out-of-flow) child to zero */
   margin: 0;
 }
-.reveal .slides section.slide p:has(> img:only-child) > img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;     /* fill the box, scaling up or down, never distorting */
-}
-/* An inline <svg> is not a replaced element: it has no `object-fit`, and its
-   intrinsic size inflates the flex column. reveal measures a slide's *natural*
-   height to paginate the print-pdf master, and that inflated height pushed the
-   slide past one page — the chart fell off the bottom / spilled to an extra
-   page. Take the SVG out of flow (absolute) so it never contributes to that
-   measurement; it fills the box and its viewBox/preserveAspectRatio contains it
-   like object-fit does for an image. The <p> is the positioned box: give it a
-   full width so it doesn't shrink-wrap its (now out-of-flow) child to zero. */
-.reveal .slides section.slide p:has(> svg:only-child) {
-  position: relative;
-  width: 100%;
-}
+.reveal .slides section.slide p:has(> img:only-child) > img,
 .reveal .slides section.slide p:has(> svg:only-child) > svg {
   position: absolute;
   inset: 0;
+  margin: auto;            /* centre a constrained override within the box */
   width: 100%;
   height: 100%;
+}
+.reveal .slides section.slide p:has(> img:only-child) > img {
+  object-fit: contain;     /* fill the box, scaling up or down, never distorting */
 }
 
 /* `::: {.center}` centers one block within the slide's column without disturbing

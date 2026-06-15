@@ -156,12 +156,14 @@ def test_standalone_image_fills_and_is_contained(fixtures, tmp_path):
     # An inlined SVG (via `<!-- include: art.svg -->`) lands as a single-child <p>
     # too, and must scale to fill the same way — `<img>` CSS wouldn't match it.
     assert "p:has(> svg:only-child)" in html
-    # Regression: the inline SVG must be taken out of flow (absolute). An in-flow
-    # SVG inflates the slide's natural height, and reveal's print-pdf pagination
-    # measures that — pushing the chart onto an oversized/extra page (fell off the
-    # bottom). The positioned <p> carries `position: relative`.
-    svg_rule = html[html.index("p:has(> svg:only-child) > svg") :]
-    assert "position: absolute;" in svg_rule[: svg_rule.index("}")]
+    # Regression: BOTH a standalone <img> and an inline <svg> must be taken out of
+    # flow (absolute). A replaced <img> or an inline <svg> at intrinsic size
+    # inflates the slide's natural height, and reveal's print-pdf pagination
+    # measures that — pushing the graphic onto an oversized/extra page (it fell off
+    # the bottom). They share one `position: absolute` rule.
+    abs_rule = html[html.index("p:has(> img:only-child) > img,") :]
+    assert "position: absolute;" in abs_rule[: abs_rule.index("}")]
+    assert "margin: auto;" in abs_rule[: abs_rule.index("}")]  # constrained stays centred
 
 
 def test_quotation_source_standardized_to_slide_color(fixtures, tmp_path):
