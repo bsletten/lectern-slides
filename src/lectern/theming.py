@@ -121,6 +121,32 @@ def resolve_theme_css(
     )
 
 
+def bundled_theme_names() -> list[str]:
+    """Sorted names of the themes packaged with lectern."""
+    themes = files("lectern").joinpath("themes")
+    return sorted(r.name[:-4] for r in themes.iterdir() if r.name.endswith(".css"))
+
+
+def available_themes(
+    theme_dirs: list[Path] | tuple[Path, ...],
+) -> list[tuple[str, str]]:
+    """``(name, source)`` for every theme usable by name, sorted by name.
+
+    Mirrors :func:`resolve_theme_css`'s search order: the configured
+    ``theme_paths`` (each dir, in order) shadow the bundled set, so the first
+    occurrence of a name wins and its ``source`` is that file's path; a bundled
+    theme's source is the string ``"bundled"``.
+    """
+    seen: dict[str, str] = {}
+    for directory in theme_dirs:
+        if directory.is_dir():
+            for css in sorted(directory.glob("*.css")):
+                seen.setdefault(css.stem, str(css))
+    for name in bundled_theme_names():
+        seen.setdefault(name, "bundled")
+    return sorted(seen.items())
+
+
 def build_theme(
     theme: str, aspect: str, root: Path, theme_paths: list[str] | None = None
 ) -> Theme:

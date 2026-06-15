@@ -58,6 +58,8 @@ lectern config ./talks/ai-sec
 lectern build ./talks/ai-sec                         # -> dist/index.html
 lectern build ./talks/ai-sec -t ./themes/mine.css -o site
 lectern build ./talks/ai-sec -f outline             # -> dist/outline.md (text transcript)
+lectern build ./talks/ai-sec --all-themes            # -> dist/index-<theme>.html, one per theme
+lectern build ./talks/ai-sec --all-themes -f pdf     # same, as index-<theme>.pdf
 
 # Live preview: rebuilds on change with SSE reload + build-error overlay
 lectern watch ./talks/ai-sec                         # serves http://127.0.0.1:8080
@@ -120,6 +122,7 @@ Inspect the effective, merged config and **where each value came from** with:
 ```bash
 lectern config ./talks/ai-sec                 # value · (cli | deck.toml | user | default)
 lectern config ./talks/ai-sec --theme grove   # preview an override before building
+lectern config ./talks/ai-sec --list-themes   # themes usable by name (bundled + theme_paths)
 ```
 
 The full key reference (top-level + `[serve]`/`[reveal]`/`[marp]`/`[quarto]`/`[pdf]`)

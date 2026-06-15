@@ -90,6 +90,38 @@ def test_config_shows_provenance(fixtures):
     assert "(default)" in result.stdout
 
 
+def test_config_list_themes(fixtures):
+    result = runner.invoke(
+        app, ["config", str(fixtures / "render-deck"), "--list-themes"]
+    )
+    assert result.exit_code == 0
+    assert "available themes" in result.stdout
+    assert "base" in result.stdout and "bundled" in result.stdout
+
+
+def test_build_all_themes_writes_one_file_per_theme(tmp_path):
+    write(tmp_path, "s.md", "# Hello\n\nbody\n")
+    out = tmp_path / "dist"
+    result = runner.invoke(
+        app, ["build", str(tmp_path / "s.md"), "--all-themes", "-o", str(out)]
+    )
+    assert result.exit_code == 0, result.stdout
+    names = {p.name for p in out.glob("index-*.html")}
+    assert "index-base.html" in names and "index-signal.html" in names
+    assert not (out / "index.html").exists()  # the fixed name is renamed away
+
+
+def test_build_all_themes_rejects_outline(tmp_path):
+    write(tmp_path, "s.md", "# Hello\n")
+    result = runner.invoke(
+        app, ["build", str(tmp_path / "s.md"), "--all-themes", "-f", "outline"]
+    )
+    assert result.exit_code != 0
+    assert (
+        "all-themes" in result.stderr.lower() or "all-themes" in result.stdout.lower()
+    )
+
+
 def test_config_override_flags_flow_through(fixtures):
     result = runner.invoke(
         app,

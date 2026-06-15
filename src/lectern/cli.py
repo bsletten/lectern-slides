@@ -34,6 +34,7 @@ from .render import (
     renderers_supporting,
     supports_format,
 )
+from .theming import available_themes
 
 app = typer.Typer(
     add_completion=False,
@@ -335,6 +336,56 @@ def check(
     )
 
 
+def _build_all_themes(
+    source: Path, config_override: Path | None, overrides: dict, fmt: str
+) -> None:
+    """Render the deck once per available theme into ``index-<theme>.<ext>``."""
+    if fmt == "outline":
+        raise ConfigError("--all-themes does not apply to the outline format")
+    # One resolve to discover themes (theme_paths) and check the renderer/format,
+    # which are theme-independent.
+    base = resolve_source(
+        source, config_override=config_override, cli_overrides=overrides
+    )
+    themes = available_themes(base.theme_dirs)
+    if not themes:
+        raise ConfigError("no themes available (none bundled or found in theme_paths)")
+    adapter = get_renderer(base.config.renderer)
+    if not supports_format(adapter.capabilities(), fmt):
+        alt = renderers_supporting(fmt)
+        hint = f" (try renderer: {', '.join(alt)})" if alt else ""
+        raise ConfigError(f"renderer '{adapter.name}' cannot produce '{fmt}'{hint}")
+    if not adapter.available():
+        raise ConfigError(
+            f"renderer '{adapter.name}' is not available "
+            "(its external tool is not installed or not on PATH)"
+        )
+
+    out_dir = base.out_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    built: list[Path] = []
+    warnings: list[str] = []
+    for name, _src in themes:
+        resolved = resolve_source(
+            source,
+            config_override=config_override,
+            cli_overrides={**overrides, "theme": name},
+        )
+        deck = assemble_resolved(resolved)
+        result = adapter.render(deck, resolved.config, out_dir, fmt)
+        # The adapters write a fixed `index.<ext>`; rename per theme so the runs
+        # don't clobber each other and share one `assets/` dir.
+        dest = result.output.with_name(f"index-{name}{result.output.suffix}")
+        result.output.replace(dest)
+        built.append(dest)
+        warnings.extend(result.warnings)
+
+    _emit_warnings(list(dict.fromkeys(warnings)))  # deck warnings repeat per theme
+    typer.secho(f"built {len(built)} theme(s) -> {out_dir}", fg=typer.colors.GREEN)
+    for dest in built:
+        typer.echo(f"  {dest.name}")
+
+
 @app.command()
 def build(
     source: Path = typer.Argument(
@@ -371,6 +422,12 @@ def build(
     ),
     fmt: str = typer.Option(
         "html", "-f", "--format", help="Output format: html | pdf | pptx | outline."
+    ),
+    all_themes: bool = typer.Option(
+        False,
+        "--all-themes",
+        help="Render once per available theme (bundled + theme_paths); "
+        "writes index-<theme>.<ext> into the output dir.",
     ),
     layout: str | None = typer.Option(
         None,
@@ -422,6 +479,9 @@ def build(
             raise ConfigError(
                 f"unknown output format '{fmt}' (expected one of: {', '.join(FORMATS)})"
             )
+        if all_themes:
+            _build_all_themes(source, config, overrides, fmt)
+            return
         resolved = resolve_source(
             source, config_override=config, cli_overrides=overrides
         )
@@ -564,6 +624,11 @@ def config_cmd(
         None, "--partial", help="Replace the partials search dirs (repeatable)."
     ),
     max_include_depth: int | None = typer.Option(None, "--max-include-depth"),
+    list_themes: bool = typer.Option(
+        False,
+        "--list-themes",
+        help="List the themes usable by name (bundled + theme_paths) and exit.",
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
@@ -581,6 +646,13 @@ def config_cmd(
         )
     except LecternError as e:
         raise _fail(e) from None
+
+    if list_themes:
+        themes = available_themes(resolved.theme_dirs)
+        typer.secho(f"available themes ({len(themes)})", bold=True)
+        for name, src in themes:
+            typer.echo(f"  {name:<22} {src}")
+        return
 
     cfg = resolved.config
     ucp = resolved.user_config_path

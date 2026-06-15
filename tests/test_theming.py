@@ -6,7 +6,33 @@ import pytest
 from conftest import write
 
 from lectern.errors import ConfigError
-from lectern.theming import build_theme, resolve_theme_css, slide_dimensions
+from lectern.theming import (
+    available_themes,
+    build_theme,
+    bundled_theme_names,
+    resolve_theme_css,
+    slide_dimensions,
+)
+
+
+def test_bundled_theme_names_includes_base():
+    names = bundled_theme_names()
+    assert "base" in names and "signal" in names
+    assert names == sorted(names)  # sorted, stable
+
+
+def test_available_themes_lists_bundled_and_discovered(tmp_path):
+    write(tmp_path, "themes/house.css", ":root { --accent: #123456; }\n")
+    themes = dict(available_themes([tmp_path / "themes"]))
+    assert themes["base"] == "bundled"  # bundled still listed
+    assert themes["house"].endswith("themes/house.css")  # discovered by path
+
+
+def test_available_themes_theme_path_shadows_bundled(tmp_path):
+    # A theme_paths theme of the same name as a bundled one wins (search order).
+    write(tmp_path, "themes/base.css", ":root { --accent: #000; }\n")
+    themes = dict(available_themes([tmp_path / "themes"]))
+    assert themes["base"].endswith("themes/base.css")  # not "bundled"
 
 
 @pytest.mark.parametrize(
