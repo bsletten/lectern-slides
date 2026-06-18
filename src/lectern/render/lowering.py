@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 
 _PROVENANCE = re.compile(r"^<!-- @from (.+?) slide=\d+ -->$")
 _SLIDE_DIRECTIVE = re.compile(r"^\s*<!--\s*slide:\s*(.+?)\s*-->\s*$")
-_NOTES_OPEN = re.compile(r"^\s*<!--\s*notes\s*-->\s*$")
+# ``<!-- notes -->`` opens handout notes; ``<!-- notes:presenter -->`` opens
+# speaker-view-only notes that are kept out of the PDF handout.
+_NOTES_OPEN = re.compile(r"^\s*<!--\s*notes(?::([\w-]+))?\s*-->\s*$")
 _NOTES_CLOSE = re.compile(r"^\s*<!--\s*/notes\s*-->\s*$")
 _FENCE_DIV = re.compile(r"^(:::+)\s*(.*?)\s*$")
 _INLINE_SPAN = re.compile(r"\[([^\]]+)\]\{([^}]*)\}")
@@ -104,8 +106,16 @@ class LoweredSlide:
     attrs: dict[str, str] = field(default_factory=dict)
     body: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    # Speaker-view-only notes: shown alongside ``notes`` in every presenter view,
+    # but excluded from the printed PDF handout.
+    presenter_notes: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     has_mermaid: bool = False
+
+    @property
+    def speaker_notes(self) -> list[str]:
+        """All notes for a presenter view: handout notes plus presenter-only."""
+        return self.notes + self.presenter_notes
 
 
 class _Scanner:
@@ -119,14 +129,17 @@ class _Scanner:
         self._label_set = False
         self._fence = None
         self._mermaid = None  # open ```mermaid fence, lowered to <pre class="mermaid">
-        self._div_stack: list[str] = []  # "div" | "incremental" | "notes"
+        # "div" | "incremental" | "notes" | "notes:presenter"
+        self._div_stack: list[str] = []
         self._directive_seen = False
-        self._notes_comment = False
+        # The notes list the current comment/div block feeds, or None when not in
+        # one — `out.notes` for handout notes, `out.presenter_notes` for speaker.
+        self._notes_bucket: list[str] | None = None
         self._warned_incremental = False
 
     @property
     def _in_notes_div(self) -> bool:
-        return bool(self._div_stack) and self._div_stack[-1] == "notes"
+        return bool(self._div_stack) and self._div_stack[-1].startswith("notes")
 
     def feed(self, line: str) -> None:
         prov = _PROVENANCE.match(line)
@@ -156,11 +169,11 @@ class _Scanner:
                 self.out.body.append(line)
             return
 
-        if self._notes_comment:
+        if self._notes_bucket is not None:
             if _NOTES_CLOSE.match(line):
-                self._notes_comment = False
+                self._notes_bucket = None
             else:
-                self.out.notes.append(line)
+                self._notes_bucket.append(line)
             return
 
         div = _FENCE_DIV.match(line)
@@ -170,11 +183,23 @@ class _Scanner:
             return
 
         if self._in_notes_div:
-            self.out.notes.append(line)
+            presenter = self._div_stack[-1] == "notes:presenter"
+            (self.out.presenter_notes if presenter else self.out.notes).append(line)
             return
 
-        if _NOTES_OPEN.match(line):
-            self._notes_comment = True
+        notes_open = _NOTES_OPEN.match(line)
+        if notes_open is not None:
+            category = notes_open.group(1)
+            if category is not None and category != "presenter":
+                # A mistyped category would silently fall through to handout
+                # notes and leak into the PDF — flag it instead.
+                self.out.warnings.append(
+                    f"{self.label}: unknown notes category '{category}'; "
+                    "only 'presenter' is recognized — treating as ordinary notes"
+                )
+            self._notes_bucket = (
+                self.out.presenter_notes if category == "presenter" else self.out.notes
+            )
             return
 
         if not self._directive_seen:
@@ -226,6 +251,8 @@ class _Scanner:
                 self._warned_incremental = True
         elif classes == ["notes"]:
             self._div_stack.append("notes")
+        elif set(classes) == {"notes", "presenter"}:
+            self._div_stack.append("notes:presenter")
         else:
             self._div_stack.append("div")
             self.out.body.extend([f"<div {build_attrs(classes, ident, attrs)}>", ""])

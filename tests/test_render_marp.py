@@ -74,7 +74,10 @@ def test_background_image_directive(fixtures, tmp_path, monkeypatch):
 
 def test_notes_become_html_comment(fixtures, tmp_path, monkeypatch):
     md, _, _ = _render(fixtures / "render-deck", tmp_path, monkeypatch)
-    assert "<!--\nA speaker note for the builds slide.\n-->" in md
+    assert (
+        "<!--\nA speaker note for the builds slide.\n"
+        "A presenter-only reminder, kept out of handouts.\n-->"
+    ) in md
 
 
 def test_incremental_degrades_with_warning(fixtures, tmp_path, monkeypatch):

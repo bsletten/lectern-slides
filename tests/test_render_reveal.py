@@ -36,6 +36,13 @@ def test_notes_lowered(fixtures, tmp_path):
     assert "Note:\nA speaker note for the builds slide." in html
 
 
+def test_presenter_notes_join_the_speaker_view(fixtures, tmp_path):
+    # `<!-- notes:presenter -->` notes ride into reveal's speaker view alongside
+    # the handout notes (they are filtered out only for the printed PDF).
+    html, _ = _render(fixtures / "render-deck", tmp_path)
+    assert "A presenter-only reminder, kept out of handouts." in html
+
+
 def test_incremental_items_get_fragment(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
     # Each incremental item gets a fragment comment carrying `data-li-frag`, the

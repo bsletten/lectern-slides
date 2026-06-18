@@ -37,8 +37,8 @@ def _format_slide(lowered) -> dict[str, str]:
     """Format a lowered slide as a reveal ``<section>`` (attrs + body markdown)."""
     classes = ["slide", *lowered.classes]
     markdown = "\n".join(lowered.body).strip("\n")
-    if lowered.notes:
-        notes = "\n".join(lowered.notes).strip("\n")
+    if lowered.speaker_notes:
+        notes = "\n".join(lowered.speaker_notes).strip("\n")
         markdown = f"{markdown}\n\nNote:\n{notes}"
     # ``</script>`` would close the data-markdown template early.
     markdown = markdown.replace("</script>", "<\\/script>")

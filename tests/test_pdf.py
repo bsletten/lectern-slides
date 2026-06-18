@@ -309,6 +309,24 @@ HAVE_CHROMIUM = _chromium_available()
 
 
 @needs_pdf_libs
+def test_slide_notes_exclude_presenter_notes(fixtures, tmp_path):
+    # The handout pipeline reads `lowered.notes` only, so `notes:presenter`
+    # blocks never reach the printed PDF (this needs no browser).
+    from lectern.config import resolve_source
+    from lectern.pdf.pipeline import _slide_notes
+    from lectern.preprocess import assemble_resolved
+
+    resolved = resolve_source(fixtures / "render-deck")
+    deck = assemble_resolved(resolved)
+    flat = [
+        line
+        for slide in _slide_notes(deck, resolved.config, tmp_path)
+        for line in slide
+    ]
+    assert "A speaker note for the builds slide." in flat
+    assert "A presenter-only reminder, kept out of handouts." not in flat
+
+
 @pytest.mark.skipif(not HAVE_CHROMIUM, reason="Chromium/Playwright not installed")
 def test_end_to_end_pdf_build(fixtures, tmp_path):
     from lectern.config import resolve_source
@@ -333,6 +351,8 @@ def test_end_to_end_pdf_build(fixtures, tmp_path):
     text = pages[0].extract_text()
     assert "Hero Slide" in text
     assert "A speaker note for the builds slide." in text  # notes carried to handout
+    # presenter-only notes stay in the speaker view, never the printed handout.
+    assert "presenter-only reminder" not in text.lower()
     # master was cached for reuse across subsequent layout/color changes —
     # under the deck's build_dir (here redirected to tmp), not the out_dir.
     assert (tmp_path / "build" / ".lectern-cache").is_dir()

@@ -91,8 +91,8 @@ def _format_slide(lowered, warnings: list[str]) -> str:
     body = "\n".join(_html_headings(lowered.body)).strip("\n")
     open_tag = f"<div {build_attrs(classes, lowered.ident, attrs)}>"
     parts = [open_tag, "", body, "", "</div>"]
-    if lowered.notes:
-        notes = "\n".join(lowered.notes).strip("\n")
+    if lowered.speaker_notes:
+        notes = "\n".join(lowered.speaker_notes).strip("\n")
         parts.extend(["", '<aside class="notes">', "", notes, "", "</aside>"])
     return "\n".join(parts).strip("\n")
 

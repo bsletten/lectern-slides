@@ -62,10 +62,10 @@ def _format_slide(lowered, warnings: list[str]) -> str:
         parts.append("\n".join(header))
         parts.append("")  # blank line ends the property block
     parts.append("\n".join(lowered.body).strip("\n"))
-    if lowered.notes:
+    if lowered.speaker_notes:
         parts.append("")
         parts.append("???")
-        parts.append("\n".join(lowered.notes).strip("\n"))
+        parts.append("\n".join(lowered.speaker_notes).strip("\n"))
     return "\n".join(parts).strip("\n")
 
 

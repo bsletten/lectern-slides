@@ -51,7 +51,8 @@ Base is **CommonMark**. On top of it:
 | Slide break | a line that is exactly `---` | fence-aware: ignored inside ``` / ~~~ code |
 | Per-slide attributes | `<!-- slide: .center .middle .inverse #intro data-x=1 -->` at slide top | classes / id / data; adapters translate |
 | Slide accessible name | `<!-- slide: label="…" -->` (or `aria-label="…"`) | the slide's name for screen readers; `label` is lowered to `aria-label` on the reveal `<section>`. Give heading-less image/quotation slides a `label` — `lectern check` flags slides with neither a heading nor a label. |
-| Speaker notes | `<!-- notes -->` … `<!-- /notes -->` | adapters map to reveal `aside.notes`, marp comments, quarto `::: notes` |
+| Speaker notes | `<!-- notes -->` … `<!-- /notes -->` (also `::: notes` … `:::`) | adapters map to reveal `aside.notes`, marp comments, quarto `::: notes` |
+| Presenter-only notes | `<!-- notes:presenter -->` … `<!-- /notes -->` (also `::: {.notes .presenter}`) | shown in every presenter view alongside ordinary notes, but **excluded from the printed PDF handout** |
 | Inline span class | `[text]{.cls}` (Pandoc-style) | neutral; reveal/remark lower to framework form |
 | Block class | `::: {.cls}` … `:::` (Pandoc fenced div) | neutral |
 | Slide content anchor | `<!-- slide: .top\|.middle\|.bottom .left\|.center\|.right -->` | nine-point grid; positions the whole content block |

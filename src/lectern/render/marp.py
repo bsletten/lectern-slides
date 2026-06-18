@@ -62,8 +62,8 @@ def _format_slide(lowered, warnings: list[str]) -> str:
 
     parts = ["\n".join(directives), ""]
     parts.append("\n".join(lowered.body).strip("\n"))
-    if lowered.notes:
-        notes = "\n".join(lowered.notes).strip("\n")
+    if lowered.speaker_notes:
+        notes = "\n".join(lowered.speaker_notes).strip("\n")
         # A presenter note is just a (non-directive) HTML comment; guard ``-->``.
         notes = notes.replace("-->", "--&gt;")
         parts.append("")
