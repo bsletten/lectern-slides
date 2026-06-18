@@ -1,6 +1,9 @@
 # Lectern
 
 [![CI](https://github.com/bsletten/lectern-slides/actions/workflows/ci.yml/badge.svg)](https://github.com/bsletten/lectern-slides/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/lectern-slides.svg)](https://pypi.org/project/lectern-slides/)
+[![Python](https://img.shields.io/pypi/pyversions/lectern-slides.svg)](https://pypi.org/project/lectern-slides/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Lectern** is a Python CLI that assembles Markdown slide sources — transclusion,
 `#1-3` slide ranges, partial search paths — into one deck and renders it via
