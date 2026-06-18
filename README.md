@@ -12,6 +12,10 @@ server and vector PDF export. It's the Markdown front-end to a larger
 resource-oriented slide system; the `Source` seam is designed so a semantic-CMS
 backend can replace the filesystem later.
 
+📦 **v0.1.0 — the first public release — is out**, live on
+[PyPI](https://pypi.org/project/lectern-slides/). See the
+[changelog](CHANGELOG.md) for what's in it.
+
 Jump to **[Install](#install)** and **[Usage](#usage)** to get going.
 
 ## Names (locked)
@@ -392,6 +396,7 @@ as slides are added.
 src/lectern/       ← the implementation: assemble · render adapters · pdf · serve · theming
 src/lectern/themes/     ← bundled themes (base, cartesian, grove, soft-editorial); add one here to ship it by name
 tests/             ← unit + golden-file + render/PDF tests
+CHANGELOG.md       ← release notes, newest first (v0.1.0 is the first release)
 SPECIFICATION.md   ← the full functional + technical spec (the substance)
 PDF-EXPORT.md      ← the PDF strategy (vector master → 2-up-with-notes, B&W, posters)
 CLAUDE.md          ← the operating manual: build order, conventions, milestones
