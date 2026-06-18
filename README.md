@@ -244,6 +244,42 @@ after it, or use a raw `<img>` (which bypasses the fill rule):
 
 (Inline images — not alone on a line — are left at their natural size.)
 
+### Speaker notes
+
+Attach speaker notes to a slide with an HTML-comment block (or the equivalent
+fenced div). They never appear on the slide itself — adapters route them to the
+presenter view (reveal's speaker window, marp/quarto/remark equivalents):
+
+```markdown
+# Threat model
+
+<!-- notes -->
+Walk the diagram left to right; the trust boundary is the dashed line.
+<!-- /notes -->
+
+::: {.notes}
+Fenced-div form — handy when a note itself contains HTML comments.
+:::
+```
+
+Add the `presenter` category for notes that should stay on stage but **not** be
+printed in the PDF handout — pacing reminders, asides, "skip if running long":
+
+```markdown
+<!-- notes:presenter -->
+Eight minutes per section to land on time.
+<!-- /notes -->
+
+::: {.notes .presenter}
+Same, fenced-div form.
+:::
+```
+
+Ordinary notes show in the presenter view **and** the `*-notes` PDF layouts;
+`presenter` notes show in the presenter view **only**. A mistyped category is
+flagged by `lectern check` and treated as an ordinary note, so it can't silently
+leak into print.
+
 ### PDF export (`-f pdf`)
 
 ```bash
