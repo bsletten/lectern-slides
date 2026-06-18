@@ -25,6 +25,9 @@ Jump to **[Install](#install)** and **[Usage](#usage)** to get going.
 
 ## Install
 
+Lectern is [live on PyPI](https://pypi.org/project/lectern-slides/) — install it
+with `pip` (or `uv`, `pipx`, …):
+
 ```bash
 pip install lectern-slides            # core: assemble + reveal/remark HTML + watch
 
