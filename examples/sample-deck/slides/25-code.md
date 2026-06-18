@@ -15,3 +15,13 @@ def parse_ranges(spec: str, n: int) -> list[int]:
             out.append(int(part))
     return [i for i in out if 1 <= i <= n]
 ```
+
+<!-- notes -->
+The `#1-3,14` range grammar is one of Lectern's load-bearing pure functions —
+note how an open-ended `5-` range is bounded by the slide count `n`.
+<!-- /notes -->
+
+<!-- notes:presenter -->
+Don't read the code line by line — point at the open-ended range branch and move
+on. This is where someone always asks about 1-based vs. 0-based indexing.
+<!-- /notes -->
