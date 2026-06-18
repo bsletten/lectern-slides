@@ -433,3 +433,13 @@ what's beyond v1 (component embeds, then a graph/CMS `Source` backend).
   imposed two-up with the real speaker notes beside each slide).
 - The `Source` protocol, adapter registry, theme token contract, and `[serve].coi`
   headers are seams kept clean so later phases (components, CMS backend) stay cheap.
+
+## Acknowledgements
+
+Most of the bundled visual themes — `blue-professional`, `broadside`,
+`cartesian`, `grove`, `long-table`, `mat`, `monochrome`, `sakura-chroma`,
+`signal`, `soft-editorial`, and `vellum` — are adapted from
+[**beautiful-html-templates** by Zara Zhang](https://github.com/zarazhangrui/beautiful-html-templates)
+(MIT), reworked to Lectern's theme token contract. `base.css` is Lectern's own.
+Each derived theme credits the original in its file header. Thanks to Zara Zhang
+for sharing them.
