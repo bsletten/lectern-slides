@@ -2,6 +2,7 @@
 
 import asyncio
 
+import pytest
 from conftest import write
 from starlette.testclient import TestClient
 
@@ -163,6 +164,40 @@ def test_sse_stream_greets_with_error_then_streams(fixtures, tmp_path):
         nxt = await asyncio.wait_for(gen.__anext__(), timeout=1)
         assert nxt == format_sse("reload", "1")
         await gen.aclose()
+
+    asyncio.run(go())
+
+
+def test_sse_stream_ends_on_shutdown(fixtures, tmp_path):
+    """Setting the stop event terminates a connected SSE stream, so it never
+    holds up uvicorn's graceful shutdown (the Ctrl-C hang)."""
+
+    async def go():
+        server = _server(fixtures / "render-deck", tmp_path)
+        queue: asyncio.Queue = asyncio.Queue()
+        gen = server._events(queue)
+        server._stop.set()  # server is shutting down
+        with pytest.raises(StopAsyncIteration):
+            await asyncio.wait_for(gen.__anext__(), timeout=1)
+
+    asyncio.run(go())
+
+
+def test_signal_stop_trips_on_should_exit(fixtures, tmp_path):
+    """`_signal_stop` flips `_stop` as soon as uvicorn flags shutdown, so SSE
+    streams end inside the graceful window instead of being force-cancelled."""
+
+    class FakeServer:
+        should_exit = False
+
+    async def go():
+        server = _server(fixtures / "render-deck", tmp_path)
+        fake = FakeServer()
+        task = asyncio.create_task(server._signal_stop(fake))
+        assert not server._stop.is_set()
+        fake.should_exit = True  # uvicorn received Ctrl-C
+        await asyncio.wait_for(server._stop.wait(), timeout=1)
+        await task
 
     asyncio.run(go())
 

@@ -200,6 +200,9 @@ class LiveReloadServer:
         self.error: str | None = None
         self.warnings: list[str] = []
         self._clients: set[asyncio.Queue] = set()
+        # Set when the server is shutting down, so long-lived SSE streams end
+        # themselves instead of holding up uvicorn's graceful shutdown.
+        self._stop = asyncio.Event()
         self._coi_headers = (
             {
                 "Cross-Origin-Opener-Policy": "same-origin",
@@ -271,15 +274,32 @@ class LiveReloadServer:
         return HTMLResponse("not found", status_code=404, headers=self._headers())
 
     async def _events(self, queue: asyncio.Queue):
-        """Yield SSE chunks for one client: greet with any error, then stream."""
+        """Yield SSE chunks for one client: greet with any error, then stream
+        until a broadcast arrives, a keepalive falls due, or the server shuts
+        down. Racing each wait against ``_stop`` lets this long-lived generator
+        end on shutdown instead of blocking uvicorn's graceful exit forever."""
         # Greet new clients with the current error, if any.
         if self.error:
             yield format_sse("builderror", self.error)
-        while True:
+        while not self._stop.is_set():
+            get = asyncio.ensure_future(queue.get())
+            stop = asyncio.ensure_future(self._stop.wait())
             try:
-                event, data = await asyncio.wait_for(queue.get(), timeout=15)
+                done, _ = await asyncio.wait(
+                    {get, stop}, timeout=15, return_when=asyncio.FIRST_COMPLETED
+                )
+            finally:
+                # Cancel only the still-pending task; a completed `get` keeps its
+                # dequeued item (cancelling a done task is a no-op anyway).
+                for task in (get, stop):
+                    if not task.done():
+                        task.cancel()
+            if self._stop.is_set():
+                break
+            if get in done:
+                event, data = get.result()
                 yield format_sse(event, data)
-            except TimeoutError:
+            else:  # neither fired within the window — send a keepalive comment
                 yield ": keepalive\n\n"
 
     async def _sse(self, request: Request) -> StreamingResponse:
@@ -317,23 +337,44 @@ class LiveReloadServer:
             print(f"warning: {w}", file=sys.stderr)
 
         config = uvicorn.Config(
-            self.app(), host=self.host, port=self.port, log_level="warning"
+            self.app(),
+            host=self.host,
+            port=self.port,
+            log_level="warning",
+            # Don't let an open SSE stream (a connected browser tab) stall the
+            # first Ctrl-C: cap the graceful wait so the server always exits.
+            timeout_graceful_shutdown=1,
         )
         server = uvicorn.Server(config)
-        asyncio.run(self._run(server))
+        # A second Ctrl-C makes uvicorn re-raise SIGINT as KeyboardInterrupt out
+        # of asyncio.run; swallow it so an impatient double-tap exits quietly too.
+        with contextlib.suppress(KeyboardInterrupt):
+            asyncio.run(self._run(server))
+        print("lectern: stopped", file=sys.stderr)
 
     async def _run(self, server) -> None:
-        stop = asyncio.Event()
-        watch_task = asyncio.create_task(self._watch_loop(stop))
+        watch_task = asyncio.create_task(self._watch_loop(self._stop))
+        shutdown_task = asyncio.create_task(self._signal_stop(server))
         if self.open_browser:
             asyncio.create_task(self._open_later())
         try:
             await server.serve()
         finally:
-            stop.set()
-            watch_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await watch_task
+            self._stop.set()
+            for task in (watch_task, shutdown_task):
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+    async def _signal_stop(self, server) -> None:
+        """Trip ``_stop`` the instant uvicorn flags shutdown (Ctrl-C sets
+        ``should_exit`` in its signal handler), so open SSE streams end and
+        their connections close *within* the graceful window — rather than being
+        force-cancelled when it expires, which dumps an ASGI CancelledError.
+        uvicorn exposes no awaitable for this, so poll it cheaply."""
+        while not server.should_exit:
+            await asyncio.sleep(0.05)
+        self._stop.set()
 
     async def _open_later(self) -> None:
         await asyncio.sleep(0.6)
