@@ -61,6 +61,17 @@ slide_number = "c"    # subtle corner index, styled by the theme
 
 # PDF export (see PDF-EXPORT.md). Defaults shown; override per-build on the CLI,
 # e.g.  lectern build examples/sample-deck -f pdf --layout 1up   (bare slides)
+# CJK in speaker notes: the notes column in a *-notes handout is drawn by
+# reportlab, whose default Helvetica has no CJK glyphs (Kanji/kana/Hangul come
+# out as black boxes). Lectern auto-switches those notes to a built-in CID font.
+# Han-only text is ambiguous (Japanese and Chinese share code points), so it
+# defaults to Japanese — set the top-level document language (a sibling of
+# `title`/`aspect` above, NOT inside [pdf]) to force the right glyphs:
+#   lang = "zh"        # Simplified Chinese
+#   lang = "zh-Hant"   # Traditional Chinese
+#   lang = "ko"        # Korean
+# (Japanese and any text containing kana/Hangul are detected automatically.)
+
 [pdf]
 layout        = "2up-notes"  # 2 slides + their notes per page (handout default)
 color         = "color"      # color | bw   (bw_engine = tokens | ghostscript)

@@ -127,6 +127,7 @@ def build_pdf(deck: AssembledDeck, config: Config, out_dir: Path) -> RenderResul
         notes=notes,
         title=title,
         date=datetime.date.today().isoformat(),
+        lang=config.lang,
     )
 
     if opts.bw and opts.bw_engine == "ghostscript":
