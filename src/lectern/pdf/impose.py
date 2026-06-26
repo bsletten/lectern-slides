@@ -13,6 +13,7 @@ is the part that actually touches pypdf/reportlab, imported lazily.
 from __future__ import annotations
 
 import io
+import re
 from typing import TYPE_CHECKING
 
 from . import geometry
@@ -26,25 +27,142 @@ _CHROME_FONT = "Helvetica"
 _CHROME_SIZE = 8.0
 _PAD = 6.0  # inner padding inside a notes box / frame, in points
 
+# CJK ranges: CJK symbols/punctuation, Hiragana, Katakana, CJK Ext-A, CJK
+# Unified, compatibility ideographs, Hangul syllables, fullwidth forms. The base
+# 14 PDF fonts (Helvetica et al.) carry none of these, so CJK notes drawn in
+# Helvetica come out as tofu/black boxes — hence the script-aware font below.
+_CJK_RE = re.compile("[　-〿぀-ゟ゠-ヿ㐀-䶿一-鿿가-힯豈-﫿＀-￯]")
+_KANA_RE = re.compile("[぀-ゟ゠-ヿ]")  # Hiragana / Katakana
+_HANGUL_RE = re.compile("[가-힯]")
+
+# reportlab's built-in CID fonts reference Adobe's standard Asian font
+# collection, so CJK text renders in mainstream viewers (Preview, Acrobat,
+# Chrome) WITHOUT embedding or bundling a multi-megabyte font — which would
+# break the "keep the core dependency-light" directive. (System CJK fonts like
+# Hiragino/PingFang/Noto are CFF-outline and reportlab can't embed them anyway.)
+# One font per script; the chosen one covers Latin too, so mixed notes are fine.
+_CID_FONTS = {
+    "jp": "HeiseiKakuGo-W5",  # Adobe-Japan1
+    "kr": "HYGothic-Medium",  # Adobe-Korea1
+    "sc": "STSong-Light",  # Adobe-GB1 (Simplified)
+    "tc": "MSung-Light",  # Adobe-CNS1 (Traditional)
+}
+_cjk_registered: set[str] = set()
+
+
+def _has_cjk(text: str) -> bool:
+    return bool(_CJK_RE.search(text))
+
+
+def _script_for_lang(lang: str | None) -> str | None:
+    """Map a BCP-47 ``lang`` to a CJK script key, or ``None`` if it isn't CJK.
+    The author's declared document language disambiguates Han text that the
+    content heuristic can't (Japanese kanji vs Chinese share code points)."""
+    if not lang:
+        return None
+    tag = lang.lower()
+    if tag.startswith("ja"):
+        return "jp"
+    if tag.startswith("ko"):
+        return "kr"
+    if tag.startswith("zh"):
+        # zh-Hant / zh-TW / zh-HK ⇒ Traditional; otherwise Simplified.
+        return "tc" if ("hant" in tag or "-tw" in tag or "-hk" in tag) else "sc"
+    return None
+
+
+def _cjk_font(*texts: str, lang: str | None = None) -> str | None:
+    """Pick + register a CID font for the script in *texts*, or ``None`` if they
+    hold no CJK. Priority: an explicit CJK ``lang`` ⇒ kana ⇒ Hangul ⇒ default
+    Japanese (Adobe-Japan1 has the broadest kanji coverage, and Han-only text is
+    usually a few Japanese terms in a Western deck). Registered once and cached;
+    a registration failure degrades to ``None`` (Helvetica)."""
+    joined = "\n".join(texts)
+    if not _has_cjk(joined):
+        return None
+    script = _script_for_lang(lang)
+    if script is None:
+        if _KANA_RE.search(joined):
+            script = "jp"
+        elif _HANGUL_RE.search(joined):
+            script = "kr"
+        else:
+            script = "jp"
+    name = _CID_FONTS[script]
+    if name not in _cjk_registered:
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+
+        try:
+            pdfmetrics.registerFont(UnicodeCIDFont(name))
+        except Exception:  # pragma: no cover - reportlab ships these fonts
+            return None
+        _cjk_registered.add(name)
+    return name
+
+
+def _atoms(s: str):
+    """Break-point atoms for wrapping: whitespace-delimited words, single CJK
+    characters (which may break anywhere), and single spaces."""
+    buf = ""
+    for ch in s:
+        if ch == " ":
+            if buf:
+                yield buf
+                buf = ""
+            yield " "
+        elif _CJK_RE.match(ch):
+            if buf:
+                yield buf
+                buf = ""
+            yield ch
+        else:
+            buf += ch
+    if buf:
+        yield buf
+
+
+def _reflow(notes: list[str]) -> str:
+    """Join the note's soft-wrapped source lines into paragraphs so the handout
+    fills the notes column instead of echoing the author's hard wraps.
+
+    Markdown semantics: a single newline is a space, a blank line separates
+    paragraphs — the same way the on-screen speaker notes render, so the printed
+    handout matches. The result is paragraphs joined by a blank line; the wrapper
+    then breaks each to the column width."""
+    paragraphs: list[str] = []
+    current: list[str] = []
+    for line in notes:
+        if line.strip():
+            current.append(line.strip())
+        elif current:
+            paragraphs.append(" ".join(current))
+            current = []
+    if current:
+        paragraphs.append(" ".join(current))
+    return "\n\n".join(paragraphs)
+
 
 def _wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
-    """Greedy word-wrap ``text`` to ``max_w`` points (reportlab metrics)."""
+    """Greedy-wrap ``text`` to ``max_w`` points (reportlab metrics). Latin wraps
+    on whitespace; CJK — which has no spaces — breaks between characters so a long
+    run doesn't overflow the narrow notes column. Blank lines (paragraph breaks
+    from :func:`_reflow`) pass through as empty output lines."""
     from reportlab.pdfbase.pdfmetrics import stringWidth
 
     lines: list[str] = []
     for paragraph in text.splitlines() or [""]:
-        words = paragraph.split()
-        if not words:
-            lines.append("")
-            continue
-        cur = words[0]
-        for w in words[1:]:
-            if stringWidth(f"{cur} {w}", font, size) <= max_w:
-                cur = f"{cur} {w}"
+        line = ""
+        for atom in _atoms(paragraph):
+            if atom == " " and not line:
+                continue  # no leading space on a fresh line
+            candidate = line + atom
+            if not line or stringWidth(candidate, font, size) <= max_w:
+                line = candidate
             else:
-                lines.append(cur)
-                cur = w
-        lines.append(cur)
+                lines.append(line.rstrip(" "))
+                line = "" if atom == " " else atom
+        lines.append(line.rstrip(" "))
     return lines
 
 
@@ -64,9 +182,18 @@ def _draw_overlay(
     options: PdfOptions,
     header: str,
     footer: str,
+    cjk_font: str | None = None,
 ):
-    """Build a one-page reportlab overlay (frames, numbers, notes, header/footer)."""
+    """Build a one-page reportlab overlay (frames, numbers, notes, header/footer).
+
+    ``cjk_font`` (resolved once per document) is used for any string that holds
+    CJK, so Kanji/kana/Hangul render instead of tofu; Latin-only strings keep
+    Helvetica."""
     from reportlab.pdfgen import canvas
+
+    def font_for(text: str, base: str) -> str:
+        """The CJK font when *text* needs it, else the Latin *base* font."""
+        return cjk_font if (cjk_font and _has_cjk(text)) else base
 
     sw, sh = sheet
     buf = io.BytesIO()
@@ -84,13 +211,12 @@ def _draw_overlay(
         if cell.notes is not None and notes:
             nx, ny, nw, nh = cell.notes
             c.setFillGray(0.1)
-            text = "\n".join(notes)
-            lines: list[str] = []
-            for ln in _wrap(text, _NOTES_FONT, _NOTES_SIZE, nw - 2 * _PAD):
-                lines.append(ln)
+            text = _reflow(notes)
+            font = font_for(text, _NOTES_FONT)
+            lines = _wrap(text, font, _NOTES_SIZE, nw - 2 * _PAD)
             leading = _NOTES_SIZE * 1.3
             ty = ny + nh - _PAD - _NOTES_SIZE
-            c.setFont(_NOTES_FONT, _NOTES_SIZE)
+            c.setFont(font, _NOTES_SIZE)
             for ln in lines:
                 if ty < ny + _PAD:
                     break  # clip overflow rather than spill into the next row
@@ -99,10 +225,11 @@ def _draw_overlay(
 
     if header or footer:
         c.setFillGray(0.4)
-        c.setFont(_CHROME_FONT, _CHROME_SIZE)
         if header:
+            c.setFont(font_for(header, _CHROME_FONT), _CHROME_SIZE)
             c.drawCentredString(sw / 2, sh - 18, header)
         if footer:
+            c.setFont(font_for(footer, _CHROME_FONT), _CHROME_SIZE)
             c.drawCentredString(sw / 2, 12, footer)
 
     c.showPage()
@@ -118,6 +245,7 @@ def impose(
     notes: list[list[str]],
     title: str,
     date: str,
+    lang: str | None = None,
 ) -> bytes:
     """Impose the master onto sheets per ``options.layout``; return PDF bytes."""
     from pypdf import PdfReader, PdfWriter, Transformation
@@ -146,6 +274,16 @@ def impose(
     cells = geometry.page_cells(options.layout, sheet, margin, gutter)
     slots = len(cells)
     pages_total = (n + slots - 1) // slots
+
+    # Resolve one CJK font for the whole document (notes + header/footer + title),
+    # so Kanji/kana/Hangul in any of them render instead of tofu. None ⇒ no CJK.
+    cjk_font = _cjk_font(
+        *("\n".join(note) for note in notes),
+        title,
+        options.header,
+        options.footer,
+        lang=lang,
+    )
 
     writer = PdfWriter()
     for sheet_idx in range(pages_total):
@@ -183,6 +321,7 @@ def impose(
                 page=sheet_idx + 1,
                 pages=pages_total,
             ),
+            cjk_font=cjk_font,
         )
         blank.merge_page(PdfReader(overlay).pages[0])
 

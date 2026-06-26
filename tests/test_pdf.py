@@ -259,6 +259,65 @@ def test_2up_notes_sheet_count_and_notes_text():
     assert "first note" in text and "second note here" in text
 
 
+# --------------------------------------------------------------------------- #
+# CJK notes — a CID font (not Helvetica) so Kanji/kana/Hangul don't tofu
+# --------------------------------------------------------------------------- #
+@needs_pdf_libs
+def test_cjk_script_selection_prefers_lang_then_content():
+    # Han-only text is ambiguous (JP kanji vs CN share code points); default JP.
+    assert impose._cjk_font("量子 (ryōshi)") == "HeiseiKakuGo-W5"
+    # An explicit document language disambiguates.
+    assert impose._cjk_font("量子", lang="zh") == "STSong-Light"
+    assert impose._cjk_font("量子", lang="zh-Hant") == "MSung-Light"
+    # Content heuristic when there's no lang hint: kana ⇒ JP, Hangul ⇒ KR.
+    assert impose._cjk_font("こんにちは") == "HeiseiKakuGo-W5"
+    assert impose._cjk_font("생체") == "HYGothic-Medium"
+    # No CJK ⇒ no special font (Helvetica is used).
+    assert impose._cjk_font("plain english", lang="en") is None
+
+
+def test_reflow_joins_soft_wraps_keeps_paragraph_breaks():
+    # A paragraph hard-wrapped in the source reflows to one line (soft newline =>
+    # space), so the handout fills the column instead of echoing source wraps.
+    note = ["The stamp reads 量子 (ryōshi) — the", "Japanese word for quantum."]
+    assert impose._reflow(note) == (
+        "The stamp reads 量子 (ryōshi) — the Japanese word for quantum."
+    )
+    # A blank line separates paragraphs; runs of blanks collapse to one break.
+    flowed = impose._reflow(["one", "two", "", "", "three"])
+    assert flowed == "one two\n\nthree"
+
+
+@needs_pdf_libs
+def test_wrap_breaks_long_cjk_run_between_characters():
+    # CJK has no spaces; a long run must still wrap rather than overflow the box.
+    run = "量子" * 30
+    lines = impose._wrap(run, "HeiseiKakuGo-W5", 8.5, 60.0)
+    assert len(lines) > 1  # it wrapped
+    assert "".join(lines) == run  # no characters lost, none invented
+    # Latin still wraps on whitespace, unchanged.
+    assert impose._wrap("the quick brown fox", "Helvetica", 8.5, 60.0) == [
+        "the quick brown",
+        "fox",
+    ]
+
+
+@needs_pdf_libs
+def test_cjk_notes_render_as_extractable_text():
+    out = impose.impose(
+        _make_master(2),
+        options=options.resolve(PdfConfig(layout="2up-notes", paper="letter")),
+        notes=[["reads 量子 (ryōshi) — the Japanese word; 生体認証 too."], ["plain"]],
+        title="量子 Talk",
+        date="2026-06-25",
+        lang="ja",
+    )
+    text = _pages(out)[0].extract_text()
+    # The Kanji survive into the PDF as real text (proves a CJK font drew them,
+    # not Helvetica's missing-glyph boxes), and so does the macron ō.
+    assert "量子" in text and "生体認証" in text and "ryōshi" in text
+
+
 @needs_pdf_libs
 def test_4up_fits_on_one_sheet_with_footer():
     out = impose.impose(
