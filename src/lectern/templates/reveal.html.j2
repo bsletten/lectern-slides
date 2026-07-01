@@ -390,23 +390,30 @@
     }{% endif %}
   }{% if init_extra %}, {{ init_extra }}{% endif %}));
 
-  // `::: incremental` marks each item `class="fragment" data-li-frag`. reveal's
-  // markdown attaches that to the item's last inline element (a <strong>/<em>)
-  // when the item is formatted, not the <li> — so only the formatted text would
-  // build, not the whole item or its list marker. Promote the fragment to the
-  // <li> wherever the marker landed on a child, then re-sync reveal's fragments.
+  // `::: incremental` marks each item `class="fragment" data-li-frag="N"`, where
+  // N is the item's source-order index. reveal's markdown attaches that to the
+  // item's last inline element (a <strong>/<em>) when the item is formatted, not
+  // the <li> — so only the formatted text would build, not the whole item or its
+  // list marker. Worse, a plain item lands the class on the <li> and becomes a
+  // fragment at load (index 0) while formatted items are promoted here and get
+  // appended after it — so builds fire out of order. Promote the fragment to the
+  // <li> wherever the marker landed, pin `data-fragment-index` to N so reveal
+  // orders builds by source order, then re-sync.
   Reveal.on('ready', () => {
-    let moved = false;
+    let dirty = false;
     document.querySelectorAll('.reveal .slides [data-li-frag]').forEach((el) => {
       const li = el.tagName === 'LI' ? el : el.closest('li');
-      if (li && li !== el && !li.classList.contains('fragment')) {
+      const idx = el.getAttribute('data-li-frag');
+      if (li && li !== el) {
         li.classList.add('fragment');
         el.classList.remove('fragment');
-        moved = true;
       }
+      const target = li || el;
+      if (idx !== null && idx !== '') target.setAttribute('data-fragment-index', idx);
       el.removeAttribute('data-li-frag');
+      dirty = true;
     });
-    if (moved) Reveal.sync();
+    if (dirty) Reveal.sync();
   });
 
   // Region landmarks: name each slide so screen-reader users can navigate it.
