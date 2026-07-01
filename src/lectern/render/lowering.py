@@ -136,6 +136,9 @@ class _Scanner:
         # one — `out.notes` for handout notes, `out.presenter_notes` for speaker.
         self._notes_bucket: list[str] | None = None
         self._warned_incremental = False
+        # Monotonic per-slide index for incremental list items, so reveal builds
+        # them in source order regardless of which element `.element` lands on.
+        self._frag_index = 0
 
     @property
     def _in_notes_div(self) -> bool:
@@ -264,13 +267,19 @@ class _Scanner:
             and "incremental" in self._div_stack
             and _LIST_ITEM.match(out)
         ):
-            # `data-li-frag` marks an incremental list item. reveal's `.element`
+            # `data-li-frag` marks an incremental list item; its value is the
+            # item's source-order index within the slide. reveal's `.element`
             # comment attaches the class to the *preceding inline element* (a
             # <strong>/<em>) when the item is formatted, not the <li> — so only
-            # the formatted text would build, not the item or its number. A small
-            # client script (see the reveal template) promotes the fragment to the
-            # <li> wherever this marker landed on a child instead.
-            out = out.rstrip() + ' <!-- .element: class="fragment" data-li-frag="1" -->'
+            # the formatted text would build, not the item or its number. Worse,
+            # a plain item lands the class on the <li> directly and becomes a
+            # fragment at load (index 0) while formatted items are promoted later
+            # and appended after it — so builds fire out of order. A client script
+            # (see the reveal template) promotes the fragment to the <li> and
+            # copies this index into `data-fragment-index` to pin source order.
+            marker = f'class="fragment" data-li-frag="{self._frag_index}"'
+            out = out.rstrip() + f" <!-- .element: {marker} -->"
+            self._frag_index += 1
         out = _INLINE_SPAN.sub(_span_repl, out)
         return self.resolver.rewrite(out, self.current_dir, self.label)
 

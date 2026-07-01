@@ -48,7 +48,27 @@ def test_incremental_items_get_fragment(fixtures, tmp_path):
     # Each incremental item gets a fragment comment carrying `data-li-frag`, the
     # marker a client script uses to promote the fragment from a formatted child
     # back up to the <li> (so the list marker/number builds in, not just the text).
-    assert html.count('<!-- .element: class="fragment" data-li-frag="1" -->') == 2
+    # Its value is the item's source-order index, which the client copies to
+    # `data-fragment-index` so builds fire in order regardless of where reveal's
+    # `.element` comment lands (on the <li> for plain items, on a child for
+    # formatted ones — otherwise plain items build first, out of source order).
+    assert html.count('<!-- .element: class="fragment" data-li-frag="0" -->') == 1
+    assert html.count('<!-- .element: class="fragment" data-li-frag="1" -->') == 1
+
+
+def test_incremental_indices_are_sequential_across_a_slide(tmp_path):
+    # Two blocks on one slide share the slide's fragment index space, so the
+    # second block's items keep building after the first's rather than resetting
+    # to 0 and building simultaneously with it.
+    src = (
+        "# Steps\n\n"
+        "::: incremental\n\n- one\n- two\n\n:::\n\n"
+        "::: incremental\n\n- three\n- four\n\n:::\n"
+    )
+    write(tmp_path, "s.md", src)
+    html, _ = _render(tmp_path / "s.md", tmp_path / "out")
+    for i in range(4):
+        assert html.count(f'class="fragment" data-li-frag="{i}"') == 1
 
 
 def test_only_top_level_incremental_items_get_fragment(tmp_path):
@@ -62,8 +82,10 @@ def test_only_top_level_incremental_items_get_fragment(tmp_path):
     )
     write(tmp_path, "s.md", src)
     html, _ = _render(tmp_path / "s.md", tmp_path / "out")
-    # two top-level items get fragments; the two nested details do not
-    assert html.count('class="fragment" data-li-frag="1"') == 2
+    # two top-level items get fragments (indices 0 and 1); the two nested do not
+    assert html.count('class="fragment" data-li-frag="0"') == 1
+    assert html.count('class="fragment" data-li-frag="1"') == 1
+    assert html.count('class="fragment" data-li-frag="2"') == 0
 
 
 def test_deck_vocabulary_baseline_precedes_theme(fixtures, tmp_path):
@@ -78,6 +100,11 @@ def test_deck_vocabulary_baseline_precedes_theme(fixtures, tmp_path):
     assert base_i < theme_i
     assert "--seal:" in html  # second-accent fallback keeps two-tone art legible
     assert ".tag.warm" in html and ".seal" in html
+    # reveal's reset.css flattens <sub>/<sup>; the baseline restores them and,
+    # loading after reset.css, wins at equal specificity.
+    reset_i = html.index("reset.css")
+    assert reset_i < base_i
+    assert "sub, sup {" in html and "sup { top:" in html
 
 
 def test_place_box_lowered_to_div(fixtures, tmp_path):
