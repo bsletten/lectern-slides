@@ -277,10 +277,8 @@ class _Scanner:
             # and appended after it — so builds fire out of order. A client script
             # (see the reveal template) promotes the fragment to the <li> and
             # copies this index into `data-fragment-index` to pin source order.
-            out = (
-                out.rstrip()
-                + f' <!-- .element: class="fragment" data-li-frag="{self._frag_index}" -->'
-            )
+            marker = f'class="fragment" data-li-frag="{self._frag_index}"'
+            out = out.rstrip() + f" <!-- .element: {marker} -->"
             self._frag_index += 1
         out = _INLINE_SPAN.sub(_span_repl, out)
         return self.resolver.rewrite(out, self.current_dir, self.label)
