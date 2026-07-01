@@ -28,6 +28,13 @@
    cascade @layer could not. `--seal` defaults to a deepened accent — distinct
    from --accent so two-tone art stays legible — unless the theme defines it. */
 :root { --seal: color-mix(in srgb, var(--accent) 55%, var(--fg) 45%); }
+/* reveal ships Eric-Meyer reset.css, which flattens <sub>/<sup> to
+   `font-size:100%; vertical-align:baseline` — so `2<sup>256</sup>` rendered as
+   plain inline "256". Restore the normalize.css rendering (this block loads
+   after reset.css, so equal-specificity element rules win). */
+sub, sup { font-size: 0.75em; line-height: 0; position: relative; vertical-align: baseline; }
+sup { top: -0.5em; }
+sub { bottom: -0.25em; }
 .kicker {
   font-family: var(--font-mono, ui-monospace, monospace);
   text-transform: uppercase; letter-spacing: 0.12em;

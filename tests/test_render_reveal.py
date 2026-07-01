@@ -100,6 +100,11 @@ def test_deck_vocabulary_baseline_precedes_theme(fixtures, tmp_path):
     assert base_i < theme_i
     assert "--seal:" in html  # second-accent fallback keeps two-tone art legible
     assert ".tag.warm" in html and ".seal" in html
+    # reveal's reset.css flattens <sub>/<sup>; the baseline restores them and,
+    # loading after reset.css, wins at equal specificity.
+    reset_i = html.index("reset.css")
+    assert reset_i < base_i
+    assert "sub, sup {" in html and "sup { top:" in html
 
 
 def test_place_box_lowered_to_div(fixtures, tmp_path):
