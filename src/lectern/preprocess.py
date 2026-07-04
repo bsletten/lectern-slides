@@ -311,16 +311,26 @@ def _split_frontmatter(text: str) -> tuple[dict, str, int]:
 
     Uses python-frontmatter for parsing but recovers the body's 1-based starting
     line itself, so locations stay accurate after the block is stripped.
+
+    Frontmatter must open on the very first line. python-frontmatter strips
+    leading whitespace before it looks for the ``---`` fence, so without this
+    guard a slide that opens with a blank line and a ``---`` separator (a plain
+    horizontal rule) would be misread as a YAML block — and the markdown below
+    it fed to the YAML parser. Only parse frontmatter when line 1 is ``---``.
     """
+    lines = text.split("\n")
+    if not lines or lines[0].strip() != "---":
+        # No frontmatter: return the body as python-frontmatter would (stripped),
+        # so this guard changes only *detection*, never the emitted body.
+        return {}, text.strip(), 1
+
     metadata, body = frontmatter.parse(text)
 
     body_line = 1
-    lines = text.split("\n")
-    if lines and lines[0].strip() == "---":
-        for i in range(1, len(lines)):
-            if lines[i].strip() in ("---", "..."):
-                body_line = i + 2  # first body line follows the closing delimiter
-                break
+    for i in range(1, len(lines)):
+        if lines[i].strip() in ("---", "..."):
+            body_line = i + 2  # first body line follows the closing delimiter
+            break
 
     return metadata, body, body_line
 

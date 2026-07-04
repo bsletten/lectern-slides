@@ -169,6 +169,19 @@ def test_frontmatter_in_partial_warns_and_is_dropped(tmp_path):
     assert any("frontmatter" in w for w in deck.warnings)
 
 
+def test_leading_separator_is_not_misread_as_frontmatter(tmp_path):
+    # A slide that opens with a blank line and a `---` separator is a horizontal
+    # rule, not YAML frontmatter. python-frontmatter strips leading whitespace
+    # before detecting the fence, so without a guard the `---` would open a bogus
+    # frontmatter block and the markdown below it would be parsed as YAML.
+    body = "\n---\n\n# Agenda\n\n| a | b |\n|---|---|\n| 1 | 2 |\n"
+    write(tmp_path, "deck.md", body)
+    deck = assemble(tmp_path / "deck.md")  # must not raise a YAML ScannerError
+    out = _md(deck)
+    assert "# Agenda" in out
+    assert "| 1 | 2 |" in out
+
+
 def test_include_inside_fence_is_not_expanded(tmp_path):
     write(tmp_path, "secret.md", "EXPANDED")
     write(
