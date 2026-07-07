@@ -105,7 +105,7 @@ def test_incremental_lead_in_paragraph_builds_as_its_own_step(tmp_path):
     for i in range(5):
         assert html.count(f'class="fragment" data-li-frag="{i}"') == 1
     assert (
-        'Unlike traditional apps, APIs expose: '
+        "Unlike traditional apps, APIs expose: "
         '<!-- .element: class="fragment" data-li-frag="2" -->' in html
     )
 
@@ -123,7 +123,7 @@ def test_incremental_multiline_paragraph_builds_as_one_step(tmp_path):
     html, _ = _render(tmp_path / "s.md", tmp_path / "out")
     assert "This lead-in sentence\n" in html  # first line carries no marker
     assert (
-        'wraps across two source lines. '
+        "wraps across two source lines. "
         '<!-- .element: class="fragment" data-li-frag="1" -->' in html
     )
     for i in range(3):
