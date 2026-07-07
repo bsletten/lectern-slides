@@ -139,10 +139,29 @@ class _Scanner:
         # Monotonic per-slide index for incremental list items, so reveal builds
         # them in source order regardless of which element `.element` lands on.
         self._frag_index = 0
+        # Within a `:::incremental` block a run of non-list content lines (a
+        # lead-in paragraph) builds as a single fragment. Holds the `out.body`
+        # index of the run's last line so the `.element` marker lands once the
+        # run ends; None when no such run is open.
+        self._incr_para_idx: int | None = None
 
     @property
     def _in_notes_div(self) -> bool:
         return bool(self._div_stack) and self._div_stack[-1].startswith("notes")
+
+    def _flush_incr_paragraph(self) -> None:
+        """Close an open incremental paragraph run, marking it a fragment.
+
+        A lead-in paragraph inside `:::incremental` builds as one fragment. Its
+        `.element` marker must sit on the paragraph's *last* line so reveal
+        attaches it to the whole `<p>`, so we defer it until the run ends here.
+        """
+        if self._incr_para_idx is None:
+            return
+        marker = f'class="fragment" data-li-frag="{self._frag_index}"'
+        self.out.body[self._incr_para_idx] += f" <!-- .element: {marker} -->"
+        self._frag_index += 1
+        self._incr_para_idx = None
 
     def feed(self, line: str) -> None:
         prov = _PROVENANCE.match(line)
@@ -181,6 +200,7 @@ class _Scanner:
 
         div = _FENCE_DIV.match(line)
         if div is not None and div.group(2) == "":
+            self._flush_incr_paragraph()
             if self._div_stack and self._div_stack.pop() == "div":
                 self.out.body.extend(["", "</div>"])
             return
@@ -192,6 +212,7 @@ class _Scanner:
 
         notes_open = _NOTES_OPEN.match(line)
         if notes_open is not None:
+            self._flush_incr_paragraph()
             category = notes_open.group(1)
             if category is not None and category != "presenter":
                 # A mistyped category would silently fall through to handout
@@ -213,11 +234,13 @@ class _Scanner:
                 return
 
         if div is not None:
+            self._flush_incr_paragraph()
             self._open_div(div.group(2))
             return
 
         marker = fence_marker(line)
         if marker is not None:
+            self._flush_incr_paragraph()
             if fence_info(line).split(" ")[0].lower() == "mermaid":
                 self._mermaid = marker
                 self.out.has_mermaid = True
@@ -225,6 +248,20 @@ class _Scanner:
                 return
             self._fence = marker
             self.out.body.append(line)
+            return
+
+        # Inside `:::incremental`, list items each build individually (handled in
+        # `_lower_content`); a run of unindented plain content lines (a lead-in
+        # paragraph) builds as one fragment. Indented lines are list-item
+        # continuations — they ride with their parent, never their own step.
+        if self.incremental == "fragment" and "incremental" in self._div_stack:
+            if _LIST_ITEM.match(line) or line.strip() == "":
+                self._flush_incr_paragraph()  # a list or blank line ends the run
+                self.out.body.append(self._lower_content(line))
+                return
+            self.out.body.append(self._lower_content(line))
+            if not line[:1].isspace():
+                self._incr_para_idx = len(self.out.body) - 1
             return
 
         self.out.body.append(self._lower_content(line))
@@ -284,6 +321,7 @@ class _Scanner:
         return self.resolver.rewrite(out, self.current_dir, self.label)
 
     def finish(self) -> LoweredSlide:
+        self._flush_incr_paragraph()
         if self._mermaid is not None:
             self.out.body.append("</pre>")
             self._mermaid = None

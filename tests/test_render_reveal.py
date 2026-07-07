@@ -88,6 +88,48 @@ def test_only_top_level_incremental_items_get_fragment(tmp_path):
     assert html.count('class="fragment" data-li-frag="2"') == 0
 
 
+def test_incremental_lead_in_paragraph_builds_as_its_own_step(tmp_path):
+    # A plain paragraph inside `::: incremental` is a build step of its own,
+    # pinned in source order — so it stays hidden until the items before it have
+    # built, then reveals before the items after it. The `.element` marker lands
+    # on the paragraph's line so reveal attaches the fragment to the whole <p>.
+    src = (
+        "# Endpoints\n\n::: incremental\n\n"
+        "- one\n- two\n\n"
+        "Unlike traditional apps, APIs expose:\n\n"
+        "- three\n- four\n\n:::\n"
+    )
+    write(tmp_path, "s.md", src)
+    html, _ = _render(tmp_path / "s.md", tmp_path / "out")
+    # Items 0,1 then the paragraph (2) then items 3,4 — one fragment each.
+    for i in range(5):
+        assert html.count(f'class="fragment" data-li-frag="{i}"') == 1
+    assert (
+        'Unlike traditional apps, APIs expose: '
+        '<!-- .element: class="fragment" data-li-frag="2" -->' in html
+    )
+
+
+def test_incremental_multiline_paragraph_builds_as_one_step(tmp_path):
+    # A soft-wrapped paragraph is one <p>, so it is one build step: the marker
+    # lands only on its last line, and the index advances by one, not per line.
+    src = (
+        "# Wrapped\n\n::: incremental\n\n"
+        "- one\n\n"
+        "This lead-in sentence\nwraps across two source lines.\n\n"
+        "- two\n\n:::\n"
+    )
+    write(tmp_path, "s.md", src)
+    html, _ = _render(tmp_path / "s.md", tmp_path / "out")
+    assert "This lead-in sentence\n" in html  # first line carries no marker
+    assert (
+        'wraps across two source lines. '
+        '<!-- .element: class="fragment" data-li-frag="1" -->' in html
+    )
+    for i in range(3):
+        assert html.count(f'data-li-frag="{i}"') == 1
+
+
 def test_deck_vocabulary_baseline_precedes_theme(fixtures, tmp_path):
     # Portable baselines for deck classes (.tag/.seal/.kicker/.vert/.handle) and a
     # warm second-accent fallback (--seal) are injected BEFORE the theme, so a
