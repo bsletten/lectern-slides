@@ -31,6 +31,14 @@ _SLIDE_DIRECTIVE = re.compile(r"^\s*<!--\s*slide:\s*(.+?)\s*-->\s*$")
 # speaker-view-only notes that are kept out of the PDF handout.
 _NOTES_OPEN = re.compile(r"^\s*<!--\s*notes(?::([\w-]+))?\s*-->\s*$")
 _NOTES_CLOSE = re.compile(r"^\s*<!--\s*/notes\s*-->\s*$")
+# reveal.js's native speaker-note separator: a line beginning with ``Note:`` (or
+# ``Notes:``). Everything from here to the end of the slide is a handout note.
+# Lectern already *emits* this on output (the reveal adapter); accepting it on
+# *input* means decks authored in raw reveal Markdown — including ones migrated by
+# hand or by an assistant — keep their notes in the PDF handout, matching what
+# reveal.js shows on screen. ``<!-- notes -->`` remains the canonical form (it is
+# matched first, and can also carry a ``:presenter`` category).
+_NOTE_SEPARATOR = re.compile(r"^\s*notes?:\s*(.*)$", re.IGNORECASE)
 _FENCE_DIV = re.compile(r"^(:::+)\s*(.*?)\s*$")
 _INLINE_SPAN = re.compile(r"\[([^\]]+)\]\{([^}]*)\}")
 # Only *top-level* list items become incremental fragments. A nested/indented
@@ -224,6 +232,18 @@ class _Scanner:
             self._notes_bucket = (
                 self.out.presenter_notes if category == "presenter" else self.out.notes
             )
+            return
+
+        note_sep = _NOTE_SEPARATOR.match(line)
+        if note_sep is not None:
+            # reveal's `Note:` separator: the rest of the slide is a handout note.
+            # Unlike `<!-- notes -->` there is no close marker — the bucket simply
+            # runs to the end of the slide (which `finish()` handles).
+            self._flush_incr_paragraph()
+            self._notes_bucket = self.out.notes
+            trailing = note_sep.group(1)
+            if trailing.strip():
+                self.out.notes.append(trailing)
             return
 
         if not self._directive_seen:
