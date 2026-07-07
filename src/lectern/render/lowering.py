@@ -31,6 +31,14 @@ _SLIDE_DIRECTIVE = re.compile(r"^\s*<!--\s*slide:\s*(.+?)\s*-->\s*$")
 # speaker-view-only notes that are kept out of the PDF handout.
 _NOTES_OPEN = re.compile(r"^\s*<!--\s*notes(?::([\w-]+))?\s*-->\s*$")
 _NOTES_CLOSE = re.compile(r"^\s*<!--\s*/notes\s*-->\s*$")
+# reveal.js's native speaker-note separator: a line beginning with ``Note:`` (or
+# ``Notes:``). Everything from here to the end of the slide is a handout note.
+# Lectern already *emits* this on output (the reveal adapter); accepting it on
+# *input* means decks authored in raw reveal Markdown — including ones migrated by
+# hand or by an assistant — keep their notes in the PDF handout, matching what
+# reveal.js shows on screen. ``<!-- notes -->`` remains the canonical form (it is
+# matched first, and can also carry a ``:presenter`` category).
+_NOTE_SEPARATOR = re.compile(r"^\s*notes?:\s*(.*)$", re.IGNORECASE)
 _FENCE_DIV = re.compile(r"^(:::+)\s*(.*?)\s*$")
 _INLINE_SPAN = re.compile(r"\[([^\]]+)\]\{([^}]*)\}")
 # Only *top-level* list items become incremental fragments. A nested/indented
@@ -139,10 +147,29 @@ class _Scanner:
         # Monotonic per-slide index for incremental list items, so reveal builds
         # them in source order regardless of which element `.element` lands on.
         self._frag_index = 0
+        # Within a `:::incremental` block a run of non-list content lines (a
+        # lead-in paragraph) builds as a single fragment. Holds the `out.body`
+        # index of the run's last line so the `.element` marker lands once the
+        # run ends; None when no such run is open.
+        self._incr_para_idx: int | None = None
 
     @property
     def _in_notes_div(self) -> bool:
         return bool(self._div_stack) and self._div_stack[-1].startswith("notes")
+
+    def _flush_incr_paragraph(self) -> None:
+        """Close an open incremental paragraph run, marking it a fragment.
+
+        A lead-in paragraph inside `:::incremental` builds as one fragment. Its
+        `.element` marker must sit on the paragraph's *last* line so reveal
+        attaches it to the whole `<p>`, so we defer it until the run ends here.
+        """
+        if self._incr_para_idx is None:
+            return
+        marker = f'class="fragment" data-li-frag="{self._frag_index}"'
+        self.out.body[self._incr_para_idx] += f" <!-- .element: {marker} -->"
+        self._frag_index += 1
+        self._incr_para_idx = None
 
     def feed(self, line: str) -> None:
         prov = _PROVENANCE.match(line)
@@ -181,6 +208,7 @@ class _Scanner:
 
         div = _FENCE_DIV.match(line)
         if div is not None and div.group(2) == "":
+            self._flush_incr_paragraph()
             if self._div_stack and self._div_stack.pop() == "div":
                 self.out.body.extend(["", "</div>"])
             return
@@ -192,6 +220,7 @@ class _Scanner:
 
         notes_open = _NOTES_OPEN.match(line)
         if notes_open is not None:
+            self._flush_incr_paragraph()
             category = notes_open.group(1)
             if category is not None and category != "presenter":
                 # A mistyped category would silently fall through to handout
@@ -205,6 +234,18 @@ class _Scanner:
             )
             return
 
+        note_sep = _NOTE_SEPARATOR.match(line)
+        if note_sep is not None:
+            # reveal's `Note:` separator: the rest of the slide is a handout note.
+            # Unlike `<!-- notes -->` there is no close marker — the bucket simply
+            # runs to the end of the slide (which `finish()` handles).
+            self._flush_incr_paragraph()
+            self._notes_bucket = self.out.notes
+            trailing = note_sep.group(1)
+            if trailing.strip():
+                self.out.notes.append(trailing)
+            return
+
         if not self._directive_seen:
             directive = _SLIDE_DIRECTIVE.match(line)
             if directive is not None:
@@ -213,11 +254,13 @@ class _Scanner:
                 return
 
         if div is not None:
+            self._flush_incr_paragraph()
             self._open_div(div.group(2))
             return
 
         marker = fence_marker(line)
         if marker is not None:
+            self._flush_incr_paragraph()
             if fence_info(line).split(" ")[0].lower() == "mermaid":
                 self._mermaid = marker
                 self.out.has_mermaid = True
@@ -225,6 +268,20 @@ class _Scanner:
                 return
             self._fence = marker
             self.out.body.append(line)
+            return
+
+        # Inside `:::incremental`, list items each build individually (handled in
+        # `_lower_content`); a run of unindented plain content lines (a lead-in
+        # paragraph) builds as one fragment. Indented lines are list-item
+        # continuations — they ride with their parent, never their own step.
+        if self.incremental == "fragment" and "incremental" in self._div_stack:
+            if _LIST_ITEM.match(line) or line.strip() == "":
+                self._flush_incr_paragraph()  # a list or blank line ends the run
+                self.out.body.append(self._lower_content(line))
+                return
+            self.out.body.append(self._lower_content(line))
+            if not line[:1].isspace():
+                self._incr_para_idx = len(self.out.body) - 1
             return
 
         self.out.body.append(self._lower_content(line))
@@ -284,6 +341,7 @@ class _Scanner:
         return self.resolver.rewrite(out, self.current_dir, self.label)
 
     def finish(self) -> LoweredSlide:
+        self._flush_incr_paragraph()
         if self._mermaid is not None:
             self.out.body.append("</pre>")
             self._mermaid = None
