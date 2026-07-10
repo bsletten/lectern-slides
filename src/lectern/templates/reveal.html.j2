@@ -360,6 +360,9 @@ sub { bottom: -0.25em; }
   }
 }
 </style>
+{% if json_ld %}
+{{ json_ld }}
+{% endif %}
 {% if extra_head %}
 {{ extra_head }}
 {% endif %}

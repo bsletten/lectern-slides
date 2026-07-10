@@ -290,6 +290,48 @@ Ordinary notes show in the presenter view **and** the `*-notes` PDF layouts;
 flagged by `lectern check` and treated as an ordinary note, so it can't silently
 leak into print.
 
+### Metadata (JSON-LD)
+
+Describe the deck semantically and Lectern emits a `<script type="application/ld+json">`
+into the rendered `<head>` — machine-readable provenance for search, a CMS, or a
+knowledge graph. Set it in `deck.toml`:
+
+```toml
+[metadata]
+type  = "cms:Presentation"                     # @type (this is the default)
+title = "Full Stack Engineering - Encryption"  # falls back to the top-level title
+link  = "https://…/fs-crypto/"                 # dc:identifier
+tags  = ["identity", "post-quantum"]           # dc:subject (a @set)
+```
+
+Add subject tags from anywhere in the Markdown with a comma-separated directive.
+It's deck-global (put it on any slide), the tags accumulate across the whole deck
+and merge with `[metadata].tags`, and the directive itself never renders:
+
+```markdown
+<!-- tags: uberconf, nfjs -->
+```
+
+The `@context` maps `title`/`tags`/`link` onto Dublin Core (`dc:`) and the ikigai
+CMS vocabulary (`cms:`); extend it with `[metadata.context]` to add or override
+prefixes/terms. A deck with no title, tags, or link emits no script.
+
+```json
+{
+  "@context": {
+    "dc": "http://purl.org/dc/elements/1.1/",
+    "cms": "https://ikigai-rs.dev/ns/cms#",
+    "title": "dc:title",
+    "tags": { "@id": "dc:subject", "@container": "@set" },
+    "link": "dc:identifier"
+  },
+  "@type": "cms:Presentation",
+  "title": "Full Stack Engineering - Encryption",
+  "tags": ["identity", "post-quantum", "uberconf", "nfjs"],
+  "link": "https://…/fs-crypto/"
+}
+```
+
 ### PDF export (`-f pdf`)
 
 ```bash

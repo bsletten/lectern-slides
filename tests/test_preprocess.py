@@ -204,6 +204,36 @@ def test_directory_mode_lexical_order(tmp_path):
     assert deck.slide_count == 3
 
 
+def test_tags_directive_is_collected_and_dropped(tmp_path):
+    write(
+        tmp_path,
+        "main.md",
+        "# Title\n\n<!-- tags: identity, post-quantum -->\n\nbody\n",
+    )
+    deck = assemble(tmp_path / "main.md")
+    assert deck.tags == ["identity", "post-quantum"]
+    # The directive is deck metadata, not slide content: it never reaches output.
+    assert "<!-- tags:" not in _md(deck)
+
+
+def test_tags_directives_accumulate_across_includes(tmp_path):
+    write(tmp_path, "part.md", "<!-- tags: nfjs, uberconf -->\n\npartial body")
+    write(
+        tmp_path,
+        "main.md",
+        "<!-- tags: identity -->\n\n<!-- include: part.md -->\n",
+    )
+    deck = assemble(tmp_path / "main.md")
+    assert deck.tags == ["identity", "nfjs", "uberconf"]
+
+
+def test_tags_directive_inside_fence_is_left_literal(tmp_path):
+    write(tmp_path, "main.md", "```\n<!-- tags: nope -->\n```\n")
+    deck = assemble(tmp_path / "main.md")
+    assert deck.tags == []
+    assert "<!-- tags: nope -->" in _md(deck)  # code, not a directive
+
+
 def test_sourcemap_maps_output_lines_to_source(tmp_path):
     write(tmp_path, "lib.md", "leaf line")
     write(tmp_path, "main.md", "top line\n\n<!-- include: lib.md -->\n")
