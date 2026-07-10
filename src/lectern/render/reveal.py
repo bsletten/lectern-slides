@@ -117,8 +117,10 @@ def build_html(
     mermaid = mermaid_seen if forced is None else bool(forced)
 
     from .. import fontawesome
+    from ..metadata import render_script
 
     fa_css = fontawesome.resolve(config.font_awesome, deck.root, out_dir, warnings)
+    json_ld = render_script(config, getattr(deck, "tags", None))
 
     html_text = _render_template(
         config,
@@ -128,6 +130,7 @@ def build_html(
         font_awesome_css=fa_css,
         init_extra=init_extra,
         extra_head=extra_head,
+        json_ld=json_ld,
     )
     return html_text, resolver, theme
 
@@ -141,6 +144,7 @@ def _render_template(
     font_awesome_css=None,
     init_extra=None,
     extra_head="",
+    json_ld="",
 ) -> str:
     rc = config.reveal.model_dump()
     math = rc.get("math") or False
@@ -199,6 +203,7 @@ def _render_template(
         init_json=json.dumps(init),
         init_extra=json.dumps(init_extra) if init_extra else "",
         extra_head=extra_head,
+        json_ld=json_ld,
         plugins=plugins,
         highlight=highlight,
         math=math,

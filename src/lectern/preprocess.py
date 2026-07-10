@@ -38,6 +38,9 @@ from .sourcemap import OutLine, SourceLocation, SourceMap
 
 # An include directive occupying its own line (indentation tolerated).
 _INCLUDE_RE = re.compile(r"^\s*<!--\s*include:\s*(?P<target>.+?)\s*-->\s*$")
+# A deck-global `<!-- tags: a, b, c -->` directive: a comma-separated subject
+# list, accumulated across the deck into the JSON-LD `dc:subject` @set.
+_TAGS_RE = re.compile(r"^\s*<!--\s*tags:\s*(?P<list>.+?)\s*-->\s*$")
 _PROVENANCE_PREFIX = "<!-- @from "
 
 
@@ -53,6 +56,7 @@ class _Ctx:
     asset_dirs: list[Path] = field(default_factory=list)
     remark_compat: bool = False
     warnings: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)  # deck-global `<!-- tags: -->`
 
 
 @dataclass
@@ -64,6 +68,7 @@ class AssembledDeck:
     config: object  # lectern.config.Config (avoid import cycle in annotations)
     root: Path
     theme_dirs: list[Path] = field(default_factory=list)  # resolved theme search dirs
+    tags: list[str] = field(default_factory=list)  # from `<!-- tags: -->` directives
 
     def markdown(self, *, provenance: bool = True) -> str:
         """Render the assembled Markdown.
@@ -155,6 +160,7 @@ def assemble_resolved(
         config=resolved.config,
         root=resolved.root,
         theme_dirs=resolved.theme_dirs,
+        tags=ctx.tags,
     )
 
 
@@ -253,6 +259,15 @@ def _expand_lines(
                     _resolve_include(
                         match.group("target"), display, base_dir, lineno, stack, ctx
                     )
+                )
+                continue
+            tags = _TAGS_RE.match(line)
+            if tags is not None:
+                # Deck-global metadata, not slide content: collect and drop the
+                # line so it never reaches a renderer. Order is preserved; the
+                # JSON-LD builder de-dupes across the whole deck.
+                ctx.tags.extend(
+                    t.strip() for t in tags.group("list").split(",") if t.strip()
                 )
                 continue
             marker = fence_marker(line)

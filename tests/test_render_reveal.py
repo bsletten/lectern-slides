@@ -1,5 +1,6 @@
 """Reveal adapter: structural assertions on the generated HTML (not pixels)."""
 
+import json
 from pathlib import Path
 
 from conftest import write
@@ -15,6 +16,39 @@ def _render(source, out_dir: Path, **overrides):
     adapter = get_renderer(resolved.config.renderer)
     result = adapter.render(deck, resolved.config, out_dir)
     return result.output.read_text(encoding="utf-8"), result
+
+
+def test_jsonld_metadata_rendered_into_head(tmp_path):
+    write(
+        tmp_path,
+        "deck.toml",
+        'title = "Full Stack Engineering - Encryption"\n'
+        'slides = ["main.md"]\n\n'
+        "[metadata]\n"
+        'link = "https://x/fs-crypto/"\n'
+        'tags = ["identity", "post-quantum"]\n',
+    )
+    write(tmp_path, "main.md", "# Hi\n\n<!-- tags: uberconf, nfjs -->\n")
+    html, _ = _render(tmp_path, tmp_path / "out")
+
+    assert '<script type="application/ld+json">' in html
+    start = html.index('<script type="application/ld+json">') + len(
+        '<script type="application/ld+json">'
+    )
+    doc = json.loads(html[start : html.index("</script>", start)])
+    assert doc["@type"] == "cms:Presentation"
+    assert doc["title"] == "Full Stack Engineering - Encryption"
+    # config tags first, then markdown-directive tags, de-duped in order.
+    assert doc["tags"] == ["identity", "post-quantum", "uberconf", "nfjs"]
+    assert doc["link"] == "https://x/fs-crypto/"
+
+
+def test_no_jsonld_script_when_no_metadata(tmp_path):
+    write(tmp_path, "deck.toml", 'slides = ["main.md"]\n')
+    write(tmp_path, "main.md", "# Hi\n")
+    html, _ = _render(tmp_path, tmp_path / "out")
+    # A bare deck with no title/tags/link emits no metadata script.
+    assert "application/ld+json" not in html
 
 
 def test_reveal_registered_with_caps():

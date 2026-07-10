@@ -91,6 +91,21 @@ class PdfConfig(_Section):
     footer: str = "{title} · {date} · {page}/{pages}"
 
 
+class MetadataConfig(_Section):
+    """Semantic deck metadata, emitted as JSON-LD in the rendered ``<head>``.
+
+    The fixed ``@context`` maps ``title``/``tags``/``link`` onto Dublin Core and
+    the ikigai CMS vocabulary; ``context`` merges in additional prefixes/terms.
+    ``tags`` is a ``dc:subject`` ``@set``; markdown ``<!-- tags: a, b -->``
+    directives accumulate onto it (see :mod:`lectern.metadata`)."""
+
+    type: str = "cms:Presentation"  # @type
+    title: str = ""  # falls back to Config.title
+    link: str = ""  # dc:identifier
+    tags: list[str] = Field(default_factory=list)  # dc:subject (@set)
+    context: dict = Field(default_factory=dict)  # extra @context terms
+
+
 class Config(BaseModel):
     """The validated, merged deck configuration."""
 
@@ -119,6 +134,7 @@ class Config(BaseModel):
     marp: dict = Field(default_factory=dict)
     quarto: dict = Field(default_factory=dict)
     pdf: PdfConfig = Field(default_factory=PdfConfig)
+    metadata: MetadataConfig = Field(default_factory=MetadataConfig)
 
 
 @dataclass
