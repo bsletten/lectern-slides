@@ -51,6 +51,27 @@ html, body { height: 100%; }
     countIncrementalSlides: false,
     navigation: { scroll: false, touch: true }
   });
+
+  // Any link that leaves the deck opens in a new tab: a click mid-talk otherwise
+  // unloads the running deck, losing the current slide and the presenter view.
+  // In-page anchors and non-web schemes (`mailto:`, `tel:`) are left alone, as is
+  // an explicit target the author set on a raw `<a>`. remark renders the markdown
+  // itself, so this runs over its output — once for the slides it has built, and
+  // again as each slide is shown (idempotent: an anchor with a target is skipped).
+  function externalLinksNewTab() {
+    document.querySelectorAll('.remark-slide-content a[href]').forEach(function (a) {
+      if (a.hasAttribute('target')) return;
+      if ((a.getAttribute('href') || '').startsWith('#')) return;
+      if (a.protocol !== 'http:' && a.protocol !== 'https:') return;
+      a.setAttribute('target', '_blank');
+      // The opened tab must not get a handle on the deck's window.
+      var rel = (a.getAttribute('rel') || '').split(/\s+/).filter(Boolean);
+      if (rel.indexOf('noopener') === -1) rel.push('noopener');
+      a.setAttribute('rel', rel.join(' '));
+    });
+  }
+  slideshow.on('afterShowSlide', externalLinksNewTab);
+  externalLinksNewTab();
 </script>
 {% if mermaid %}
 <script type="module">
