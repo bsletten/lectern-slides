@@ -6,6 +6,13 @@ aims to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Links out of the deck now open in a new tab (`reveal` and `remark`): an
+  `http(s)` link gets `target="_blank" rel="noopener"`, so a click mid-talk no
+  longer unloads the running deck. In-page anchors, `mailto:`/`tel:`, and any
+  link whose `target` the author set are untouched.
+
 ## [0.1.0] — 2026-06-17
 
 First public release. A dependency-light Python CLI (`lectern`) that assembles

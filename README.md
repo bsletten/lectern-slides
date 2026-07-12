@@ -254,6 +254,19 @@ after it, or use a raw `<img>` (which bypasses the fill rule):
 
 (Inline images — not alone on a line — are left at their natural size.)
 
+### Links
+
+An ordinary `[text](https://…)` link opens in a **new tab** — clicking one mid-talk
+would otherwise unload the running deck, losing your slide, your fragment state, and
+the speaker window. In-page links (`[next](#/12)`) and `mailto:`/`tel:` links are left
+alone. To opt one link out, set the target yourself:
+
+```markdown
+<a href="https://example.org" target="_self">open in the deck's own tab</a>
+```
+
+(reveal and remark only — `marp` and `quarto` render their own HTML.)
+
 ### Speaker notes
 
 Attach speaker notes to a slide with an HTML-comment block (or the equivalent

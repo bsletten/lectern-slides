@@ -430,6 +430,25 @@ sub { bottom: -0.25em; }
     if (dirty) Reveal.sync();
   });
 
+  // Any link that leaves the deck opens in a new tab: a click mid-talk otherwise
+  // unloads the running deck, losing the current slide, fragment state, and the
+  // speaker window. Reveal's own in-page navigation (`#/3`, `#slide-id`) and
+  // non-web schemes (`mailto:`, `tel:`) are left alone, as is an explicit target
+  // the author set (a raw `<a target=…>`, or `<!-- .element: target="_self" -->`).
+  // Runs on `ready`: the anchors are the markdown plugin's output, not ours.
+  Reveal.on('ready', () => {
+    document.querySelectorAll('.reveal .slides a[href]').forEach((a) => {
+      if (a.hasAttribute('target')) return;
+      if ((a.getAttribute('href') || '').startsWith('#')) return;
+      if (a.protocol !== 'http:' && a.protocol !== 'https:') return;
+      a.setAttribute('target', '_blank');
+      // The opened tab must not get a handle on the deck's window.
+      const rel = (a.getAttribute('rel') || '').split(/\s+/).filter(Boolean);
+      if (!rel.includes('noopener')) rel.push('noopener');
+      a.setAttribute('rel', rel.join(' '));
+    });
+  });
+
   // Region landmarks: name each slide so screen-reader users can navigate it.
   // A <section> with an accessible name is implicitly an ARIA `region`. Slides
   // with an explicit `label`/`aria-label` keep it; the rest take their heading
