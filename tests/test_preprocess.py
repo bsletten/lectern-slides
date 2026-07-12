@@ -21,10 +21,11 @@ def test_inline_include_resolved_relatively(tmp_path):
     assert deck.slide_count == 1  # single-slide partial stays inline
 
 
-def test_svg_include_collapses_blank_lines_to_stay_inline(tmp_path):
-    # An inlined SVG must be one uninterrupted block: reveal's client-side
-    # Markdown ends an HTML block at the first blank line, which would close
-    # `<svg>` early. The include strips blank lines for .svg/.xml (but not .md).
+def test_svg_include_flattens_to_one_line_to_stay_inline(tmp_path):
+    # An inlined SVG must reach reveal's client-side Markdown (marked) as one
+    # complete HTML block, or marked parses it as inline HTML in a `<p>`, closes
+    # `<svg>` empty, and orphans its children. The include flattens .svg/.xml onto
+    # a single line (but not .md, where blank lines separate paragraphs).
     svg = (
         '<svg viewBox="0 0 10 10">\n'
         "  <title>t</title>\n"
@@ -36,9 +37,40 @@ def test_svg_include_collapses_blank_lines_to_stay_inline(tmp_path):
     write(tmp_path, "art.svg", svg)
     write(tmp_path, "main.md", "# Art\n\n<!-- include: art.svg -->\n")
     out = _md(assemble(tmp_path / "main.md"))
-    block = out[out.index("<svg") : out.index("</svg>")]
+    block = out[out.index("<svg") : out.index("</svg>") + len("</svg>")]
     assert "<rect" in block
-    assert "\n\n" not in block  # no blank line within the SVG to break the HTML block
+    assert "\n" not in block  # the whole element sits on one line
+
+
+def test_svg_include_survives_illustrator_hazards(tmp_path):
+    # A real-world Adobe Illustrator export trips every marked hazard at once: the
+    # `<svg …>` opening tag is wrapped across lines, children are tab-indented, it
+    # carries an embedded `<style>`, and a path `d="…"` spans lines. Flattening must
+    # produce a single line that keeps the tag, the style rules, and the path intact.
+    svg = (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        "<!-- Generator: Adobe Illustrator -->\n"
+        '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"\n'
+        '\t viewBox="0 0 20 10" xml:space="preserve">\n'
+        '<style type="text/css">\n'
+        "\t.st0{fill:#F5B21B;}\n"
+        "</style>\n"
+        "<g>\n"
+        '\t<path class="st0" d="M9.7,76.9H36c19.4,0\n'
+        '\t\tl50.6-70.7v77.6z"/>\n'
+        "</g>\n"
+        "</svg>\n"
+    )
+    write(tmp_path, "logo.svg", svg)
+    write(tmp_path, "main.md", "# Logo\n\n<!-- include: logo.svg -->\n")
+    out = _md(assemble(tmp_path / "main.md"))
+    block = next(ln for ln in out.split("\n") if "<svg" in ln)
+    # The opening tag, the embedded stylesheet, and the (formerly multi-line) path
+    # all land on the one line, so marked passes the element through verbatim.
+    assert "<svg" in block and "</svg>" in block  # one complete element, one line
+    assert "<style" in block and ".st0{fill:#F5B21B;}" in block
+    assert 'd="M9.7,76.9H36c19.4,0 l50.6-70.7v77.6z"' in block  # newline -> space
+    assert "\t" not in block  # tab indentation gone (no indented-code misread)
 
 
 def test_include_resolves_via_asset_base(tmp_path):

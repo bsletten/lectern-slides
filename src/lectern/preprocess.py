@@ -188,13 +188,20 @@ def _resolve_include(
 
     # Inlining an SVG (`<!-- include: art.svg -->`) lets it read the slide's theme
     # tokens, which a flat `<img>` can't. But the deck is rendered by reveal's
-    # client-side Markdown (marked), where a CommonMark HTML block ends at the
-    # first blank line — a blank line between SVG elements would close `<svg>`
-    # early and orphan everything after it. Collapse the file's blank lines so the
-    # markup stays one uninterrupted block. (Insignificant whitespace for SVG/XML;
-    # not done for Markdown partials, where blank lines separate paragraphs.)
+    # client-side Markdown (marked), which only leaves markup untouched — as a raw
+    # HTML block — when the opening tag both starts a line and is *complete on that
+    # line*. A real-world Illustrator export breaks every part of that: the `<svg …>`
+    # tag is wrapped across lines, children are tab-indented (read as an indented
+    # code block), there's an embedded `<style>`, and path `d="…"` attributes span
+    # lines. marked then parses the whole thing as inline HTML inside a `<p>`,
+    # auto-closes `<svg>` empty, and orphans every child — the graphic vanishes.
+    # Collapsing the file onto a single line sidesteps all of it at once: the
+    # element becomes one complete HTML block (the shape hand-authored SVGs already
+    # have). Whitespace runs — newlines included — are insignificant between SVG/XML
+    # nodes and inside path data, so a single-space join is safe. (Not done for
+    # Markdown partials, where blank lines separate paragraphs.)
     if resolved.suffix.lower() in (".svg", ".xml"):
-        body = "\n".join(ln for ln in body.split("\n") if ln.strip())
+        body = " ".join(ln.strip() for ln in body.split("\n") if ln.strip())
     if metadata:
         keys = ", ".join(map(str, metadata))
         ctx.warnings.append(
