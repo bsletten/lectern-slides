@@ -292,13 +292,39 @@ def test_reflow_joins_soft_wraps_keeps_paragraph_breaks():
 def test_wrap_breaks_long_cjk_run_between_characters():
     # CJK has no spaces; a long run must still wrap rather than overflow the box.
     run = "量子" * 30
-    lines = impose._wrap(run, "HeiseiKakuGo-W5", 8.5, 60.0)
+    lines = impose._wrap(run, "Helvetica", "HeiseiKakuGo-W5", 8.5, 60.0)
     assert len(lines) > 1  # it wrapped
     assert "".join(lines) == run  # no characters lost, none invented
     # Latin still wraps on whitespace, unchanged.
-    assert impose._wrap("the quick brown fox", "Helvetica", 8.5, 60.0) == [
+    assert impose._wrap("the quick brown fox", "Helvetica", None, 8.5, 60.0) == [
         "the quick brown",
         "fox",
+    ]
+
+
+def test_runs_keep_latin_in_base_font_next_to_cjk():
+    # A mixed note must draw its Latin in the base (Helvetica) font and only the
+    # CJK characters in the CID font — not drag the whole line into the CID font's
+    # heavier Latin. Runs split on the script boundary, in order, losslessly.
+    runs = list(impose._runs("基本 (kihon)", "Helvetica", "HeiseiKakuGo-W5"))
+    assert runs == [
+        ("HeiseiKakuGo-W5", "基本"),
+        ("Helvetica", " (kihon)"),
+    ]
+    # No CJK font ⇒ one base run (the pre-CJK behaviour, unchanged).
+    assert list(impose._runs("plain text", "Helvetica", None)) == [
+        ("Helvetica", "plain text")
+    ]
+    # A trailing CJK term closes as its own run.
+    runs = list(impose._runs("word 語", "Helvetica", "HeiseiKakuGo-W5"))
+    assert runs == [("Helvetica", "word "), ("HeiseiKakuGo-W5", "語")]
+    # A word with a glyph Helvetica lacks (macron ō) draws whole in the CID font,
+    # so it renders instead of a notdef box — but neighbouring ASCII stays base.
+    runs = list(impose._runs("the ryōshi word", "Helvetica", "HeiseiKakuGo-W5"))
+    assert runs == [
+        ("Helvetica", "the "),
+        ("HeiseiKakuGo-W5", "ryōshi"),
+        ("Helvetica", " word"),
     ]
 
 

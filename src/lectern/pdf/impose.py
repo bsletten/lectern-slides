@@ -143,13 +143,81 @@ def _reflow(notes: list[str]) -> str:
     return "\n\n".join(paragraphs)
 
 
-def _wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
-    """Greedy-wrap ``text`` to ``max_w`` points (reportlab metrics). Latin wraps
-    on whitespace; CJK — which has no spaces — breaks between characters so a long
-    run doesn't overflow the narrow notes column. Blank lines (paragraph breaks
-    from :func:`_reflow`) pass through as empty output lines."""
+def _base_has(ch: str) -> bool:
+    """Whether ``ch`` is in the base-14 fonts' WinAnsi encoding (reportlab's default
+    for Helvetica). Extended Latin outside it — a macron ``ō``, ``ū`` in romanized
+    Japanese — would print as a notdef box, so it's routed to the CID font, which
+    carries full Latin. ``\\n`` never reaches here (we wrap per line)."""
+    try:
+        ch.encode("cp1252")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def _runs(text: str, base: str, cjk_font: str | None):
+    """Split ``text`` into ``(font, run)`` segments so each part is drawn in the
+    font that actually has its glyphs. A CJK character always uses ``cjk_font``; a
+    whitespace-delimited word uses ``base`` (clean Helvetica) unless it holds a
+    character Helvetica can't render — a macron and friends — in which case the
+    whole word uses ``cjk_font`` too (keeping the word intact for shaping and text
+    extraction). Without a ``cjk_font`` the whole string is one ``base`` run.
+
+    This is what keeps a note's English in Helvetica even when a Kanji term shares
+    the line — instead of dragging the whole note into the CID font's heavier
+    Latin — while still rendering the odd macron correctly."""
+    if not cjk_font:
+        yield base, text
+        return
+
+    def word_font(word: str) -> str:
+        return base if all(_base_has(ch) for ch in word) else cjk_font
+
+    # Segment first (CJK char / space / word), then coalesce equal-font neighbours
+    # so runs of base words and their spaces merge into one drawString.
+    segments: list[tuple[str, str]] = []
+    word = ""
+    for ch in text:
+        if _CJK_RE.match(ch) or ch == " ":
+            if word:
+                segments.append((word_font(word), word))
+                word = ""
+            segments.append((cjk_font if ch != " " else base, ch))
+        else:
+            word += ch
+    if word:
+        segments.append((word_font(word), word))
+
+    cur: str | None = None
+    buf = ""
+    for font, chunk in segments:
+        if font != cur:
+            if buf:
+                yield cur, buf
+            cur, buf = font, chunk
+        else:
+            buf += chunk
+    if buf:
+        yield cur, buf
+
+
+def _mixed_width(text: str, base: str, cjk_font: str | None, size: float) -> float:
+    """Width of ``text`` when drawn per-run (each segment in its own font)."""
     from reportlab.pdfbase.pdfmetrics import stringWidth
 
+    return sum(
+        stringWidth(run, font, size) for font, run in _runs(text, base, cjk_font)
+    )
+
+
+def _wrap(
+    text: str, base: str, cjk_font: str | None, size: float, max_w: float
+) -> list[str]:
+    """Greedy-wrap ``text`` to ``max_w`` points (reportlab metrics). Latin wraps
+    on whitespace; CJK — which has no spaces — breaks between characters so a long
+    run doesn't overflow the narrow notes column. Width is measured per-run, so a
+    mixed Latin/CJK line is fit with each script in its real font. Blank lines
+    (paragraph breaks from :func:`_reflow`) pass through as empty output lines."""
     lines: list[str] = []
     for paragraph in text.splitlines() or [""]:
         line = ""
@@ -157,13 +225,42 @@ def _wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
             if atom == " " and not line:
                 continue  # no leading space on a fresh line
             candidate = line + atom
-            if not line or stringWidth(candidate, font, size) <= max_w:
+            if not line or _mixed_width(candidate, base, cjk_font, size) <= max_w:
                 line = candidate
             else:
                 lines.append(line.rstrip(" "))
                 line = "" if atom == " " else atom
         lines.append(line.rstrip(" "))
     return lines
+
+
+def _draw_runs(
+    c, x: float, y: float, text: str, base: str, cjk_font: str | None, size: float
+):
+    """Draw ``text`` left-anchored at ``(x, y)``, switching font per run so CJK
+    and Latin each render in the font that has their glyphs, on one baseline."""
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+
+    for font, run in _runs(text, base, cjk_font):
+        c.setFont(font, size)
+        c.drawString(x, y, run)
+        x += stringWidth(run, font, size)
+
+
+def _draw_runs_centred(
+    c, cx: float, y: float, text: str, base: str, cjk_font: str | None, size: float
+):
+    """Centre a possibly-mixed-font string on ``cx`` (drawCentredString can't span
+    fonts), then draw it per-run."""
+    _draw_runs(
+        c,
+        cx - _mixed_width(text, base, cjk_font, size) / 2,
+        y,
+        text,
+        base,
+        cjk_font,
+        size,
+    )
 
 
 def _expand(template: str, *, title: str, date: str, page: int, pages: int) -> str:
@@ -186,14 +283,11 @@ def _draw_overlay(
 ):
     """Build a one-page reportlab overlay (frames, numbers, notes, header/footer).
 
-    ``cjk_font`` (resolved once per document) is used for any string that holds
-    CJK, so Kanji/kana/Hangul render instead of tofu; Latin-only strings keep
-    Helvetica."""
+    ``cjk_font`` (resolved once per document) draws the CJK characters in any
+    string, so Kanji/kana/Hangul render instead of tofu; the Latin in the same
+    string still draws in Helvetica (see :func:`_runs`), so mixed notes stay
+    visually consistent with the Latin-only ones."""
     from reportlab.pdfgen import canvas
-
-    def font_for(text: str, base: str) -> str:
-        """The CJK font when *text* needs it, else the Latin *base* font."""
-        return cjk_font if (cjk_font and _has_cjk(text)) else base
 
     sw, sh = sheet
     buf = io.BytesIO()
@@ -212,25 +306,25 @@ def _draw_overlay(
             nx, ny, nw, nh = cell.notes
             c.setFillGray(0.1)
             text = _reflow(notes)
-            font = font_for(text, _NOTES_FONT)
-            lines = _wrap(text, font, _NOTES_SIZE, nw - 2 * _PAD)
+            lines = _wrap(text, _NOTES_FONT, cjk_font, _NOTES_SIZE, nw - 2 * _PAD)
             leading = _NOTES_SIZE * 1.3
             ty = ny + nh - _PAD - _NOTES_SIZE
-            c.setFont(font, _NOTES_SIZE)
             for ln in lines:
                 if ty < ny + _PAD:
                     break  # clip overflow rather than spill into the next row
-                c.drawString(nx + _PAD, ty, ln)
+                _draw_runs(c, nx + _PAD, ty, ln, _NOTES_FONT, cjk_font, _NOTES_SIZE)
                 ty -= leading
 
     if header or footer:
         c.setFillGray(0.4)
         if header:
-            c.setFont(font_for(header, _CHROME_FONT), _CHROME_SIZE)
-            c.drawCentredString(sw / 2, sh - 18, header)
+            _draw_runs_centred(
+                c, sw / 2, sh - 18, header, _CHROME_FONT, cjk_font, _CHROME_SIZE
+            )
         if footer:
-            c.setFont(font_for(footer, _CHROME_FONT), _CHROME_SIZE)
-            c.drawCentredString(sw / 2, 12, footer)
+            _draw_runs_centred(
+                c, sw / 2, 12, footer, _CHROME_FONT, cjk_font, _CHROME_SIZE
+            )
 
     c.showPage()
     c.save()

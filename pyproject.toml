@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lectern-slides"
-version = "0.1.0"
+version = "0.2.0"
 description = "Assemble Markdown slide sources into a deck and render it through a pluggable framework adapter."
 readme = "README.md"
 requires-python = ">=3.11"
