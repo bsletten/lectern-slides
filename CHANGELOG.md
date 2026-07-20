@@ -6,12 +6,43 @@ aims to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-07-20
+
+### Added
+
+- **CJK speaker notes in PDF handouts.** Notes (and header/footer/title) holding
+  Kanji, kana, or Hangul now render in the imposed handout via reportlab's
+  built-in Adobe CID fonts — no bundled or embedded multi-megabyte font, so the
+  core stays dependency-light. The script is chosen from the deck's `lang`
+  (`ja`/`ko`/`zh`/`zh-Hant`), else inferred from the text. Latin in a mixed note
+  is drawn per-run in Helvetica so it stays visually consistent with Latin-only
+  notes (only the CJK — and any extended-Latin glyph Helvetica lacks, e.g. a
+  macron `ō` — uses the CID font). Notes reflow with Markdown paragraph
+  semantics so the handout column fills instead of echoing source hard-wraps.
+- **Deck metadata as JSON-LD**, plus a comma-separated `<!-- tags: a, b, c -->`
+  directive accumulated across the deck into the metadata.
+- **Reveal's native `Note:` speaker-note separator** is accepted alongside the
+  existing forms; an incremental lead-in paragraph builds as its own step.
+- **Inline SVG/XML flattening in `assemble`** — a multi-line inlined `<svg>`/XML
+  block is collapsed to one line so reveal's client-side Markdown parser can't
+  shred it (raw HTML must be one complete block). This makes `<!-- include:
+  art.svg -->` a reliable way to inline a vector graphic — which, unlike an
+  `<img>`-referenced SVG, also survives Chromium's print-to-PDF with masks and
+  `<use>` intact.
+
 ### Changed
 
 - Links out of the deck now open in a new tab (`reveal` and `remark`): an
   `http(s)` link gets `target="_blank" rel="noopener"`, so a click mid-talk no
   longer unloads the running deck. In-page anchors, `mailto:`/`tel:`, and any
   link whose `target` the author set are untouched.
+
+### Fixed
+
+- `reveal`: incremental build order corrected, and `<sub>`/`<sup>` restored.
+- `lectern watch` now shuts down cleanly on Ctrl-C.
+- `assemble` no longer misreads a slide's leading `---` separator as a YAML
+  frontmatter block.
 
 ## [0.1.0] — 2026-06-17
 
@@ -73,5 +104,6 @@ adapter, with a live-reload preview server and vector PDF export.
   alt-text checks, heading-order and contrast lint, tagged PDF output, a document
   outline, and forced-colors support.
 
-[Unreleased]: https://github.com/bsletten/lectern-slides/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/bsletten/lectern-slides/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/bsletten/lectern-slides/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/bsletten/lectern-slides/releases/tag/v0.1.0
