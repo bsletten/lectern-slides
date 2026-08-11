@@ -263,6 +263,12 @@ def test_standalone_image_fills_and_is_contained(fixtures, tmp_path):
     html, _ = _render(fixtures / "render-deck", tmp_path)
     assert "p:has(> img:only-child)" in html
     assert "object-fit: contain;" in html
+    # Scoped to a DIRECT child of the section. A graphic the author wrapped in a
+    # block (`::: {.qr}`, `.place`, a column) keeps that block's layout: out of
+    # flow inside a non-flex wrapper, the <p> collapses to zero height and the
+    # graphic disappears.
+    assert "section.slide > p:has(> img:only-child)" in html
+    assert "section.slide p:has(> img:only-child)" not in html
     # An inlined SVG (via `<!-- include: art.svg -->`) lands as a single-child <p>
     # too, and must scale to fill the same way — `<img>` CSS wouldn't match it.
     assert "p:has(> svg:only-child)" in html
@@ -271,7 +277,7 @@ def test_standalone_image_fills_and_is_contained(fixtures, tmp_path):
     # inflates the slide's natural height, and reveal's print-pdf pagination
     # measures that — pushing the graphic onto an oversized/extra page (it fell off
     # the bottom). They share one `position: absolute` rule.
-    abs_rule = html[html.index("p:has(> img:only-child) > img,") :]
+    abs_rule = html[html.index("> p:has(> img:only-child) > img,") :]
     block = abs_rule[: abs_rule.index("}")]
     assert "position: absolute;" in block
     assert "margin: auto;" in block  # a constrained override stays centred

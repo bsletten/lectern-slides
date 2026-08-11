@@ -209,9 +209,16 @@ sub { bottom: -0.25em; }
    Ratio (svg) keeps it contained, and `margin: auto` keeps a *constrained*
    override (a `<!-- .element: style="max-width:…" -->`) centred, not left-pinned.
    A raw `<img style="…">`/`<svg style="…">` is a direct child of the section (not
-   a single-child <p>), so it sidesteps this rule and is sized verbatim. */
-.reveal .slides section.slide p:has(> img:only-child),
-.reveal .slides section.slide p:has(> svg:only-child) {
+   a single-child <p>), so it sidesteps this rule and is sized verbatim.
+
+   Scoped to a DIRECT child of the section: the stage only makes sense for a
+   graphic laid out in the slide's own flex column. A graphic the author wrapped
+   in a block (`::: {.qr}`, `.place`, a column) is that block's business — and
+   out of flow inside a non-flex wrapper it would collapse the <p> to zero height
+   and vanish. Wrapped graphics stay in flow at their intrinsic size, capped by
+   the theme's `.slide img`. */
+.reveal .slides section.slide > p:has(> img:only-child),
+.reveal .slides section.slide > p:has(> svg:only-child) {
   display: flex;
   flex: 1 1 auto;          /* take the space heading/caption don't */
   min-height: 0;
@@ -219,15 +226,15 @@ sub { bottom: -0.25em; }
   width: 100%;             /* don't shrink-wrap the (out-of-flow) child to zero */
   margin: 0;
 }
-.reveal .slides section.slide p:has(> img:only-child) > img,
-.reveal .slides section.slide p:has(> svg:only-child) > svg {
+.reveal .slides section.slide > p:has(> img:only-child) > img,
+.reveal .slides section.slide > p:has(> svg:only-child) > svg {
   position: absolute;
   inset: 0;
   margin: auto;            /* centre a constrained override within the box */
   width: 100%;
   height: 100%;
 }
-.reveal .slides section.slide p:has(> img:only-child) > img {
+.reveal .slides section.slide > p:has(> img:only-child) > img {
   object-fit: contain;     /* fill the box, scaling up or down, never distorting */
 }
 

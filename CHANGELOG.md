@@ -6,6 +6,23 @@ aims to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Deck-local assets resolve from the deck root.** A relative reference now also
+  tries the deck root (a one-off `images/qr.svg` beside `deck.toml`) before the
+  shared `asset_base`, so a slide in `slides/` finds it. Deck-local files win
+  over a same-named file in `asset_base`.
+
+### Fixed
+
+- **A graphic wrapped in a block no longer disappears.** The "standalone graphic
+  fills the slide" rule is now scoped to a *direct* child of the section. Inside
+  an author's wrapper (`::: {.qr}`, `.place`, a column) the graphic was taken out
+  of flow, collapsing the paragraph to zero height — and the rule's specificity
+  also overrode any size the theme set for it. Top-level standalone graphics are
+  unchanged; wrapped ones stay in flow at their intrinsic size, capped by the
+  theme's `.slide img`.
+
 ## [0.2.0] — 2026-07-20
 
 ### Added

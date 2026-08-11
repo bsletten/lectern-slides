@@ -168,8 +168,10 @@ A reference is any image target, `src`, or `href`.
 - root-absolute `/p` → joined with `asset_base`. If `asset_base` is a **dir**,
   the file is copied into `dist/assets/` (deduped by content hash) and the ref
   rewritten to a relative path. If a **URL**, the ref is prefixed.
-- relative `p` → resolved against the *including file's* directory, copied into
-  `dist/assets/`, rewritten relative.
+- relative `p` → resolved against the *including file's* directory, then the deck
+  root (a one-off `images/qr.svg` beside `deck.toml`), then a local `asset_base`
+  dir; deck-local files win over a same-named file in `asset_base`. The hit is
+  copied into `dist/assets/` and the ref rewritten relative.
 - missing asset → warning (build continues) + a visible placeholder, with the
   originating slide cited.
 

@@ -59,6 +59,24 @@ def test_relative_falls_back_to_asset_base_dir(tmp_path):
     assert len(r.copied) == 1
 
 
+def test_relative_falls_back_to_deck_root(tmp_path):
+    # A one-off asset kept at the deck root, referenced from a slide in slides/.
+    write(tmp_path, "images/qr.svg", "<svg/>")
+    r = _resolver(tmp_path)
+    out = r.rewrite("![qr](./images/qr.svg)", tmp_path / "slides", "slides/s.md")
+    assert "assets/qr-" in out
+    assert len(r.copied) == 1
+
+
+def test_deck_root_wins_over_asset_base(tmp_path):
+    # Same relative path in both places: the deck's own copy is the one used.
+    write(tmp_path, "images/qr.svg", "deck-local")
+    write(tmp_path, "shared/images/qr.svg", "shared")
+    r = _resolver(tmp_path, asset_base="./shared")
+    r.rewrite("![qr](images/qr.svg)", tmp_path / "slides", "slides/s.md")
+    assert r.copied[0].read_text() == "deck-local"
+
+
 def test_http_refs_pass_through(tmp_path):
     r = _resolver(tmp_path)
     text = '![x](https://ex.com/a.png) and <a href="#/3">link</a>'
