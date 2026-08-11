@@ -8,10 +8,13 @@ addition):
   → left untouched;
 * **root-absolute** ``/p`` → joined with ``asset_base`` (a URL is prefixed; a
   local dir is read from ``asset_base/p``);
-* **relative** ``p`` → resolved against the *including file's* directory, then —
-  if a local ``asset_base`` dir is configured — against that (this is what lets a
-  deck keep ``bg.svg`` in ``assets/`` while referencing it bare from a slide);
-  a relative ref under a URL ``asset_base`` that isn't found locally is prefixed;
+* **relative** ``p`` → resolved against the *including file's* directory, then
+  the deck root (so a one-off ``images/qr.svg`` next to ``deck.toml`` is found
+  from a slide in ``slides/``), then — if a local ``asset_base`` dir is
+  configured — against that (this is what lets a deck keep ``bg.svg`` in
+  ``assets/`` while referencing it bare from a slide); deck-local files win over
+  a same-named file in the shared ``asset_base``. A relative ref under a URL
+  ``asset_base`` that isn't found locally is prefixed;
 * local hits are copied into ``<out_dir>/assets/`` (de-duplicated by content
   hash) and the reference rewritten to a relative ``assets/…`` path;
 * a missing asset is a warning (the build continues), citing the slide.
@@ -104,6 +107,11 @@ class AssetResolver:
                 candidates = [p]
             else:
                 candidates = [base_dir / p]
+                # A deck-local asset (`images/qr.svg` beside `deck.toml`) is the
+                # natural home for a one-off; try the deck root before the shared
+                # asset_base so deck-local always wins.
+                if base_dir != self.root:
+                    candidates.append(self.root / p)
                 if self.asset_base_dir is not None:
                     candidates.append(self.asset_base_dir / p)
 
