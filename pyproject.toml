@@ -33,7 +33,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-pdf = ["playwright>=1.44", "pypdf>=4.2", "reportlab>=4.1"]
+# pillow arrives through reportlab; the floor is 13.0.0 for the 2026-10-17 advisories (GHSA-g7cr-3p24-7wf7 and others).
+pdf = ["playwright>=1.44", "pypdf>=4.2", "reportlab>=4.1", "pillow>=13.0.0"]
 
 [project.scripts]
 lectern = "lectern.cli:app"
