@@ -490,9 +490,10 @@ what's beyond v1 (component embeds, then a graph/CMS `Source` backend).
   imposed two-up with the real speaker notes beside each slide).
 - Slides, themes, assets and the manifest all go through the `Source` protocol
   (keyed by path or IRI; `FilesystemSource` by default, `KernelSource` over a
-  resource-client protocol; `config --list-themes` still scans the disk). The adapter registry, theme token contract, and
-  `[serve].coi` headers are the other seams kept clean so later phases
-  (components, the `ikigai-python` adapter) stay cheap.
+  resource-client protocol; `config --list-themes` still scans the disk). The
+  adapter registry, theme token contract, and `[serve].coi` headers are the other
+  seams kept clean so later phases (components, the `ikigai-python` adapter) stay
+  cheap.
 
 ## Acknowledgements
 
