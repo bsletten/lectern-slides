@@ -170,7 +170,14 @@ def load_toml(path: Path, src: Source | None = None) -> dict:
     """Parse the TOML at *path* — from disk, or through *src* when one is given."""
     try:
         if src is not None and not isinstance(src, FilesystemSource):
-            return tomllib.loads(src.read(path))
+            try:
+                text = src.read(path)
+            except UnicodeDecodeError as e:
+                raise ConfigError(
+                    f"config file {path} is not valid UTF-8 (byte {e.start}); "
+                    "save it as UTF-8 and try again."
+                ) from e
+            return tomllib.loads(text)
         with open(path, "rb") as fh:
             return tomllib.load(fh)
     except FileNotFoundError:

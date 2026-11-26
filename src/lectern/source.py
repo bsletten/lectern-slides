@@ -19,6 +19,7 @@ locations, which keeps the protocol narrow enough for a graph backend to honor.
 
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
@@ -90,7 +91,7 @@ class FilesystemSource:
 
 
 class KernelResources(Protocol):
-    """The slice of the kernel's Python face a :class:`KernelSource` needs.
+    """The resource-client protocol a :class:`KernelSource` reads through.
 
     ``get`` returns a resource's bytes by IRI (``None`` when there is none);
     ``list`` returns the IRIs of the resources directly under a container IRI.
@@ -102,7 +103,7 @@ class KernelResources(Protocol):
 
 
 class KernelSource:
-    """A source that answers from kernel resources, keyed by IRI.
+    """A source keyed by IRI that reads through a resource-client protocol.
 
     The deck lives under one *base* IRI (``urn:deck:ai-sec/``, say). Lectern still
     lays a deck out as paths under a deck root — manifests, includes, ``partials``
@@ -114,8 +115,10 @@ class KernelSource:
 
     *resources* is anything with ``get(iri) -> bytes | None`` and
     ``list(container_iri) -> iterable of IRIs`` (:class:`KernelResources`). That
-    keeps lectern free of a hard dependency on the kernel's Python bindings: hand
-    in the kernel's resource client, or :meth:`from_mapping` for an in-memory set.
+    keeps lectern free of a hard dependency on the kernel's Python bindings. The
+    real ``ikigai_python.Client`` (``source(iri)``, ``exists(iri)``, no listing)
+    does not offer this protocol yet; the ``ikigai-python`` adapter is pending.
+    Use :meth:`from_mapping` for an in-memory set.
     """
 
     def __init__(
@@ -128,7 +131,9 @@ class KernelSource:
             raise ValueError(f"kernel source base must be an IRI, got {base!r}")
         self.resources = resources
         self.base = base if base.endswith(("/", ":")) else base + "/"
-        self.root = Path(root)
+        # Absolute, because resolve_source makes the deck root absolute: a
+        # relative root would otherwise never match a key.
+        self.root = Path(os.path.abspath(root))
 
     @classmethod
     def from_mapping(
@@ -183,7 +188,9 @@ class KernelSource:
         container = self.iri(directory)
         if container is None:
             return []
-        if not container.endswith("/"):
+        # The base itself may end in ``:`` (``urn:deck:x:``); only a container
+        # that ends in neither separator needs one appended.
+        if not container.endswith(("/", ":")):
             container += "/"
         out: list[Path] = []
         for iri in self.resources.list(container):

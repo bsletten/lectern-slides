@@ -263,3 +263,45 @@ def test_filesystem_build_asks_the_source_for_theme_and_assets(tmp_path):
     assert root / "themes/house.css" in read
     assert root / "assets/logo.png" in read
     assert root / "images/qr.svg" in read
+
+
+# -- KernelSource edge cases ---------------------------------------------------
+
+
+@pytest.mark.parametrize("base", ["urn:deck:x:", "urn:deck:x/"])
+def test_kernel_directory_mode_under_any_base_separator(base):
+    """A base ending in ``:`` or ``/`` lists the deck's slides either way."""
+    kernel = KernelSource.from_mapping(
+        {base + "02-b.md": "# B\n", base + "01-a.md": "# A\n"}, base, KROOT
+    )
+    assert kernel.list(KROOT) == [KROOT / "01-a.md", KROOT / "02-b.md"]
+    resolved = resolve_source(KROOT, src=kernel)
+    assert resolved.entries == ["01-a.md", "02-b.md"]
+
+
+def test_kernel_subdirectory_under_colon_base_gets_a_slash():
+    base = "urn:deck:x:"
+    kernel = KernelSource.from_mapping(
+        {base + "sub/a.md": "# A\n", base + "subway.md": "# no\n"}, base, KROOT
+    )
+    assert kernel.list(KROOT / "sub") == [KROOT / "sub/a.md"]
+
+
+def test_kernel_relative_root_matches_the_absolute_deck_root(tmp_path, monkeypatch):
+    """resolve_source makes the deck root absolute; a relative root still matches."""
+    monkeypatch.chdir(tmp_path)
+    kernel = KernelSource.from_mapping(
+        {BASE + "01-a.md": "# A\n"}, BASE, Path("virtual/deck")
+    )
+    assert kernel.root.is_absolute()
+    resolved = resolve_source(Path("virtual/deck"), src=kernel)
+    assert resolved.entries == ["01-a.md"]
+    assert assemble_resolved(resolved, src=kernel).slide_count == 1
+
+
+def test_kernel_manifest_that_is_not_utf8_is_a_config_error():
+    kernel = KernelSource.from_mapping(
+        {BASE + "deck.toml": b'title = "\xff\xfe"\n'}, BASE, KROOT
+    )
+    with pytest.raises(ConfigError, match="not valid UTF-8"):
+        resolve_source(KROOT, src=kernel)
