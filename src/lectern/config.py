@@ -166,8 +166,11 @@ def user_config_path() -> Path:
     return root.joinpath(*_USER_CONFIG_SUBPATH)
 
 
-def load_toml(path: Path) -> dict:
+def load_toml(path: Path, src: Source | None = None) -> dict:
+    """Parse the TOML at *path* — from disk, or through *src* when one is given."""
     try:
+        if src is not None and not isinstance(src, FilesystemSource):
+            return tomllib.loads(src.read(path))
         with open(path, "rb") as fh:
             return tomllib.load(fh)
     except FileNotFoundError:
@@ -200,7 +203,9 @@ def _under_root(value: str, root: Path) -> Path:
     return p if p.is_absolute() else (root / p)
 
 
-def _theme_search_dirs(config, layers: dict, root: Path) -> list[Path]:
+def _theme_search_dirs(
+    config, layers: dict, root: Path, src: Source | None = None
+) -> list[Path]:
     """Directories searched for themes by name: the configured ``theme_paths``,
     plus the folder of any path-style ``theme`` value across the layers.
 
@@ -215,7 +220,10 @@ def _theme_search_dirs(config, layers: dict, root: Path) -> list[Path]:
         value = (layers.get(layer) or {}).get("theme")
         if isinstance(value, str) and is_theme_path(value):
             parent = _under_root(value, root).parent
-            if parent.is_dir() and parent not in dirs:
+            # A non-filesystem source has no directories to test; keep the
+            # folder and let theme resolution probe it through the source.
+            on_disk = src is None or isinstance(src, FilesystemSource)
+            if (parent.is_dir() or not on_disk) and parent not in dirs:
                 dirs.append(parent)
     return dirs
 
@@ -262,14 +270,23 @@ def resolve_source(
         manifest_path = Path(config_override).expanduser()
         deck_data = load_toml(manifest_path)
 
-    if source.is_dir():
+    # The filesystem answers "is this a directory?"; any other source names a
+    # deck directory by holding a manifest or Markdown under it.
+    on_disk = isinstance(src, FilesystemSource)
+    is_dir = (
+        source.is_dir()
+        if on_disk
+        else (source.suffix not in (".toml", *_MARKDOWN_SUFFIXES))
+    )
+
+    if is_dir:
         root = source
         if manifest_path is None:
             for name in _MANIFEST_NAMES:
                 candidate = source / name
-                if candidate.is_file():
+                if src.exists(candidate):
                     manifest_path = candidate
-                    deck_data = load_toml(candidate)
+                    deck_data = load_toml(candidate, src)
                     break
         origin = manifest_path.name if manifest_path else source.name
         single = None
@@ -277,13 +294,13 @@ def resolve_source(
     elif source.suffix == ".toml":
         manifest_path = manifest_path or source
         if config_override is None:
-            deck_data = load_toml(source)
+            deck_data = load_toml(source, src)
         root = manifest_path.parent
         origin = source.name
         single = None
 
     elif source.suffix in _MARKDOWN_SUFFIXES:
-        if not source.is_file():
+        if not src.exists(source):
             raise ConfigError(f"source file not found: {source}")
         root = source.parent
         origin = source.name
@@ -296,7 +313,7 @@ def resolve_source(
         )
 
     # Anchor the deck root absolutely: everything below is CWD-independent.
-    root = root.resolve()
+    root = root.resolve() if on_disk else Path(os.path.abspath(root))
 
     merged, layers, user_path = _layer(deck_data, cli_overrides, user_config)
     config = _validate(merged)
@@ -317,7 +334,7 @@ def resolve_source(
         entries=entries,
         origin_display=origin,
         partial_dirs=[_under_root(p, root) for p in config.partials],
-        theme_dirs=_theme_search_dirs(config, layers, root),
+        theme_dirs=_theme_search_dirs(config, layers, root, src),
         out_dir=_under_root(config.out_dir, root),
         build_dir=_under_root(config.build_dir, root),
         mode=mode,

@@ -8,6 +8,18 @@ aims to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Themes and assets go through `Source`.** Theme resolution (a path theme or a
+  name found in `theme_paths`), asset lookup and copy, and the deck manifest are
+  now read through the deck's `Source`, not the disk directly, so a non-filesystem
+  backend can serve a whole deck. The filesystem source behaves as before; the
+  bundled-theme fallback is still package data.
+- **Sources are keyed by IRI as well as by path.** `Source` methods take a `Key`
+  (`Path` or IRI string); `FilesystemSource` accepts `file:` IRIs. `Source` gains
+  `read_bytes` for binary assets.
+- **`KernelSource`.** Answers `read`/`read_bytes`/`exists`/`list` from kernel
+  resources under a base IRI, mapping deck paths under a virtual root onto IRIs.
+  It takes any resource client with `get(iri)` and `list(container)`, so lectern
+  has no hard dependency on the kernel bindings.
 - **Deck-local assets resolve from the deck root.** A relative reference now also
   tries the deck root (a one-off `images/qr.svg` beside `deck.toml`) before the
   shared `asset_base`, so a slide in `slides/` finds it. Deck-local files win

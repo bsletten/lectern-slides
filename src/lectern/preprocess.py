@@ -68,6 +68,8 @@ class AssembledDeck:
     config: object  # lectern.config.Config (avoid import cycle in annotations)
     root: Path
     theme_dirs: list[Path] = field(default_factory=list)  # resolved theme search dirs
+    # The Source the deck was assembled from; renderers read themes/assets via it.
+    source: Source = field(default_factory=FilesystemSource)
     tags: list[str] = field(default_factory=list)  # from `<!-- tags: -->` directives
 
     def markdown(self, *, provenance: bool = True) -> str:
@@ -160,6 +162,7 @@ def assemble_resolved(
         config=resolved.config,
         root=resolved.root,
         theme_dirs=resolved.theme_dirs,
+        source=src,
         tags=ctx.tags,
     )
 

@@ -22,6 +22,7 @@ from importlib.resources import files
 from pathlib import Path
 
 from .errors import ConfigError
+from .source import FilesystemSource, Source
 
 # Named aspect ratios with their canonical authoring pixel dimensions.
 _ASPECT_DIMENSIONS = {
@@ -88,7 +89,10 @@ def resolve_theme_dirs(theme_paths: list[str], root: Path) -> list[Path]:
 
 
 def resolve_theme_css(
-    theme: str, root: Path, theme_dirs: list[Path] | tuple[Path, ...] = ()
+    theme: str,
+    root: Path,
+    theme_dirs: list[Path] | tuple[Path, ...] = (),
+    src: Source | None = None,
 ) -> tuple[str, str]:
     """Return ``(name, css)`` for a theme name or a deck-relative path.
 
@@ -96,19 +100,24 @@ def resolve_theme_css(
     **name** is searched first in ``theme_dirs`` (the configured ``theme_paths``,
     in order), then in the package's bundled themes — so a deck or user config can
     keep a reusable theme library outside the package and still use it by name.
+
+    Deck themes (a path, or a name found in ``theme_dirs``) are read through
+    *src* (default: the filesystem), so a non-filesystem source can serve them;
+    the bundled fallback is package data.
     """
+    src = src or FilesystemSource()
     if is_theme_path(theme):
         p = Path(theme).expanduser()
         if not p.is_absolute():
             p = root / p
-        if not p.is_file():
+        if not src.exists(p):
             raise ConfigError(f"theme file not found: {p}")
-        return p.stem, p.read_text(encoding="utf-8")
+        return p.stem, src.read(p)
 
     for directory in theme_dirs:
         candidate = directory / f"{theme}.css"
-        if candidate.is_file():
-            return theme, candidate.read_text(encoding="utf-8")
+        if src.exists(candidate):
+            return theme, src.read(candidate)
 
     resource = files("lectern").joinpath("themes", f"{theme}.css")
     if resource.is_file():
@@ -152,6 +161,7 @@ def build_theme(
     aspect: str,
     root: Path,
     theme_dirs: list[Path] | tuple[Path, ...] | None = None,
+    src: Source | None = None,
 ) -> Theme:
     """Resolve the theme and inject the aspect-driven geometry tokens.
 
@@ -159,7 +169,7 @@ def build_theme(
     effective ``theme_dirs`` — ``theme_paths`` plus the folder of any path-style
     theme), so a bare-name override resolves against the same places listing does.
     """
-    name, css = resolve_theme_css(theme, root, theme_dirs or ())
+    name, css = resolve_theme_css(theme, root, theme_dirs or (), src)
     width, height = slide_dimensions(aspect)
     override = (
         "\n/* lectern: aspect override */\n"

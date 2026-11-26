@@ -264,7 +264,7 @@ def _theme_warnings(deck: AssembledDeck) -> list[str]:
     from .theming import resolve_theme_css
 
     try:
-        name, css = resolve_theme_css(deck.config.theme, deck.root)
+        name, css = resolve_theme_css(deck.config.theme, deck.root, (), deck.source)
     except Exception:
         return []  # a bad theme path is reported elsewhere
     tokens = parse_root_tokens(css)
