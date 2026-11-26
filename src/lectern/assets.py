@@ -29,6 +29,8 @@ import hashlib
 import re
 from pathlib import Path
 
+from .source import FilesystemSource, Source
+
 # ![alt](REF  — capture the prefix and the ref; title/closing paren are untouched.
 _MD_IMAGE = re.compile(r"(!\[[^\]]*\]\()\s*<?([^)\s>]+)")
 # HTML attribute references (quoted).
@@ -59,7 +61,11 @@ class AssetResolver:
         asset_base: str | None,
         out_dir: Path,
         warnings: list[str],
+        src: Source | None = None,
     ):
+        # Every local lookup and read goes through the deck's Source, so a
+        # non-filesystem backend can serve assets; output is still written to disk.
+        self.src = src or FilesystemSource()
         self.root = root
         self.out_dir = out_dir
         self.assets_dir = out_dir / "assets"
@@ -116,7 +122,7 @@ class AssetResolver:
                     candidates.append(self.asset_base_dir / p)
 
         for candidate in candidates:
-            if candidate.is_file():
+            if self.src.exists(candidate):
                 return self._copy(candidate)
 
         if self.asset_base_url and not raw.startswith("/"):
@@ -127,7 +133,7 @@ class AssetResolver:
         return ref
 
     def _copy(self, src: Path) -> str:
-        data = src.read_bytes()
+        data = self.src.read_bytes(src)
         digest = hashlib.sha256(data).hexdigest()[:8]
         if digest in self._by_hash:
             return self._by_hash[digest]

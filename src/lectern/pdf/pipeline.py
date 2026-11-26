@@ -47,7 +47,9 @@ def _slide_notes(
 ) -> list[list[str]]:
     """Per-(non-blank)-slide speaker notes, aligned 1:1 with the master pages."""
     warnings: list[str] = []
-    resolver = AssetResolver(deck.root, config.asset_base, work_dir, warnings)
+    resolver = AssetResolver(
+        deck.root, config.asset_base, work_dir, warnings, deck.source
+    )
     notes: list[list[str]] = []
     for group in deck.slides():
         if is_blank_group(group):
@@ -67,7 +69,9 @@ def _render_master(
     """Build the print HTML and render (or reuse a cached) 1-up vector master."""
     from ..render.reveal import build_html
 
-    theme = build_theme(config.theme, config.aspect, deck.root, deck.theme_dirs)
+    theme = build_theme(
+        config.theme, config.aspect, deck.root, deck.theme_dirs, deck.source
+    )
     print_css = _printcss.build(opts, theme.css)
     extra_head = f'<style id="lectern-print">\n{print_css}</style>' if print_css else ""
     # Notes layouts need exactly one master page per slide so notes map 1:1.

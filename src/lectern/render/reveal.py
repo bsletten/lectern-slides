@@ -99,8 +99,12 @@ def build_html(
     the seams the PDF master uses to flatten fragments and inject print CSS.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
-    resolver = AssetResolver(deck.root, config.asset_base, out_dir, warnings)
-    theme = build_theme(config.theme, config.aspect, deck.root, deck.theme_dirs)
+    resolver = AssetResolver(
+        deck.root, config.asset_base, out_dir, warnings, deck.source
+    )
+    theme = build_theme(
+        config.theme, config.aspect, deck.root, deck.theme_dirs, deck.source
+    )
 
     slides = []
     mermaid_seen = False

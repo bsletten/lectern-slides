@@ -9,8 +9,10 @@
 `#1-3` slide ranges, partial search paths — into one deck and renders it via
 reveal.js (with remark / marp / quarto as alternates), with a live-reload preview
 server and vector PDF export. It's the Markdown front-end to a larger
-resource-oriented slide system; the `Source` seam is designed so a semantic-CMS
-backend can replace the filesystem later.
+resource-oriented slide system: slides, themes, assets and the manifest are all
+read through the `Source` seam, which is keyed by path or IRI, so a non-filesystem
+backend can serve a whole deck. `KernelSource` maps a deck onto IRIs through a
+small resource-client protocol; the `ikigai-python` adapter is pending.
 
 📦 **v0.1.0 — the first public release — is out**, live on
 [PyPI](https://pypi.org/project/lectern-slides/). See the
@@ -486,8 +488,12 @@ what's beyond v1 (component embeds, then a graph/CMS `Source` backend).
   `lectern-slides[pdf]` extra, imported lazily.
 - Manifests are **TOML**; the PDF default is **2up-notes** (one vector master,
   imposed two-up with the real speaker notes beside each slide).
-- The `Source` protocol, adapter registry, theme token contract, and `[serve].coi`
-  headers are seams kept clean so later phases (components, CMS backend) stay cheap.
+- Slides, themes, assets and the manifest all go through the `Source` protocol
+  (keyed by path or IRI; `FilesystemSource` by default, `KernelSource` over a
+  resource-client protocol; `config --list-themes` still scans the disk). The
+  adapter registry, theme token contract, and `[serve].coi` headers are the other
+  seams kept clean so later phases (components, the `ikigai-python` adapter) stay
+  cheap.
 
 ## Acknowledgements
 
