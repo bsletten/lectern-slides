@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import shutil
 from pathlib import Path
 
 from .source import FilesystemSource, Source
@@ -73,6 +74,8 @@ class AssetResolver:
         self.copied: list[Path] = []
         self.missing: list[str] = []
         self._by_hash: dict[str, str] = {}
+        # Subdirectories of assets/ written this build (fence elements' files).
+        self.kept_dirs: list[Path] = []
 
         self.asset_base_url: str | None = None
         self.asset_base_dir: Path | None = None
@@ -148,6 +151,11 @@ class AssetResolver:
         self.copied.append(dest)
         return rel
 
+    def keep(self, files: list[Path], dirs: list[Path]) -> None:
+        """Record files and asset subdirectories another stage wrote this build."""
+        self.copied.extend(files)
+        self.kept_dirs.extend(dirs)
+
     def prune_stale(self) -> list[Path]:
         """Delete files in ``assets/`` that this build did not (re)write.
 
@@ -156,18 +164,35 @@ class AssetResolver:
         accumulates orphans. Remove any flat file there not produced this run, so
         a plain ``build`` yields the same ``assets/`` a clean rebuild would.
 
-        Only ever touches the deck's own ``out_dir/assets``; subdirectories (a
-        copied ``font-awesome`` kit lives in ``out_dir/font-awesome``, elsewhere)
-        are left untouched. Returns the files removed.
+        Only ever touches the deck's own ``out_dir/assets``. Subdirectories are
+        left untouched (a copied ``font-awesome`` kit lives in
+        ``out_dir/font-awesome``, elsewhere), except a fence element's
+        content-hashed ``<element>-<hash16>/`` directory that this build did not
+        write. Returns the files removed.
         """
+        from .fences import FENCE_DIR
+
         if not self.assets_dir.is_dir():
             return []
         kept = {p.resolve() for p in self.copied}
+        kept_dirs = {p.resolve() for p in self.kept_dirs}
         removed: list[Path] = []
         for child in sorted(self.assets_dir.iterdir()):
             if child.is_file() and child.resolve() not in kept:
                 child.unlink()
                 removed.append(child)
+            elif (
+                child.is_dir()
+                and FENCE_DIR.match(child.name)
+                and child.resolve() not in kept_dirs
+            ):
+                removed.extend(p for p in sorted(child.rglob("*")) if p.is_file())
+                shutil.rmtree(child)
+            elif child.resolve() in kept_dirs:
+                for p in sorted(child.iterdir()):
+                    if p.is_file() and p.resolve() not in kept:
+                        p.unlink()
+                        removed.append(p)
         return removed
 
 

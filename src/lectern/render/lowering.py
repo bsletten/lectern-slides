@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from ..fences import render_element
 from ..slides import closes_fence, fence_info, fence_marker
 
 if TYPE_CHECKING:
@@ -127,8 +128,18 @@ class LoweredSlide:
 
 
 class _Scanner:
-    def __init__(self, resolver: AssetResolver, root: Path, incremental: str):
+    def __init__(
+        self,
+        resolver: AssetResolver,
+        root: Path,
+        incremental: str,
+        fence_elements: dict[str, str] | None = None,
+    ):
         self.resolver = resolver
+        # fence language → custom element (`[fences]` in deck.toml); see fences.py
+        self.fence_elements = fence_elements or {}
+        # (marker, element, code lines, indent) of an open element fence
+        self._element = None
         self.root = root
         self.incremental = incremental  # "fragment" | "degrade"
         self.out = LoweredSlide()
@@ -185,6 +196,15 @@ class _Scanner:
             self.out.body.append(line)
             if closes_fence(line, self._fence):
                 self._fence = None
+            return
+
+        if self._element is not None:
+            marker, element, code, indent = self._element
+            if closes_fence(line, marker):
+                self.out.body.extend(render_element(element, code, indent))
+                self._element = None
+            else:
+                code.append(line)
             return
 
         # A ```mermaid block is lowered to a raw <pre class="mermaid"> (a
@@ -261,7 +281,12 @@ class _Scanner:
         marker = fence_marker(line)
         if marker is not None:
             self._flush_incr_paragraph()
-            if fence_info(line).split(" ")[0].lower() == "mermaid":
+            lang = fence_info(line).split(" ")[0].lower()
+            if lang in self.fence_elements:
+                indent = line[: len(line) - len(line.lstrip(" "))]
+                self._element = (marker, self.fence_elements[lang], [], indent)
+                return
+            if lang == "mermaid":
                 self._mermaid = marker
                 self.out.has_mermaid = True
                 self.out.body.append('<pre class="mermaid">')
@@ -342,6 +367,10 @@ class _Scanner:
 
     def finish(self) -> LoweredSlide:
         self._flush_incr_paragraph()
+        if self._element is not None:
+            _marker, element, code, indent = self._element
+            self.out.body.extend(render_element(element, code, indent))
+            self._element = None
         if self._mermaid is not None:
             self.out.body.append("</pre>")
             self._mermaid = None
@@ -357,9 +386,10 @@ def scan_slide(
     root: Path,
     *,
     incremental: str = "fragment",
+    fence_elements: dict[str, str] | None = None,
 ) -> LoweredSlide:
     """Lower one assembled slide into a :class:`LoweredSlide`."""
-    scanner = _Scanner(resolver, root, incremental)
+    scanner = _Scanner(resolver, root, incremental, fence_elements)
     for outline in group:
         scanner.feed(outline.text)
     return scanner.finish()

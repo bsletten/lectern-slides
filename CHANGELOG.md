@@ -21,6 +21,24 @@ aims to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   deck paths under a virtual root onto IRIs. The `ikigai-python` adapter is
   pending: the real client offers `source(iri)` and `exists(iri)` but no listing.
   Lectern has no hard dependency on the kernel bindings.
+- **Fence elements: a configured code fence renders as a custom element.**
+  `[fences.<lang>] element = "my-cell"` in `deck.toml` turns a ```` ```<lang> ````
+  fence into `<my-cell>CODE</my-cell>` (the code as its escaped text content)
+  in the reveal adapter and its PDF; every other fence renders as before. The
+  table's `scripts`, `styles` and `files` are local files, copied unrenamed into
+  one content-hashed `assets/<element>-<hash>/` directory and loaded once in
+  `<head>` (scripts as module scripts); a URL there is refused with a sentence.
+  An optional `[fences.<lang>.data]` block (`type` + `file` or `text`) is
+  emitted verbatim as a `<script type=…>` the element reads. `lectern check`
+  validates the table, and `lectern check --built` builds the deck and audits
+  each element in headless Chromium: its Run control has an accessible name
+  and its output is a live region. A deck with no `[fences]` table builds
+  byte-for-byte as before. The fence's files are read through the deck's
+  `Source` (so a `KernelSource` deck can carry a `[fences]` table), linked by
+  percent-encoded URLs, and a data block holding `</script` or `<!--` is
+  refused. A fence inside a list item loses the list's indentation in the
+  element's code.
+
 - **Deck-local assets resolve from the deck root.** A relative reference now also
   tries the deck root (a one-off `images/qr.svg` beside `deck.toml`) before the
   shared `asset_base`, so a slide in `slides/` finds it. Deck-local files win

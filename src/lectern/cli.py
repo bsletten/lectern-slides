@@ -309,14 +309,26 @@ def check(
     a11y: bool = typer.Option(
         True, "--a11y/--no-a11y", help="Run accessibility checks (default on)."
     ),
+    built: bool = typer.Option(
+        False,
+        "--built",
+        help="Also build the deck (reveal, to a temp dir) and audit its fence "
+        "elements in headless Chromium (needs the [pdf] extra).",
+    ),
     config: Path | None = typer.Option(
         None, "--config", help="Override the deck manifest (.toml)."
     ),
 ) -> None:
     """Validate includes, ranges, and partials (and accessibility) without rendering."""
+    from . import fences
+
     overrides = _assembly_overrides(remark_compat, partial, max_include_depth)
     try:
-        deck = assemble(source, config_override=config, cli_overrides=overrides)
+        resolved = resolve_source(
+            source, config_override=config, cli_overrides=overrides
+        )
+        fences.validate(resolved.config, resolved.root)
+        deck = assemble_resolved(resolved)
     except LecternError as e:
         raise _fail(e) from None
 
@@ -326,6 +338,8 @@ def check(
         from .a11y import audit
 
         a11y_warnings = audit(deck)
+        if built and resolved.config.fences:
+            a11y_warnings.extend(_audit_built(deck, resolved.config))
         _emit_warnings(f"a11y: {w}" for w in a11y_warnings)
 
     issues = len(deck.warnings) + len(a11y_warnings)
@@ -334,6 +348,21 @@ def check(
         f"ok: {deck.slide_count} slide(s) assembled cleanly{suffix}",
         fg=typer.colors.GREEN,
     )
+
+
+def _audit_built(deck, config) -> list[str]:
+    """Build *deck* with reveal into a temp dir and audit its fence elements."""
+    import tempfile
+
+    from .a11y import audit_built
+
+    elements = sorted({f.element for f in config.fences.values()})
+    with tempfile.TemporaryDirectory(prefix="lectern-check-") as tmp:
+        try:
+            result = get_renderer("reveal").render(deck, config, Path(tmp), "html")
+            return audit_built(result.output, elements)
+        except LecternError as e:
+            raise _fail(e) from None
 
 
 def _build_all_themes(

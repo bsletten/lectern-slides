@@ -106,12 +106,28 @@ def build_html(
         config.theme, config.aspect, deck.root, deck.theme_dirs, deck.source
     )
 
+    from .. import fences
+
+    # `[fences]`: copy each element's files and load them once in <head>. A deck
+    # with no `[fences]` table gets no extra markup at all.
+    fence_elements = fences.element_map(config)
+    if fence_elements:
+        staged = fences.stage(config, deck.root, out_dir, deck.source)
+        resolver.keep(staged.copied, staged.dirs)
+        extra_head = "\n".join(x for x in (staged.head, extra_head) if x)
+
     slides = []
     mermaid_seen = False
     for group in deck.slides():
         if is_blank_group(group):
             continue
-        lowered = scan_slide(group, resolver, deck.root, incremental="fragment")
+        lowered = scan_slide(
+            group,
+            resolver,
+            deck.root,
+            incremental="fragment",
+            fence_elements=fence_elements,
+        )
         warnings.extend(lowered.warnings)
         mermaid_seen = mermaid_seen or lowered.has_mermaid
         slides.append(_format_slide(lowered))
