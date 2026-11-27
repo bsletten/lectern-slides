@@ -20,15 +20,15 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from ..assets import AssetResolver
 from ..theming import build_theme
+from . import reveal_assets
 from .base import Caps, RenderResult, register
 from .lowering import build_attrs, is_blank_group, scan_slide
+from .reveal_assets import REVEAL_CDN, REVEAL_VERSION  # noqa: F401 — re-exported
 
 if TYPE_CHECKING:
     from ..config import Config
     from ..preprocess import AssembledDeck
 
-REVEAL_VERSION = "5.1.0"
-REVEAL_CDN = f"https://cdn.jsdelivr.net/npm/reveal.js@{REVEAL_VERSION}"
 KATEX_CDN = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
 MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
 
@@ -139,6 +139,18 @@ def build_html(
     from .. import fontawesome
     from ..metadata import render_script
 
+    # `[reveal] assets`: cdn (default), vendored or local. The self-contained
+    # modes refuse a feature still loaded from a CDN, then copy reveal in.
+    rc = config.reveal.model_dump()
+    math = bool(rc.get("math"))
+    highlight = bool(rc.get("highlight", True))
+    reveal_assets.refuse_cdn_only(
+        config, mermaid=mermaid, math=math, font_awesome=config.font_awesome
+    )
+    reveal_files = reveal_assets.resolve(
+        config, deck.root, deck.source, resolver, highlight=highlight, math=math
+    )
+
     fa_css = fontawesome.resolve(config.font_awesome, deck.root, out_dir, warnings)
     json_ld = render_script(config, getattr(deck, "tags", None))
 
@@ -146,6 +158,7 @@ def build_html(
         config,
         theme,
         slides,
+        reveal_files=reveal_files,
         mermaid=mermaid,
         font_awesome_css=fa_css,
         init_extra=init_extra,
@@ -160,6 +173,7 @@ def _render_template(
     theme,
     slides,
     *,
+    reveal_files,
     mermaid=False,
     font_awesome_css=None,
     init_extra=None,
@@ -215,7 +229,7 @@ def _render_template(
         author=html.escape(config.author or ""),
         lang=html.escape(config.lang or "en"),
         theme_css=theme.css,
-        reveal_cdn=REVEAL_CDN,
+        reveal=reveal_files,
         katex_cdn=KATEX_CDN,
         mermaid_cdn=MERMAID_CDN,
         mermaid=mermaid,

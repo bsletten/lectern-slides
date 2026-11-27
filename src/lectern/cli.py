@@ -32,6 +32,7 @@ from .render import (
     FORMATS,
     get_renderer,
     renderers_supporting,
+    reveal_assets,
     supports_format,
 )
 from .theming import available_themes
@@ -328,6 +329,7 @@ def check(
             source, config_override=config, cli_overrides=overrides
         )
         fences.validate(resolved.config, resolved.root)
+        reveal_assets.mode_of(resolved.config)
         deck = assemble_resolved(resolved)
     except LecternError as e:
         raise _fail(e) from None
@@ -338,8 +340,13 @@ def check(
         from .a11y import audit
 
         a11y_warnings = audit(deck)
-        if built and resolved.config.fences:
-            a11y_warnings.extend(_audit_built(deck, resolved.config))
+        self_contained = reveal_assets.mode_of(resolved.config) != "cdn"
+        if self_contained:
+            a11y_warnings.extend(_remote_loads(deck, resolved.config))
+        if built and (resolved.config.fences or self_contained):
+            a11y_warnings.extend(
+                _audit_built(deck, resolved.config, flag_remote=self_contained)
+            )
         _emit_warnings(f"a11y: {w}" for w in a11y_warnings)
 
     issues = len(deck.warnings) + len(a11y_warnings)
@@ -350,7 +357,28 @@ def check(
     )
 
 
-def _audit_built(deck, config) -> list[str]:
+def _remote_loads(deck, config) -> list[str]:
+    """Build *deck* with reveal into a temp dir; flag each load from another host.
+
+    Only for a self-contained deck (``[reveal] assets`` other than ``"cdn"``),
+    which promises to load nothing from the network.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="lectern-check-") as tmp:
+        try:
+            result = get_renderer("reveal").render(deck, config, Path(tmp), "html")
+        except LecternError as e:
+            raise _fail(e) from None
+        html_text = result.output.read_text(encoding="utf-8")
+    mode = reveal_assets.mode_of(config)
+    return [
+        f'[reveal] assets = "{mode}", but the built deck loads {url} from another host'
+        for url in reveal_assets.remote_loads(html_text)
+    ]
+
+
+def _audit_built(deck, config, *, flag_remote: bool = False) -> list[str]:
     """Build *deck* with reveal into a temp dir and audit its fence elements."""
     import tempfile
 
@@ -360,7 +388,7 @@ def _audit_built(deck, config) -> list[str]:
     with tempfile.TemporaryDirectory(prefix="lectern-check-") as tmp:
         try:
             result = get_renderer("reveal").render(deck, config, Path(tmp), "html")
-            return audit_built(result.output, elements)
+            return audit_built(result.output, elements, flag_remote=flag_remote)
         except LecternError as e:
             raise _fail(e) from None
 

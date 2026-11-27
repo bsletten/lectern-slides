@@ -8,6 +8,17 @@ aims to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Self-contained reveal decks: `[reveal] assets = "cdn" | "vendored" | "local"`.**
+  `cdn` stays the default and builds byte-identical to before. `vendored` copies
+  the reveal.js 5.1.0 files lectern now ships (MIT, with reveal's license and a
+  notice of the npm tarball and its integrity hash); `local` copies them from the
+  directory `[reveal] path` names, read through the deck's `Source`, and refuses a
+  missing or incomplete directory with a sentence naming what is missing. Both
+  load only relative, content-hashed `assets/` paths, in the browser and in the
+  PDF master. Mermaid, `[reveal] math` and `font_awesome = true` are still
+  CDN-only and are refused in the self-contained modes. `lectern check` flags any
+  remaining remote load in such a deck, and `check --built` flags every request
+  the page makes to another host.
 - **Themes and assets go through `Source`.** Theme resolution (a path theme or a
   name found in `theme_paths`), asset lookup and copy, and the deck manifest are
   now read through the deck's `Source`, not the disk directly, so a non-filesystem

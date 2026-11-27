@@ -136,7 +136,11 @@ class AssetResolver:
         return ref
 
     def _copy(self, src: Path) -> str:
-        data = self.src.read_bytes(src)
+        return self.copy_bytes(src.name, self.src.read_bytes(src))
+
+    def copy_bytes(self, filename: str, data: bytes) -> str:
+        """Write *data* as ``assets/<stem>-<hash8><suffix>``; return its href."""
+        src = Path(filename)
         digest = hashlib.sha256(data).hexdigest()[:8]
         if digest in self._by_hash:
             return self._by_hash[digest]

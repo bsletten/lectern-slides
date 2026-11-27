@@ -61,6 +61,10 @@ class RevealConfig(_Section):
     highlight: bool = True
     math: str | bool = False
     mermaid: bool | None = None  # None = auto (load only if a ```mermaid block exists)
+    # Where reveal.js loads from: "cdn" (default) · "vendored" (the copy shipped
+    # in this package) · "local" (the directory `path` names, deck-root relative).
+    assets: str = "cdn"
+    path: str | None = None
 
 
 class PdfConfig(_Section):

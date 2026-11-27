@@ -342,13 +342,20 @@ async ([names, timeout]) => {
 """
 
 
-def audit_built(index_html, elements: list[str], *, timeout_ms: int = 10000):
+def audit_built(
+    index_html,
+    elements: list[str],
+    *,
+    timeout_ms: int = 10000,
+    flag_remote: bool = False,
+):
     """Audit each fence element in a built deck in headless Chromium.
 
     Serves the deck's directory over loopback HTTP (module scripts don't load
     from ``file://``), waits for each element to be defined, and returns
     warnings for a Run control without an accessible name, a missing Run
-    control, or a missing live output region. Needs the ``[pdf]`` extra's
+    control, or a missing live output region, and with ``flag_remote`` every
+    request the page made to another host. Needs the ``[pdf]`` extra's
     Playwright + Chromium; raises :class:`~lectern.errors.RenderError` without.
     """
     import functools
@@ -373,6 +380,16 @@ def audit_built(index_html, elements: list[str], *, timeout_ms: int = 10000):
             browser = p.chromium.launch()
             try:
                 page = browser.new_page()
+                origin = f"http://127.0.0.1:{server.server_address[1]}/"
+                remote: list[str] = []
+                page.on(
+                    "request",
+                    lambda r: (
+                        None
+                        if r.url.startswith((origin, "data:", "blob:", "about:"))
+                        else remote.append(r.url)
+                    ),
+                )
                 page.goto(url, wait_until="load")
                 found = page.evaluate(_ELEMENT_PROBE, [elements, timeout_ms])
             finally:
@@ -382,6 +399,11 @@ def audit_built(index_html, elements: list[str], *, timeout_ms: int = 10000):
         server.server_close()
 
     warnings: list[str] = []
+    if flag_remote:
+        warnings.extend(
+            f"the built deck loaded {u} from another host"
+            for u in dict.fromkeys(remote)
+        )
     for f in found:
         where = f"slide {f['slide']}, <{f['name']}> {f['index']}"
         if f["undefined"]:
