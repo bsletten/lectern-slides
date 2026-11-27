@@ -1,0 +1,14 @@
+# A deck whose ```demo fences render as <demo-cell> (tests/test_fences.py).
+title    = "Fence Fixture"
+renderer = "reveal"
+slides   = ["slides.md"]
+
+[fences.demo]
+element = "demo-cell"
+scripts = ["vendor/demo-cell.js"]
+styles  = ["vendor/demo-cell.css"]
+files   = ["vendor/demo-glue.js", "vendor/demo-kernel.bin"]
+
+[fences.demo.data]
+type = "application/demo-kernel+json"
+file = "kernel.json"

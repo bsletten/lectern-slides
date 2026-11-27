@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Render Fixture</title>
+<meta name="author" content="Test Harness">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style id="lectern-deck-baseline">
+/* ---- Portable deck vocabulary -------------------------------------------
+   A deck authored against a richly-styled theme leans on a handful of classes
+   (.kicker/.tag/.seal/.handle/.vert) and a warm second accent (--seal) that not
+   every theme defines, so the same deck looked broken under other themes (plain
+   text where pills/badges were expected, a two-tone chart collapsing to one
+   colour). These low-specificity baselines, injected BEFORE the theme, make a
+   deck degrade gracefully under ANY theme: a theme that styles these (its rule
+   comes later at equal-or-higher specificity) wins, while bare class selectors
+   here still beat reveal's element-level reset (`span { border:0 }`), which a
+   cascade @layer could not. `--seal` defaults to a deepened accent — distinct
+   from --accent so two-tone art stays legible — unless the theme defines it. */
+:root { --seal: color-mix(in srgb, var(--accent) 55%, var(--fg) 45%); }
+/* reveal ships Eric-Meyer reset.css, which flattens <sub>/<sup> to
+   `font-size:100%; vertical-align:baseline` — so `2<sup>256</sup>` rendered as
+   plain inline "256". Restore the normalize.css rendering (this block loads
+   after reset.css, so equal-specificity element rules win). */
+sub, sup { font-size: 0.75em; line-height: 0; position: relative; vertical-align: baseline; }
+sup { top: -0.5em; }
+sub { bottom: -0.25em; }
+.kicker {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  font-size: var(--fs-small, 0.7em); color: var(--muted, currentColor);
+}
+.tag, .pill {
+  display: inline-block; margin: 0.15em 0.25em 0.15em 0;
+  /* longhands, not the `border` shorthand: a shorthand whose colour is a var()
+     is pending-substitution, and reveal's element reset then wins the box. */
+  border-width: 1px; border-style: solid;
+  border-color: var(--rule, var(--muted, currentColor));
+  padding: 0.34em 0.95em; font-size: var(--fs-small, 0.75em);
+  line-height: 1; letter-spacing: 0.04em; color: var(--fg);
+}
+.pill { border-radius: 999px; }
+.tag.warm, .pill.warm { border-color: var(--seal); color: var(--seal); }
+.tag.cool, .pill.cool { border-color: var(--accent); color: var(--accent); }
+.tag.ink,  .pill.ink  { border-color: var(--fg); color: var(--fg); }
+.tag.solid, .pill.solid { color: var(--bg); border-color: transparent; }
+.tag.warm.solid, .pill.warm.solid { background: var(--seal); }
+.tag.cool.solid, .pill.cool.solid { background: var(--accent); }
+.tag.ink.solid,  .pill.ink.solid  { background: var(--fg); }
+.seal {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2.6em; min-height: 2.6em; padding: 0.3em 0.5em;
+  background: var(--seal); color: var(--bg); font-family: var(--font-display, inherit);
+}
+.seal.hollow {
+  background: transparent; color: var(--seal);
+  border-width: 2px; border-style: solid; border-color: var(--seal);
+}
+.seal.round { border-radius: 50%; }
+.seal.stack, .vert { writing-mode: vertical-rl; }
+.vert { color: var(--muted, currentColor); }
+.handle { font-size: var(--fs-small, 0.8em); color: var(--muted, currentColor); }
+.handle i { color: var(--seal); margin-right: 0.22em; }
+.handle a { color: inherit; }
+</style>
+<style id="lectern-theme">
+/* ============================================================================
+   Lectern — base theme
+   A neutral, token-driven starting point. Customize by editing the tokens in
+   :root first (accent + fonts are the highest-leverage changes); the rest
+   cascades. Class names match Remark conventions (center / middle / inverse /
+   quotation / footnote) so existing decks render correctly.
+   ============================================================================ */
+
+:root {
+  /* --- geometry -------------------------------------------------------- */
+  --slide-w: 1280px;
+  --slide-h: 720px;
+  --pad-x: 88px;
+  --pad-y: 64px;
+
+  /* --- color (change --accent first) ----------------------------------- */
+  --bg:          #fbfbfd;
+  --fg:          #17171d;
+  --muted:       #5b5b66;
+  --accent:      #0e7c86;       /* restrained teal; the one chromatic note   */
+  --rule:        #e4e4ea;
+  --inverse-bg:  #14141b;
+  --inverse-fg:  #f4f4f7;
+  --code-bg:     #0f1020;
+  --code-fg:     #e8e8f2;
+
+  /* --- type (wire up the real web fonts in your template <head>) -------- */
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body:    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  --fs-h1: 52px;
+  --fs-h2: 32px;
+  --fs-body: 27px;
+  --fs-code: 19px;
+  --fs-small: 16px;
+  --lh-tight: 1.14;
+  --lh-body: 1.42;
+}
+
+/* --- slide surface ----------------------------------------------------- */
+@page { size: var(--slide-w) var(--slide-h); margin: 0; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-body); color: var(--fg); background: var(--bg); }
+
+.slide {
+  width: var(--slide-w);
+  height: var(--slide-h);
+  padding: var(--pad-y) var(--pad-x);
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  page-break-after: always;
+}
+.slide:last-child { page-break-after: auto; }
+
+/* --- typography -------------------------------------------------------- */
+.slide h1 { font-family: var(--font-display); font-weight: 600;
+            font-size: var(--fs-h1); line-height: var(--lh-tight);
+            letter-spacing: -0.01em; margin: 0 0 0.35em; }
+.slide h2 { font-family: var(--font-display); font-weight: 500;
+            font-size: var(--fs-h2); line-height: 1.2; margin: 0 0 0.4em;
+            color: var(--muted); }
+.slide p, .slide li { font-size: var(--fs-body); line-height: var(--lh-body); }
+.slide ul, .slide ol { padding-left: 1.05em; }
+.slide li { margin: 0.18em 0; }
+.slide li::marker { color: var(--accent); }
+.slide a { color: var(--accent); text-decoration: none;
+           border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.slide strong { font-weight: 650; }
+.slide img { max-width: 100%; height: auto; }
+
+/* --- code (these decks are code-heavy; give it real presence) ---------- */
+.slide pre {
+  font-family: var(--font-mono); font-size: var(--fs-code); line-height: 1.4;
+  background: var(--code-bg); color: var(--code-fg);
+  padding: 22px 26px; border-radius: 10px; overflow: hidden;
+}
+.slide code { font-family: var(--font-mono); }
+.slide :not(pre) > code {
+  font-size: 0.9em; padding: 0.08em 0.34em; border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* --- layout: anchor the whole slide's content block (compose freely) --- */
+/* The slide is a vertical flex container; these move the content block to any
+   of nine positions. Default is top-left. Set via `<!-- slide: .center .middle -->`. */
+.slide { display: flex; flex-direction: column; }
+.slide.top    { justify-content: flex-start; }   /* vertical — default */
+.slide.middle { justify-content: center; }
+.slide.bottom { justify-content: flex-end; }
+.slide.left   { align-items: flex-start; text-align: left; }   /* horizontal — default */
+.slide.center { align-items: center;     text-align: center; }
+.slide.right  { align-items: flex-end;   text-align: right; }
+/* e.g. `.center .middle` = dead centre · `.right .bottom` = bottom-right corner */
+
+/* --- place an individual box at a point (any number per slide) --------- */
+/* `::: {.place .top .right}` … `:::` anchors a box inside the slide. Combine
+   edges, or give exact coordinates with style="left:62%; top:18%". */
+.place { position: absolute; max-width: 72%; }
+.place.top    { top: var(--pad-y); }
+.place.bottom { bottom: var(--pad-y); }
+.place.left   { left: var(--pad-x); }
+.place.right  { right: var(--pad-x); }
+.place.center { left: 50%; transform: translateX(-50%); }
+.place.middle { top: 50%; transform: translateY(-50%); }
+.place.center.middle { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+/* --- inverse (colour only) --------------------------------------------- */
+.slide.inverse { background: var(--inverse-bg); color: var(--inverse-fg); }
+.slide.inverse h1 { color: var(--inverse-fg); }
+.slide.inverse h2 { color: color-mix(in srgb, var(--inverse-fg) 70%, transparent); }
+.slide.inverse a   { color: color-mix(in srgb, var(--accent) 70%, white); }
+
+/* --- Remark-parity content classes ------------------------------------- */
+.quotation {
+  font-family: var(--font-display); font-weight: 400; font-style: italic;
+  font-size: 58px; line-height: 1.3; max-width: 84%;
+}
+.quotation-source {
+  display: block; margin-top: 0.55em; font-size: 26px;
+  font-style: normal; color: inherit;
+}
+.quotation-source::before { content: "— "; }
+.footnote {
+  position: absolute; bottom: 34px; left: var(--pad-x); right: var(--pad-x);
+  font-size: var(--fs-small); color: var(--muted); text-align: center;
+}
+
+/* --- accessibility floor ----------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* lectern: aspect override */
+:root { --slide-w: 1024px; --slide-h: 768px; }
+
+</style>
+<style id="lectern-layout">
+/* reveal bridge: make section.slide the themed, flex-laid-out content box.
+   Higher specificity than reveal's own section rules, injected after them, so
+   the neutral .slide layout model (anchor grid, padding) survives. */
+.reveal .slides { text-align: left; }
+.reveal .slides > section.slide,
+.reveal .slides > section > section.slide {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: var(--pad-y, 64px) var(--pad-x, 88px);
+  box-sizing: border-box;
+}
+.reveal .slides section.slide > *:first-child { margin-top: 0; }
+
+/* The flex layout above is what vertically centers `.middle`/`.bottom` slides.
+   reveal would normally override it by setting `display:block` inline on a
+   visible slide — and only on the *present* one, so a leaving slide snapped
+   from flex-centered to block (top-aligned) mid-fade and flashed. We pass
+   `display: "flex"` to Reveal.initialize (see render/reveal.py) so reveal
+   applies *flex* inline to every visible slide instead; the layout then holds
+   through transitions and hidden slides still get `display:none`. No
+   stylesheet `!important` is needed to fight it. */
+
+/* Standardize the quotation source across themes. Themes variously muted,
+   accent-coloured, or dimmed `.quotation-source` (and the "— " prefix), which
+   washed out — unreadable over photographic backgrounds. Give it the slide's
+   own text colour — the same token the quote uses (`--fg`, or `--inverse-fg` on
+   dark slides) — so it matches the quote regardless of how a theme wraps it.
+   (`inherit` is unreliable: the source can sit in a `<p>` a theme mutes.) It
+   stays distinct by its smaller size and the "— " prefix. Scoped to
+   `.quotation-source` only, so `.footnote`/`.label` keep their muted treatment. */
+.reveal .slides section.slide .quotation-source,
+.reveal .slides section.slide .quotation-source::before {
+  color: var(--fg) !important;
+  opacity: 1 !important;
+}
+.reveal .slides section.slide.inverse .quotation-source,
+.reveal .slides section.slide.inverse .quotation-source::before {
+  color: var(--inverse-fg) !important;
+}
+
+/* `.on-dark` — force light, legible text on a dark backdrop (a photo or video),
+   independent of a theme's `.inverse` treatment. A theme's `.inverse` may be a
+   *light* "moment" (cream/paper) whose dark text vanishes on a dark image; this
+   is the class to reach for on a dark background-image slide:
+   `<!-- slide: .on-dark data-background-image="…" -->`. Fixed near-white (not a
+   theme token, since the theme's own fg may be dark) plus a soft shadow for
+   legibility over busy imagery. Placed after the quotation rules so it wins. */
+.reveal .slides section.slide.on-dark { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55); }
+.reveal .slides section.slide.on-dark,
+.reveal .slides section.slide.on-dark h1,
+.reveal .slides section.slide.on-dark h2,
+.reveal .slides section.slide.on-dark h3,
+.reveal .slides section.slide.on-dark p,
+.reveal .slides section.slide.on-dark li,
+.reveal .slides section.slide.on-dark a,
+.reveal .slides section.slide.on-dark .quotation,
+.reveal .slides section.slide.on-dark .quotation-source,
+.reveal .slides section.slide.on-dark .quotation-source::before {
+  color: #f5f5f7 !important;
+}
+/* Full-opacity text over the backdrop — but NOT on the section itself: reveal
+   animates the *section's* opacity for fade transitions, so forcing it to 1 kept
+   this slide fully visible while it was an off-screen neighbour (its text bled
+   onto adjacent slides). Restrict the override to the text elements. */
+.reveal .slides section.slide.on-dark h1,
+.reveal .slides section.slide.on-dark h2,
+.reveal .slides section.slide.on-dark h3,
+.reveal .slides section.slide.on-dark p,
+.reveal .slides section.slide.on-dark li,
+.reveal .slides section.slide.on-dark a,
+.reveal .slides section.slide.on-dark .quotation,
+.reveal .slides section.slide.on-dark .quotation-source,
+.reveal .slides section.slide.on-dark .quotation-source::before {
+  opacity: 1 !important;
+}
+.reveal .slides section.slide.on-dark a { text-decoration: underline; }
+
+/* When a slide declares a reveal background (image / video / color / gradient),
+   reveal paints it on a separate `.slide-background` layer *behind* the section.
+   A theme's opaque `.slide` (or `.slide.inverse`) fill would hide it, so make the
+   section transparent: the background shows through and the slide's text sits on
+   top. `!important` + the high-specificity selector win over any theme's fill.
+   Pair a background image with `.inverse` (light text) — or a scrim — for
+   legibility; this rule only stops the slide from blocking the image. */
+.reveal .slides section.slide[data-background-image],
+.reveal .slides section.slide[data-background-video],
+.reveal .slides section.slide[data-background-color],
+.reveal .slides section.slide[data-background-gradient],
+.reveal .slides section.slide[data-background] {
+  background: transparent !important;
+}
+
+/* reveal copies each slide's classes onto its `.slide-background` layer, so a
+   theme's `.slide` padding leaks onto the background and insets the image — a
+   border around it. Zero that padding (and pin the content) so a `cover` image
+   fills the slide edge to edge. Leave the layer's own background alone so reveal
+   can still honour `data-background-color`. NB: match `.slide-background`
+   wherever reveal puts it — under `.backgrounds` on screen, but moved into each
+   `.pdf-page` in print-pdf — so the PDF master fills too. */
+.reveal .slide-background { padding: 0 !important; }
+.reveal .slide-background .slide-background-content { inset: 0 !important; }
+
+/* Embedded live visualizations (iframe.embed: D3, WebGL, …) are capped to a
+   fraction of the slide height, so they always leave room for the heading/body
+   and never overflow the frame — independent of a theme's type scale. The slide
+   section has a definite height, so this percentage resolves even though reveal
+   forces the visible section to display:block inline (which would defeat a
+   flex-shrink approach). The embed's own page resizes its canvas to fit. */
+.reveal .slides section.slide iframe.embed {
+  max-height: 60%;
+  min-height: 0;
+  max-width: 100%;
+}
+
+/* A standalone graphic on its own line — a Markdown `![alt](src)` image or an
+   inlined `<svg>` (via `<!-- include: art.svg -->`), each landing as a single-
+   child <p> — fills the space the slide's heading/body leave: generous on a
+   graphic-only slide, politely smaller when there's also text, scaled to fit (up
+   or down) without distortion or overflow, under any theme.
+
+   The <p> takes the leftover vertical space (flex: 1) and is the positioning
+   box; the graphic is taken OUT OF FLOW (absolute, inset: 0). That is load-
+   bearing for the PDF: a replaced <img> or an inline <svg> at its intrinsic size
+   inflates reveal's *natural-height* measurement of the slide, and reveal then
+   paginates the print-pdf master onto a too-tall page — the graphic falls off
+   the bottom / spills to an extra page. Out of flow, it never contributes to
+   that height; `object-fit: contain` (img) or the SVG's viewBox/preserveAspect-
+   Ratio (svg) keeps it contained, and `margin: auto` keeps a *constrained*
+   override (a `<!-- .element: style="max-width:…" -->`) centred, not left-pinned.
+   A raw `<img style="…">`/`<svg style="…">` is a direct child of the section (not
+   a single-child <p>), so it sidesteps this rule and is sized verbatim.
+
+   Scoped to a DIRECT child of the section: the stage only makes sense for a
+   graphic laid out in the slide's own flex column. A graphic the author wrapped
+   in a block (`::: {.qr}`, `.place`, a column) is that block's business — and
+   out of flow inside a non-flex wrapper it would collapse the <p> to zero height
+   and vanish. Wrapped graphics stay in flow at their intrinsic size, capped by
+   the theme's `.slide img`. */
+.reveal .slides section.slide > p:has(> img:only-child),
+.reveal .slides section.slide > p:has(> svg:only-child) {
+  display: flex;
+  flex: 1 1 auto;          /* take the space heading/caption don't */
+  min-height: 0;
+  position: relative;      /* positioning box for the out-of-flow graphic */
+  width: 100%;             /* don't shrink-wrap the (out-of-flow) child to zero */
+  margin: 0;
+}
+.reveal .slides section.slide > p:has(> img:only-child) > img,
+.reveal .slides section.slide > p:has(> svg:only-child) > svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;            /* centre a constrained override within the box */
+  width: 100%;
+  height: 100%;
+}
+.reveal .slides section.slide > p:has(> img:only-child) > img {
+  object-fit: contain;     /* fill the box, scaling up or down, never distorting */
+}
+
+/* `::: {.center}` centers one block within the slide's column without disturbing
+   the title/body alignment — handy for an ASCII-art code fence on an otherwise
+   left-aligned slide. `align-self` centers the block itself (it shrink-wraps its
+   content under the slide's flex layout); a contained `<pre>` keeps left-aligned
+   text so its monospace columns stay put. `.place` is positioned absolutely, so
+   it's excluded. */
+.reveal .slides section.slide > .center:not(.place) {
+  align-self: center;
+  max-width: 100%;
+  text-align: center;
+}
+.reveal .slides section.slide > .center:not(.place) > pre {
+  text-align: left;
+}
+
+/* Mermaid diagrams: the source `<pre class="mermaid">` is swapped for a
+   `<div class="mermaid">` once rendered (see the script), so `.mermaid` matches
+   both. Center the diagram and cap the SVG to a fraction of the slide so a big
+   one doesn't bump the frame — the same height-cap story as embeds/images. */
+.reveal .slides section.slide pre.mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  background: none;       /* drop the theme's code-block panel behind the diagram */
+  min-height: 0;
+}
+.reveal .slides section.slide pre.mermaid svg {
+  max-width: 100%;
+  max-height: 62vh;
+  height: auto;
+}
+/* foreignObject clips by default; Mermaid sizes label boxes a hair tight, so the
+   last glyph of the longest label can get shaved. Let it spill instead of clip. */
+.reveal .slides section.slide pre.mermaid svg foreignObject {
+  overflow: visible;
+}
+/* Mermaid wraps each label in a <p>; the theme's `.slide p` margin would leak in
+   and push the text off-center (most visibly in Safari/WebKit). Zero it. */
+.reveal .slides section.slide pre.mermaid p {
+  margin: 0;
+}
+/* Mermaid appends a `.mermaidTooltip` helper to <body>; in print it extends a
+   few px past the last slide, which Chromium paginates into a trailing BLANK
+   page. It's inert on paper — remove it from the printed flow. */
+@media print {
+  .mermaidTooltip { display: none !important; }
+}
+
+/* print-pdf wraps each slide in a `.pdf-page`, which breaks the `>` selectors
+   above and lets reveal force `display:block; padding:0` — that jams content
+   into the page edge and drops the anchor-grid centering. Re-assert the slide
+   layout for the printed master (and anyone using reveal's own Ctrl-P export). */
+.print-pdf .slides .pdf-page > section.slide {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: var(--pad-y, 64px) var(--pad-x, 88px) !important;
+  box-sizing: border-box !important;
+  /* reveal's print `center` mode offsets the section's `top` to center its
+     content, which double-counts against our flex anchor grid and shoves a
+     `.middle` slide into the lower page. Pin it and let the slide fill the
+     page so the flex layout is the single source of vertical placement. */
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Visually-hidden but screen-reader-available: the aria-live slide announcer. */
+.lectern-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+  white-space: nowrap; border: 0;
+}
+
+/* Visible keyboard focus, theme-independent: browser/theme defaults are easy to
+   lose on links over a themed background. `:focus-visible` shows it for keyboard
+   users only, in the theme accent (which the audit holds to >=3:1 vs --bg). */
+.reveal .slides section a:focus-visible,
+.reveal .slides section button:focus-visible,
+.reveal .slides section iframe:focus-visible,
+.reveal .slides section [tabindex]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* Respect prefers-reduced-motion: zero out reveal's slide / fragment / background
+   transitions and any keyframe animation, so the live deck doesn't animate for
+   users who ask for less motion. Slides still position and fragments still step —
+   they just don't tween. (The PDF master already emulates reduced motion.) */
+@media (prefers-reduced-motion: reduce) {
+  .reveal .slides section,
+  .reveal .slides section *,
+  .reveal .backgrounds .slide-background {
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* Density helpers are layout, not aesthetics, so they belong here and work under
+   any theme. `.code-sm` shrinks code so a long ASCII/code block stays on one
+   slide; `.dense` tightens vertical rhythm so a list-heavy slide doesn't spill
+   off the bottom. High specificity intentionally owns these across all themes. */
+.reveal .slides section.slide.code-sm pre { font-size: 13px; line-height: 1.45; }
+.reveal .slides section.slide.dense {
+  padding-top: calc(var(--pad-y, 64px) * 0.5);
+  padding-bottom: calc(var(--pad-y, 64px) * 0.5);
+}
+.reveal .slides section.slide.dense :is(ul, ol) { line-height: 1.28; }
+.reveal .slides section.slide.dense li { margin-top: 0.18em; margin-bottom: 0.18em; }
+
+/* Forced colors (Windows High Contrast): the OS replaces the theme palette with a
+   limited system palette, so a cue the theme carried with colour alone needs a
+   non-colour fallback. Underline links (don't rely on the accent colour), and pin
+   the keyboard-focus ring to the system Highlight so it stays visible. */
+@media (forced-colors: active) {
+  .reveal .slides section a { text-decoration: underline; }
+  .reveal .slides section a:focus-visible,
+  .reveal .slides section button:focus-visible,
+  .reveal .slides section iframe:focus-visible,
+  .reveal .slides section [tabindex]:focus-visible {
+    outline-color: Highlight;
+  }
+}
+</style>
+<script type="application/ld+json">
+{
+  "@context": {
+    "dc": "http://purl.org/dc/elements/1.1/",
+    "cms": "https://ikigai-rs.dev/ns/cms#",
+    "title": "dc:title",
+    "tags": {
+      "@id": "dc:subject",
+      "@container": "@set"
+    },
+    "link": "dc:identifier"
+  },
+  "@type": "cms:Presentation",
+  "title": "Render Fixture"
+}
+</script>
+</head>
+<body>
+<div id="lectern-live" class="lectern-sr-only" aria-live="polite" aria-atomic="true"></div>
+<div class="reveal">
+<div class="slides">
+<section class="slide center middle" id="hero" data-x="1" data-markdown>
+<script type="text/template">
+# Hero Slide
+
+A <span class="accent">highlighted span</span> inline.
+
+<div class="place bottom right">
+
+corner box
+
+</div>
+</script>
+</section>
+<section class="slide" data-markdown>
+<script type="text/template">
+# Builds
+
+
+- first step <!-- .element: class="fragment" data-li-frag="0" -->
+- second step <!-- .element: class="fragment" data-li-frag="1" -->
+
+Note:
+A speaker note for the builds slide.
+A presenter-only reminder, kept out of handouts.
+</script>
+</section>
+<section class="slide inverse" data-background-image="assets/grid-5d73a73e.svg" data-markdown>
+<script type="text/template">
+# Background Image
+
+![logo](assets/logo-8023f385.png)
+</script>
+</section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/math/math.js"></script>
+<script>
+  Reveal.initialize(Object.assign({"width": 1024, "height": 768, "margin": 0.04, "center": false, "display": "flex", "hash": true, "controls": true, "progress": true, "transition": "fade", "backgroundTransition": "none", "slideNumber": false}, {
+    plugins: [ RevealMarkdown, RevealNotes, RevealHighlight, RevealMath.KaTeX ],
+    katex: {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false }
+      ]
+    }  }));
+
+  // `::: incremental` marks each build `class="fragment" data-li-frag="N"`, where
+  // N is the build's source-order index — one per list item, plus one per lead-in
+  // paragraph. reveal's markdown attaches that to the last inline element (a
+  // <strong>/<em>) when the text is formatted, not the enclosing <li>/<p> — so
+  // only the formatted run would build, not the whole item/paragraph. Worse, a
+  // plain item lands the class on the <li> and becomes a fragment at load (index
+  // 0) while formatted ones are promoted here and appended after it — so builds
+  // fire out of order. Promote the fragment to its <li>/<p> wherever the marker
+  // landed, pin `data-fragment-index` to N so reveal orders builds by source
+  // order, then re-sync.
+  Reveal.on('ready', () => {
+    let dirty = false;
+    document.querySelectorAll('.reveal .slides [data-li-frag]').forEach((el) => {
+      const host =
+        el.tagName === 'LI' || el.tagName === 'P'
+          ? el
+          : el.closest('li') || el.closest('p');
+      const idx = el.getAttribute('data-li-frag');
+      if (host && host !== el) {
+        host.classList.add('fragment');
+        el.classList.remove('fragment');
+      }
+      const target = host || el;
+      if (idx !== null && idx !== '') target.setAttribute('data-fragment-index', idx);
+      el.removeAttribute('data-li-frag');
+      dirty = true;
+    });
+    if (dirty) Reveal.sync();
+  });
+
+  // Any link that leaves the deck opens in a new tab: a click mid-talk otherwise
+  // unloads the running deck, losing the current slide, fragment state, and the
+  // speaker window. Reveal's own in-page navigation (`#/3`, `#slide-id`) and
+  // non-web schemes (`mailto:`, `tel:`) are left alone, as is an explicit target
+  // the author set (a raw `<a target=…>`, or `<!-- .element: target="_self" -->`).
+  // Runs on `ready`: the anchors are the markdown plugin's output, not ours.
+  Reveal.on('ready', () => {
+    document.querySelectorAll('.reveal .slides a[href]').forEach((a) => {
+      if (a.hasAttribute('target')) return;
+      if ((a.getAttribute('href') || '').startsWith('#')) return;
+      if (a.protocol !== 'http:' && a.protocol !== 'https:') return;
+      a.setAttribute('target', '_blank');
+      // The opened tab must not get a handle on the deck's window.
+      const rel = (a.getAttribute('rel') || '').split(/\s+/).filter(Boolean);
+      if (!rel.includes('noopener')) rel.push('noopener');
+      a.setAttribute('rel', rel.join(' '));
+    });
+  });
+
+  // Region landmarks: name each slide so screen-reader users can navigate it.
+  // A <section> with an accessible name is implicitly an ARIA `region`. Slides
+  // with an explicit `label`/`aria-label` keep it; the rest take their heading
+  // text (rendered by the markdown plugin, so we wait for `ready`).
+  Reveal.on('ready', () => {
+    document.querySelectorAll('.reveal .slides section').forEach((s) => {
+      if (s.getAttribute('aria-label') || s.getAttribute('aria-labelledby')) return;
+      const h = s.querySelector('h1, h2, h3, h4, h5, h6');
+      const name = h && h.textContent.trim();
+      if (name) s.setAttribute('aria-label', name);
+    });
+  });
+
+  // Live announcer: speak the current slide on navigation, so screen-reader
+  // users hear the change (reveal doesn't announce it). Skipped in print-pdf
+  // (no navigation; every slide is laid out at once).
+  if (!location.search.includes('print-pdf')) {
+    const live = document.getElementById('lectern-live');
+    const announce = () => {
+      const cur = Reveal.getCurrentSlide();
+      if (!live || !cur) return;
+      const slides = Reveal.getSlides();
+      const pos = slides.indexOf(cur) + 1;
+      const h = cur.querySelector('h1, h2, h3, h4, h5, h6');
+      const name = cur.getAttribute('aria-label') || (h && h.textContent.trim()) || '';
+      live.textContent = `Slide ${pos} of ${slides.length}${name ? ': ' + name : ''}`;
+    };
+    Reveal.on('ready', announce);
+    Reveal.on('slidechanged', announce);
+  }
+</script>
+</body>
+</html>

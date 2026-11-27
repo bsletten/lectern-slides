@@ -24,6 +24,7 @@ declaration, not a mistake; ``alt=""`` says the same on a raw ``<img>``.
 from __future__ import annotations
 
 import dataclasses
+import http.server
 import re
 from typing import TYPE_CHECKING
 
@@ -288,3 +289,128 @@ def _theme_warnings(deck: AssembledDeck) -> list[str]:
                     f"{ratio:.1f}:1, below {standard} ({minimum:g}:1)"
                 )
     return out
+
+
+# --------------------------------------------------------------------------- #
+# Built-deck audit of fence elements (`lectern check --built`)
+# --------------------------------------------------------------------------- #
+# A fence element (`[fences]` in deck.toml) draws its controls in the browser,
+# so its accessibility can only be read from a built deck once the element has
+# upgraded. Two things break it for a screen reader: a Run control (a <button>)
+# with no accessible name, and an output that is not a live region (results
+# appear silently). Light and open-shadow DOM are both searched.
+_ELEMENT_PROBE = """
+async ([names, timeout]) => {
+  const out = [];
+  const sections = [...document.querySelectorAll('.reveal .slides > section')];
+  for (const name of names) {
+    const defined = await Promise.race([
+      customElements.whenDefined(name).then(() => true),
+      new Promise((r) => setTimeout(() => r(false), timeout)),
+    ]);
+    const els = [...document.querySelectorAll(name)];
+    if (!defined) {
+      if (els.length) out.push({ name, slide: 0, index: 0, undefined: true });
+      continue;
+    }
+    await new Promise((r) => setTimeout(r, 50));
+    els.forEach((el, i) => {
+      const roots = [el, ...(el.shadowRoot ? [el.shadowRoot] : [])];
+      const all = (sel) => roots.flatMap((r) => [...r.querySelectorAll(sel)]);
+      const label = (b) => {
+        const by = b.getAttribute('aria-labelledby');
+        const ref = by && by.split(/\\s+/)
+          .map((id) => b.getRootNode().getElementById?.(id)
+            || document.getElementById(id))
+          .filter(Boolean).map((n) => n.textContent).join(' ');
+        return (b.getAttribute('aria-label') || ref || b.textContent
+          || b.getAttribute('title') || '').trim();
+      };
+      const buttons = all('button, [role="button"]');
+      const live = all('[aria-live]:not([aria-live="off"]), [role="status"], '
+        + '[role="log"], [role="alert"]');
+      const slide = sections.findIndex((s) => s.contains(el)) + 1;
+      out.push({
+        name, slide, index: i + 1, undefined: false,
+        buttons: buttons.length, unnamed: buttons.filter((b) => !label(b)).length,
+        live: live.length,
+      });
+    });
+  }
+  return out;
+}
+"""
+
+
+def audit_built(index_html, elements: list[str], *, timeout_ms: int = 10000):
+    """Audit each fence element in a built deck in headless Chromium.
+
+    Serves the deck's directory over loopback HTTP (module scripts don't load
+    from ``file://``), waits for each element to be defined, and returns
+    warnings for a Run control without an accessible name, a missing Run
+    control, or a missing live output region. Needs the ``[pdf]`` extra's
+    Playwright + Chromium; raises :class:`~lectern.errors.RenderError` without.
+    """
+    import functools
+    import threading
+    from pathlib import Path
+
+    from .pdf.master import ensure_available
+
+    ensure_available()
+    from playwright.sync_api import sync_playwright
+
+    index_html = Path(index_html)
+    handler = functools.partial(
+        _QuietHandler, directory=str(index_html.parent.resolve())
+    )
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_address[1]}/{index_html.name}"
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            try:
+                page = browser.new_page()
+                page.goto(url, wait_until="load")
+                found = page.evaluate(_ELEMENT_PROBE, [elements, timeout_ms])
+            finally:
+                browser.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    warnings: list[str] = []
+    for f in found:
+        where = f"slide {f['slide']}, <{f['name']}> {f['index']}"
+        if f["undefined"]:
+            warnings.append(
+                f"<{f['name']}> was never defined in the built deck — check that "
+                "its script is listed in the fence's scripts="
+            )
+            continue
+        if not f["buttons"]:
+            warnings.append(f"{where}: has no Run control (no <button>)")
+        elif f["unnamed"]:
+            warnings.append(
+                f"{where}: {f['unnamed']} control(s) have no accessible name"
+            )
+        if not f["live"]:
+            warnings.append(
+                f"{where}: its output is not a live region (aria-live / "
+                'role="status"), so screen readers are not told of results'
+            )
+    return warnings
+
+
+class _QuietHandler(http.server.SimpleHTTPRequestHandler):
+    extensions_map = {
+        **http.server.SimpleHTTPRequestHandler.extensions_map,
+        ".wasm": "application/wasm",
+        ".js": "text/javascript",
+        ".mjs": "text/javascript",
+    }
+
+    def log_message(self, format, *args):  # noqa: A002 — keep the CLI quiet
+        pass

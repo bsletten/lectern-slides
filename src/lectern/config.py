@@ -31,6 +31,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from .errors import ConfigError
+from .fences import FenceElement
 from .source import FilesystemSource, Source
 from .theming import is_theme_path
 
@@ -135,6 +136,8 @@ class Config(BaseModel):
     quarto: dict = Field(default_factory=dict)
     pdf: PdfConfig = Field(default_factory=PdfConfig)
     metadata: MetadataConfig = Field(default_factory=MetadataConfig)
+    # `[fences.<lang>]`: render a ```<lang> fence as a custom element (fences.py).
+    fences: dict[str, FenceElement] = Field(default_factory=dict)
 
 
 @dataclass

@@ -347,6 +347,57 @@ prefixes/terms. A deck with no title, tags, or link emits no script.
 }
 ```
 
+### Runnable code (fence elements)
+
+A deck can render a code fence as a custom element, so a slide can carry
+runnable code. Map a fence language to the element in `deck.toml`, and name the
+element's files:
+
+```toml
+[fences.ikigai]
+element = "ikigai-cell"
+scripts = ["vendor/ikigai/ikigai-cell.<hash>.js"]          # loaded as module scripts
+files   = ["vendor/ikigai/ikigai-cell.<hash>.css",          # copied, not linked
+           "vendor/ikigai/ikigai_web_demo.<hash>.js",
+           "vendor/ikigai/ikigai_web_demo_bg.<hash>.wasm"]
+# styles = ["…css"]                                          # linked in <head>
+
+[fences.ikigai.data]          # optional: a block the element reads, passed through untouched
+type = "application/ikigai-kernel+json"
+file = "kernel.json"          # or: text = '''{ "modules": ["fn"] }'''
+```
+
+Then a ```` ```ikigai ```` fence renders as `<ikigai-cell>` with the fenced code
+as its text content (escaped). Other fences render exactly as before, and a deck
+without a `[fences]` table builds byte-for-byte as it did. Lectern knows nothing
+about any element: the element and its files are the deck's.
+
+- **Self-contained.** Every entry in `scripts`, `styles` and `files` is a local
+  file (relative to the deck root); a URL is refused. The files are copied
+  together, **under their own names**, into one content-hashed directory,
+  `assets/<element>-<hash>/`, because an element's files usually find each
+  other by relative URL. Each is loaded once per deck, in `<head>`, after the
+  data block, by a percent-encoded URL (so a space, `#` or `%` in a file name
+  is fine). The files, and the data block's `file`, are read through the deck's
+  `Source`, so a deck served by a non-filesystem source (such as `KernelSource`)
+  can carry a `[fences]` table too.
+- **Data block.** It is emitted verbatim, so lectern refuses content holding
+  `</script` or `<!--` (either can end the block early or swallow the page)
+  rather than altering it.
+- **Lists.** A fence indented inside a list item renders inside that item, and
+  the list's indentation is stripped from the element's code, as CommonMark
+  does for a fenced code block.
+- **Keys.** reveal.js listens for keys on the `document`, so an element that
+  stops propagation of its key events (as `<ikigai-cell>` does) keeps arrow keys
+  and the rest for itself while it has focus; outside it, they change slides.
+- **Check.** `lectern check` refuses a missing file, a URL or a bad element name.
+  `lectern check --built` also builds the deck (reveal, to a temp dir) and
+  audits each element in headless Chromium (the `[pdf]` extra): every Run
+  control (`<button>`) needs an accessible name, and the output must be a live
+  region (`aria-live` or `role="status"`).
+- Fence elements are rendered by the `reveal` adapter (and its PDF). Other
+  adapters show the fence as ordinary code.
+
 ### PDF export (`-f pdf`)
 
 ```bash
