@@ -7,8 +7,8 @@
 {% if author %}
 <meta name="author" content="{{ author }}">
 {% endif %}
-<link rel="stylesheet" href="{{ reveal_cdn }}/dist/reset.css">
-<link rel="stylesheet" href="{{ reveal_cdn }}/dist/reveal.css">
+<link rel="stylesheet" href="{{ reveal.reset }}">
+<link rel="stylesheet" href="{{ reveal.css }}">
 {% if math == 'katex' %}
 <link rel="stylesheet" href="{{ katex_cdn }}">
 {% endif %}
@@ -387,14 +387,14 @@ sub { bottom: -0.25em; }
 {% endfor %}
 </div>
 </div>
-<script src="{{ reveal_cdn }}/dist/reveal.js"></script>
-<script src="{{ reveal_cdn }}/plugin/markdown/markdown.js"></script>
-<script src="{{ reveal_cdn }}/plugin/notes/notes.js"></script>
+<script src="{{ reveal.js }}"></script>
+<script src="{{ reveal.markdown }}"></script>
+<script src="{{ reveal.notes }}"></script>
 {% if highlight %}
-<script src="{{ reveal_cdn }}/plugin/highlight/highlight.js"></script>
+<script src="{{ reveal.highlight }}"></script>
 {% endif %}
 {% if math %}
-<script src="{{ reveal_cdn }}/plugin/math/math.js"></script>
+<script src="{{ reveal.math }}"></script>
 {% endif %}
 <script>
   Reveal.initialize(Object.assign({{ init_json }}, {

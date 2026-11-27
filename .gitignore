@@ -23,3 +23,6 @@ dist/
 *.~undo-tree~
 *~
 \#*\#
+
+# The vendored reveal.js keeps its upstream `dist/` layout (ships in the wheel).
+!src/lectern/vendor/reveal.js/dist/

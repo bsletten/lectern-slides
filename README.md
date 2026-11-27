@@ -190,6 +190,50 @@ moves content.
 The format is gated by the adapter's capabilities; asking for one it can't make
 prints a hint toward an adapter that can (e.g. `-f pptx` → *try renderer: marp*).
 
+### Self-contained decks (`[reveal] assets`)
+
+By default a reveal deck loads reveal.js 5.1.0 from jsDelivr. To build a deck
+that loads nothing from another host, at build time or when it is viewed:
+
+```toml
+[reveal]
+assets = "vendored"        # "cdn" (default) | "vendored" | "local"
+# path = "vendor/reveal"   # with assets = "local": a directory holding reveal.js
+```
+
+- **`vendored`** copies the reveal.js 5.1.0 files that ship inside lectern
+  (`src/lectern/vendor/reveal.js`, MIT, with reveal's `LICENSE` and a
+  `NOTICE.md`) into the build.
+- **`local`** copies them from the directory `path` names, resolved against the
+  deck root like every deck path and read through the deck's `Source`. It must
+  hold the npm package's layout: `dist/reset.css`, `dist/reveal.css`,
+  `dist/reveal.js`, `plugin/markdown/markdown.js`, `plugin/notes/notes.js`, and
+  `plugin/highlight/highlight.js` unless `highlight = false`. A missing or
+  incomplete directory is refused with a sentence naming the missing files.
+
+In both modes each file lands in `assets/` under a content-hashed name and the
+page loads only those relative paths. The PDF master renders that local copy too.
+Mermaid, `[reveal] math` (KaTeX/MathJax) and `font_awesome = true` still load
+from a CDN, so a self-contained deck that uses them is refused with a sentence
+(vendoring them is a follow-up; a local Font Awesome kit works). `lectern check`
+builds a self-contained deck and flags any load that remains from another
+host, such as a remote image, and `lectern check --built` also flags every
+request the page makes to another host in headless Chromium.
+
+**How the vendored copy was obtained, and how to update it.** It is an
+unmodified subset of the npm tarball
+`https://registry.npmjs.org/reveal.js/-/reveal.js-5.1.0.tgz`, whose registry
+integrity is
+`sha512-KDt7m0+xwKV6nAZt4CNPVFBf42sTKRQapg0bGGKB5PKO5XvChnMfwlZkybydHiQJ7p5+6LbHKRGrhXODdoNIaA==`.
+To update it: download the new version's tarball, check its hash against
+`npm view reveal.js@<version> dist.integrity` (for example
+`echo "sha512-$(openssl dgst -sha512 -binary reveal.js-<version>.tgz | base64)"`),
+unpack it, copy `LICENSE` and the files listed above over
+`src/lectern/vendor/reveal.js/`, and update `REVEAL_VERSION` in
+`src/lectern/render/reveal_assets.py`, `NOTICE.md` and this paragraph. Changing
+`REVEAL_VERSION` also changes the cdn URL, so regenerate the cdn golden
+(`tests/fixtures/golden/render-deck.index.html`) in the same change.
+
 ### Diagrams (Mermaid)
 
 A fenced ` ```mermaid ` block renders to a diagram — it stays valid CommonMark
